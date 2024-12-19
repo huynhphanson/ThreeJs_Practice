@@ -32,9 +32,14 @@ new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmen
 // scene.add(directionaLightRight);
 // directionaLightRight.position.set(30, 30, 10);
 
-
+const geometry = new THREE.BoxGeometry( 10, 10, 10 );
+const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+const cube = new THREE.Mesh( geometry, material );
+cube.position.set(0, 0, 0);
+scene.add( cube );
 
 const loader = new GLTFLoader();
+
 loader.load(
 	// resource URL
 	'mygia.glb',
@@ -50,26 +55,28 @@ loader.load(
 	function ( error ) {
 		console.log( 'An error happened' );
 	}
+
 );
-//RayCaster
+
+
 const raycaster = new THREE.Raycaster();
-window.addEventListener( 'mousedown', onMousedown );
-const coords = new THREE.Vector2();
+document.addEventListener( 'mousedown', onMousedown );
 function onMousedown( event ) {
-	( event.clientX / window.innerWidth ) * 2 - 1;
-	( event.clientY / window.innerHeight ) * 2 + 1;
+	const coords = new THREE.Vector2();
+	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+	raycaster.setFromCamera(coords, camera);
+
+	const intersections = raycaster.intersectObjects(scene.children,true);
+	if(intersections.length > 0){
+		const selectedObject = intersections[0].object;
+		console.log(`${selectedObject.name} was clicked`);
+	}
 }
 
-camera.position.z = 300;
+camera.position.z = 40;
 
 function animate() {
     controls.update();
 	renderer.render( scene, camera );
-}
-
-raycaster.setFromCamera(coords, camera);
-
-const intersections = raycaster.intersectObjects(scene.children, true);
-if(intersections.length > 0){
-	console.log(intersections);
 }
