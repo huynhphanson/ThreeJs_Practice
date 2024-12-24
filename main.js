@@ -39,6 +39,7 @@ const geometry = new THREE.BoxGeometry( 10, 10, 10 );
 const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 const cube1 = new THREE.Mesh( geometry, material );
 cube1.userData.origionalColor = 0x00ff00;
+cube1.userData.label = "Thông tin 1";
 cube1.position.set(0, 0, 0);
 cubes.push(cube1);
 
@@ -47,6 +48,7 @@ const cube2 = new THREE.Mesh(
 	new THREE.MeshBasicMaterial({color: 0xffffff})
 );
 cube2.userData.origionalColor = 0xffffff;
+cube2.userData.label = "Thông tin 2";
 cube2.position.set(-5, -10, -7);
 cubes.push(cube2);
 cubes.forEach(cube => {
@@ -65,7 +67,6 @@ document.body.appendChild(labelRenderer.domElement);
 const label = document.querySelector('.label');
 label.textContent = "hello World";
 const cPointLabel = new CSS2DObject(label);
-// cPointLabel.getSize(100, 100);
 scene.add(cPointLabel);
 cPointLabel.position.set(-20, 5, 10);
 
@@ -88,9 +89,9 @@ loader.load(
 );
 
 const raycaster = new THREE.Raycaster();
-let hoveredObjects = [];
-window.addEventListener( 'pointermove', onMousedown );
-function onMousedown( event ) {
+window.addEventListener('mousedown', onMouseDown);
+window.addEventListener( 'mousemove', onMouseMove );
+function onMouseMove( event ) {
 	event.preventDefault();
 	const coords = new THREE.Vector2();
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
@@ -109,6 +110,30 @@ function onMousedown( event ) {
 			cube.material.color.set(cube.userData.origionalColor);
 		})
 }}
+
+function onMouseDown( event ) {
+	event.preventDefault();
+	const coords = new THREE.Vector2();
+	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+	raycaster.setFromCamera(coords, camera);
+
+	const intersects = raycaster.intersectObjects(cubes);
+	if(intersects.length > 0){
+		cubes.forEach(cube => {
+			if(intersects[0].object === cube){
+				console.log(cube.userData.label);
+				showLabel(cube.userData.label);
+			}
+		})
+	}
+}
+
+function showLabel(object){
+	const objectInfo = document.querySelector('.objectInfo');
+	objectInfo.innerHTML = object;
+	objectInfo.style.display === 'none' ? objectInfo.style.display = 'block' : objectInfo.style.display = 'none';
+}
 
 camera.position.z = 40;
 
