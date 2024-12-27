@@ -2,7 +2,7 @@ body{
     margin: 0;
 }
 
-.objectInfo{
+.tagContainer{
     display: none;
     position: absolute;
     top: 5px;
@@ -11,6 +11,32 @@ body{
     height: 400px;
     border: 2px solid red;
     border-radius: 10px;
-    word-wrap: break-all;
-    padding: 4px 4px;
+    padding: 2px 2px;
+}
+
+.contentContainer{
+    margin: 0;
+    border: 2px solid green;
+}
+
+.btnContainer{
+    position: absolute;
+    margin: 0;
+    right: 2px;
+}
+
+.exitBtn{
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    border: none;
+    background-color: hsl(0, 86%, 70%);
+}
+
+.exitBtn:hover{
+    background-color: hsl(0, 86%, 60%);
+}
+
+.exitBtn:active{
+    background-color: hsl(0, 86%, 50%);
 }
