@@ -3,23 +3,20 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RGBELoader } from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
-import JEASINGS from 'jeasings';
 
 
 const scene = new THREE.Scene();
-const clock = new THREE.Clock();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
 camera.up = new THREE.Vector3(0, 0, 1);
-scene.add(camera);
-
-const boundingBox = new THREE.Box3();
-
+camera.position.set(65, -150, 50);
+// scene.add(camera);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setAnimationLoop( animate );
 document.body.appendChild( renderer.domElement );
 const controls = new OrbitControls( camera, renderer.domElement );
+controls.target = new THREE.Vector3(25, -30, -90);
 controls.update();
 controls.enableDamping = true;
 
@@ -32,13 +29,6 @@ new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmen
 	scene.environment = environmentMap;
 })
 
-
-// const directionaLightLeft = new THREE.DirectionalLight(0xFFFFFF, 10);
-// scene.add(directionaLightLeft);
-// directionaLightLeft.position.set(-30, 30, -10);
-// const directionaLightRight = new THREE.DirectionalLight(0xFFFFFF, 10);
-// scene.add(directionaLightRight);
-// directionaLightRight.position.set(30, 30, 10);
 let cubes = [];
 const geometry = new THREE.BoxGeometry( 10, 10, 10 );
 const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
@@ -60,9 +50,6 @@ cubes.push(cube2);
 cubes.forEach((cube, index) => {
 	scene.add(cube);
 })
-
-
-
 
 // CSS2DRenderer
 const labelRenderer = new CSS2DRenderer();
@@ -128,18 +115,16 @@ function zoomCam( event ) {
 
 	const intersects = raycaster.intersectObjects(scene.children);
 	if(intersects.length > 0){
-		controls.enableDamping = false;
-		controls.enabled = false;
 		let target = intersects[0].point;
 		let cameraPosition = camera.position.clone();
 		let distance = cameraPosition.sub(target);
 		let direction = distance.normalize();
-		let offset = distance.clone().sub(direction.multiplyScalar(10.0));
+		let offset = distance.clone().sub(direction.multiplyScalar(20.0));
 		let newPos = target.clone().sub(offset);
 		zoomAt(target, newPos);
-		console.log('>>CamPosition:', camera.position);
-		console.log('>>TargetPosition:', target)
-		console.log('>>Direction:', direction);
+		// console.log('>>CamPosition:', camera.position);
+		// console.log('>>TargetPosition:', target)
+		// console.log('>>Direction:', direction);
 	} else {
 		
 }}
@@ -203,7 +188,7 @@ function onMouseDown( event ) {
 
 
 
-camera.position.z = 40;
+
 
 function animate() {
     controls.update();
@@ -236,26 +221,19 @@ function showLabel(object){
 }
 
 // Zoome Gsap
-const zoomAt = (target, newPos,) => {
+const zoomAt = (target, newPos) => {
 	gsap.to( camera.position, {
 		duration: 1,
 		x: newPos.x,
 		y: newPos.y,
 		z: newPos.z,
-		onUpdate: function() {
-			camera.lookAt( target.x, target.t, target.z ); //important 
-		}
 	} );
 
 	gsap.to( controls.target, {
 		duration: 1,
 		x: target.x,
-		y: target.y, //set the center of the controler to the zoomed object 
-		z: target.z , // no distance needed
-		onComplete: ()=>{
-			controls.update();
-			controls.enabled = true; // activate the controler again after animation
-		}
+		y: target.y,
+		z: target.z,
 	} );
 };
 
