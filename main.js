@@ -7,7 +7,12 @@ import JEASINGS from 'jeasings';
 
 
 const scene = new THREE.Scene();
+const clock = new THREE.Clock();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
+camera.up = new THREE.Vector3(0, 0, 1);
+scene.add(camera);
+
+const boundingBox = new THREE.Box3();
 
 
 const renderer = new THREE.WebGLRenderer();
@@ -72,7 +77,9 @@ const label = document.querySelector('.label');
 label.textContent = "hello World";
 const cPointLabel = new CSS2DObject(label);
 scene.add(cPointLabel);
-cPointLabel.position.set(-20, 5, 10);
+cPointLabel.position.set(-10, 5, 10);
+
+
 
 const loader = new GLTFLoader();
 loader.load(
@@ -97,19 +104,42 @@ window.addEventListener('dblclick', zoomCam)
 window.addEventListener('mousedown', onMouseDownGltf)
 window.addEventListener('mousedown', onMouseDown);
 window.addEventListener( 'mousemove', onMouseMove );
+window.addEventListener('mousewheel', onMouseWheel);
+
+function onMouseWheel(event){
+	let cameraPosition = camera.position.clone();
+	let distance = cameraPosition.distanceTo(cPointLabel.position);
+	console.log(distance);
+	if(distance > 100 || distance < 10){
+		scene.remove(cPointLabel);
+	} else {
+		scene.add(cPointLabel);
+	}
+}
 
 
 
 function zoomCam( event ) {
 	event.preventDefault();
-	const coords = new THREE.Vector2();
+	const coords = new THREE.Vector3();
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	raycaster.setFromCamera(coords, camera);
 
 	const intersects = raycaster.intersectObjects(scene.children);
 	if(intersects.length > 0){
-		zoomAt(intersects[0].point, camera);
+		controls.enableDamping = false;
+		controls.enabled = false;
+		let target = intersects[0].point;
+		let cameraPosition = camera.position.clone();
+		let distance = cameraPosition.sub(target);
+		let direction = distance.normalize();
+		let offset = distance.clone().sub(direction.multiplyScalar(10.0));
+		let newPos = target.clone().sub(offset);
+		zoomAt(target, newPos);
+		console.log('>>CamPosition:', camera.position);
+		console.log('>>TargetPosition:', target)
+		console.log('>>Direction:', direction);
 	} else {
 		
 }}
@@ -117,7 +147,7 @@ function zoomCam( event ) {
 
 function onMouseMove( event ) {
 	event.preventDefault();
-	const coords = new THREE.Vector2();
+	const coords = new THREE.Vector3();
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	raycaster.setFromCamera(coords, camera);
@@ -136,14 +166,13 @@ function onMouseMove( event ) {
 }}
 function onMouseDownGltf( event ) {
 	event.preventDefault();
-	const coords = new THREE.Vector2();
+	const coords = new THREE.Vector3();
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	raycaster.setFromCamera(coords, camera);
 
 	const intersects = raycaster.intersectObjects(scene.children);
 	if(intersects.length > 0){
-		console.log(intersects);
 		const p = intersects[0].point;
 		console.log('Tọa độ:',p.x, p.y, p.z);
 	} else {
@@ -207,15 +236,14 @@ function showLabel(object){
 }
 
 // Zoome Gsap
-const zoomAt = (target, camera) => {
-
+const zoomAt = (target, newPos,) => {
 	gsap.to( camera.position, {
 		duration: 1,
-		x: target.x,
-		y: target.y,
-		z: target.z + 20,
+		x: newPos.x,
+		y: newPos.y,
+		z: newPos.z,
 		onUpdate: function() {
-			camera.lookAt(target.x, target.y, target.z); //important 
+			camera.lookAt( target.x, target.t, target.z ); //important 
 		}
 	} );
 
@@ -230,3 +258,4 @@ const zoomAt = (target, camera) => {
 		}
 	} );
 };
+
