@@ -71,7 +71,7 @@ cPointLabel.position.set(-10, 5, 10);
 const loader = new GLTFLoader();
 loader.load(
 	// resource URL
-	'mygia.glb',
+	'./GLB/mygia.glb',
 	// called when the resource is loaded
 	function ( gltf ) {
 		scene.add( gltf.scene );
