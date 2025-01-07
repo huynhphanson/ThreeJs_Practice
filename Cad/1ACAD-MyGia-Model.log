@@ -1,0 +1,23 @@
+ [DefaultDomain:     ]IMPORT STARTED: 07/01/2025 11:14:45 SA
+
+ [DefaultDomain:Error]eFileNotFound
+   at Autodesk.AutoCAD.DatabaseServices.Database.ReadDwgFile(String fileName, FileOpenMode mode, Boolean allowCPConversion, String password)
+   at Autodesk.Aec.Ifc.Interop.Controllers.OpImportController.importAttributeTemplate(Database db)
+ [DefaultDomain:Error]eFileNotFound
+   at Autodesk.AutoCAD.DatabaseServices.Database.ReadDwgFile(String fileName, FileOpenMode mode, Boolean allowCPConversion, String password)
+   at Autodesk.Aec.Ifc.Interop.Controllers.OpImportController.importPSetTemplate(Database db)
+ [DefaultDomain:Error]eFileNotFound
+   at Autodesk.AutoCAD.DatabaseServices.Database.ReadDwgFile(String fileName, FileOpenMode mode, Boolean allowCPConversion, String password)
+   at Autodesk.Aec.Ifc.Interop.Controllers.OpImportController.importAttributeTemplate(Database db)
+ [DefaultDomain:Error]eFileNotFound
+   at Autodesk.AutoCAD.DatabaseServices.Database.ReadDwgFile(String fileName, FileOpenMode mode, Boolean allowCPConversion, String password)
+   at Autodesk.Aec.Ifc.Interop.Controllers.OpImportController.importPSetTemplate(Database db)
+ [DefaultDomain:     ]
+	=============
+	Object Count:
+	=============
+	- AecDbMvBlockRef**       :	Total:  (9)
+	- IfcBuildingElementProxy :	Total:  (9)
+	  ** = Object classified as other IFC object.
+ [DefaultDomain:     ]IMPORT ENDED: 07/01/2025 11:15:33 SA
+

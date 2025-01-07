@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { RGBELoader } from 'three/examples/jsm/Addons.js';
+import { OBJLoader, RGBELoader } from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
 
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
 camera.up = new THREE.Vector3(0, 0, 1);
-camera.position.set(65, -150, 50);
+camera.position.set(165, -50, 150);
 // scene.add(camera);
 
 const renderer = new THREE.WebGLRenderer();
@@ -21,7 +21,7 @@ controls.update();
 controls.enableDamping = true;
 
 const ambientLight = new THREE.AmbientLight(0xffffff);
-// scene.add(ambientLight);
+scene.add(ambientLight);
 
 new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmentMap) => {
 	environmentMap.mapping = THREE.EquirectangularReflectionMapping;
@@ -35,7 +35,7 @@ const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 const cube1 = new THREE.Mesh( geometry, material );
 cube1.userData.origionalColor = 0x00ff00;
 cube1.userData.label = "Thông tin 1";
-cube1.position.set(0, 0, 0);
+cube1.position.set(0, 0, 10);
 cubes.push(cube1);
 
 const cube2 = new THREE.Mesh( 
@@ -44,7 +44,7 @@ const cube2 = new THREE.Mesh(
 );
 cube2.userData.origionalColor = 0xffffff;
 cube2.userData.label = "Thông tin 2";
-cube2.position.set(-5, -18, -20);
+cube2.position.set(-5, -18, 20);
 cubes.push(cube2);
 
 cubes.forEach((cube, index) => {
@@ -61,19 +61,90 @@ document.body.appendChild(labelRenderer.domElement);
 
 // CSS2DObject
 const label = document.querySelector('.label');
-label.textContent = "hello World";
+label.textContent = 'Hello_World';
 const cPointLabel = new CSS2DObject(label);
+cPointLabel.position.set(0, 10, 50);
 scene.add(cPointLabel);
-cPointLabel.position.set(-10, 5, 10);
+const points = [
+	{"content": "Điểm 1", "x": "0", "y": "10", "z": "50"},
+	{"content": "Điểm 2", "x": "0", "y": "20", "z": "50"},
+	{"content": "Điểm 3", "x": "0", "y": "30", "z": "50"},
+	{"content": "Điểm 4", "x": "0", "y": "40", "z": "50"},
+];
+let div = [];
+let node = [];
+let cPointDiv = [];
+points.forEach((point, i) => {
+	div[i] = document.createElement('div');
+	div[i].classList.add(`div${i}`);
+	node[i] = document.createTextNode(point.content);
+	div[i].appendChild(node[i]);
+	labelRenderer.domElement.appendChild(div[i]);
+	cPointDiv[i] = new CSS2DObject(document.querySelector(`.div${i}`));
+	cPointDiv[i].position.set(point.x, point.y, point.z);
+	scene.add(cPointDiv[i]);
+});
 
 
+// OBJLoader
+const manager = new THREE.LoadingManager();
+manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
+	console.log( 'Started loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+};
 
+manager.onLoad = function ( ) {
+	console.log( 'Loading complete!');
+};
+
+manager.onProgress = function ( url, itemsLoaded, itemsTotal ) {
+	console.log( 'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+};
+
+manager.onError = function ( url ) {
+	console.log( 'There was an error loading ' + url );
+};
+const objLoader = new OBJLoader(manager);
+objLoader.load(
+	'./Obj/ranh3.obj', 
+	function (object) {
+		object.traverse(node => {
+			if(node.isMesh){
+				node.material.color.set(0xf6ace1);
+			}
+		});
+		object.position.z = 100;
+		scene.add(object);
+	}, (xhr) => {
+		console.log('>>>ObjLoader:',(xhr.loaded / xhr.total * 100) + ' %loaded');
+	}, (error) => {
+		console.log('>>>ObjLoader Status: Error Happened');
+	}
+);
+objLoader.load(
+	'./Obj/tuyen1.obj',
+	(object) => {
+		object.traverse(node => {
+			if(node.isMesh){
+				node.material.color.set(0x32a852);
+			}
+		});
+		scene.add(object);
+	}, (xhr) => {
+		console.log('>>>ObjLoader:',(xhr.loaded / xhr.total * 100) + ' %loaded');
+	}, (error) => {
+		console.log('>>>ObjLoader Status: Error Happened');
+	}
+);
+
+
+// GLTFLoader
 const loader = new GLTFLoader();
 loader.load(
 	// resource URL
 	'./GLB/mygia.glb',
 	// called when the resource is loaded
 	function ( gltf ) {
+		gltf.scene.position.z = 50;
 		scene.add( gltf.scene );
 	},
 	// called while loading is progressing
@@ -85,6 +156,24 @@ loader.load(
 		console.log( 'An error happened' );
 	}
 );
+loader.load(
+	// resource URL
+	'./GLB/MyGia1.glb',
+	// called when the resource is loaded
+	function ( gltf ) {
+		gltf.scene.position.z = 50;
+		scene.add( gltf.scene );
+	},
+	// called while loading is progressing
+	function ( xhr ) {
+		// console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+	},
+	// called when loading has errors
+	function ( error ) {
+		console.log( 'An error happened' );
+	}
+);
+
 
 const raycaster = new THREE.Raycaster();
 window.addEventListener('dblclick', zoomCam)

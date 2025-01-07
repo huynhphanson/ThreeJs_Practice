@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.landxml.org/schema/LandXML-1.2 http://www.landxml.org/schema/LandXML-1.2/LandXML-1.2.xsd" date="2025-01-07" time="09:25:58" version="1.2" language="English" readOnly="false">
+	<Units>
+		<Metric areaUnit="squareMeter" linearUnit="meter" volumeUnit="cubicMeter" temperatureUnit="celsius" pressureUnit="milliBars" diameterUnit="millimeter" angularUnit="decimal degrees" directionUnit="decimal degrees"></Metric>
+	</Units>
+	<CoordinateSystem desc="VN2000-KHANH HOA 108d15p" ogcWktCode="PROJCS[&quot;VN2000-KHANH HOA&quot;,GEOGCS[&quot;Vietnam2000.LL&quot;,DATUM[&quot;Vietnam2000&quot;,SPHEROID[&quot;WGS84&quot;,6378137.000,298.25722356],TOWGS84[-191.9044,-39.3032,-111.4503,-0.009288,0.019755,-0.004274,0.25290628]],PRIMEM[&quot;Greenwich&quot;,0],UNIT[&quot;Degree&quot;,0.017453292519943295]],PROJECTION[&quot;Transverse_Mercator&quot;],PARAMETER[&quot;false_easting&quot;,500000.000],PARAMETER[&quot;false_northing&quot;,0.000],PARAMETER[&quot;scale_factor&quot;,0.999900000000],PARAMETER[&quot;central_meridian&quot;,108.25000000000000],PARAMETER[&quot;latitude_of_origin&quot;,0.00000000000000],UNIT[&quot;Meter&quot;,1.00000000000000]]" horizontalDatum="Vietnam2000" horizontalCoordinateSystemName="VN2000-KHANH HOA" fileLocation="AutoCAD Map Zone Name"></CoordinateSystem>
+	<Project name="D:\TempDelete\gtlf\Cad\MyGia.dwg"></Project>
+	<Application name="Autodesk Civil 3D" desc="Civil 3D" manufacturer="Autodesk, Inc." version="2022" manufacturerURL="www.autodesk.com/civil" timeStamp="2025-01-07T09:25:58"></Application>
+	<Alignments name="">
+		<Alignment name="Tuyến Test" length="302.504420515283" staStart="0." desc="">
+			<CoordGeom>
+				<Line dir="22.555961327719" length="159.772121105473">
+					<Start>-135.576206539034 -38.641625704564</Start>
+					<End>-74.289919758758 108.908778345129</End>
+				</Line>
+				<Line dir="100.046441515855" length="142.732299409809">
+					<Start>-74.289919758758 108.908778345129</Start>
+					<End>66.253819302725 84.009647729196</End>
+				</Line>
+			</CoordGeom>
+			<CrossSects>
+				<CrossSect sta="0." name="0+000.00"></CrossSect>
+				<CrossSect sta="50." name="0+050.00"></CrossSect>
+				<CrossSect sta="100." name="0+100.00"></CrossSect>
+				<CrossSect sta="150." name="0+150.00"></CrossSect>
+				<CrossSect sta="159.772121105473" name="0+159.77"></CrossSect>
+				<CrossSect sta="200." name="0+200.00"></CrossSect>
+				<CrossSect sta="250." name="0+250.00"></CrossSect>
+				<CrossSect sta="300." name="0+300.00"></CrossSect>
+				<CrossSect sta="302.504420515283" name="0+302.50"></CrossSect>
+			</CrossSects>
+		</Alignment>
+	</Alignments>
+</LandXML>
