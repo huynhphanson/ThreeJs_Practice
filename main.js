@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { OBJLoader, RGBELoader } from 'three/examples/jsm/Addons.js';
+import { OBJLoader, RGBELoader} from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
+
+
 
 
 const scene = new THREE.Scene();
@@ -14,7 +16,7 @@ camera.position.set(165, -50, 150);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setAnimationLoop( animate );
-document.body.appendChild( renderer.domElement );
+document.querySelector('.threeContainer').appendChild( renderer.domElement );
 const controls = new OrbitControls( camera, renderer.domElement );
 controls.target = new THREE.Vector3(25, -30, -90);
 controls.update();
@@ -57,7 +59,7 @@ labelRenderer.setSize(window.innerWidth, window.innerHeight);
 labelRenderer.domElement.style.position = 'absolute';
 labelRenderer.domElement.style.top = '0px';
 labelRenderer.domElement.style.pointerEvents = 'none';
-document.body.appendChild(labelRenderer.domElement);
+document.querySelector('.threeContainer').appendChild(labelRenderer.domElement);
 
 // CSS2DObject
 const label = document.querySelector('.label');
@@ -66,14 +68,15 @@ const cPointLabel = new CSS2DObject(label);
 cPointLabel.position.set(0, 10, 50);
 scene.add(cPointLabel);
 const points = [
-	{"content": "Điểm 1", "x": "0", "y": "10", "z": "50"},
-	{"content": "Điểm 2", "x": "0", "y": "20", "z": "50"},
-	{"content": "Điểm 3", "x": "0", "y": "30", "z": "50"},
-	{"content": "Điểm 4", "x": "0", "y": "40", "z": "50"},
+	{"content": "Điểm 1", "x": "37", "y": "-110", "z": "50"},
+	{"content": "Điểm 2", "x": "-90", "y": "-90", "z": "50"},
+	{"content": "Điểm 3", "x": "175", "y": "-10", "z": "50"},
+	{"content": "Điểm 4", "x": "25", "y": "105", "z": "50"},
 ];
 let div = [];
 let node = [];
 let cPointDiv = [];
+let sphereMesh = [];
 points.forEach((point, i) => {
 	div[i] = document.createElement('div');
 	div[i].classList.add(`div${i}`);
@@ -82,8 +85,20 @@ points.forEach((point, i) => {
 	labelRenderer.domElement.appendChild(div[i]);
 	cPointDiv[i] = new CSS2DObject(document.querySelector(`.div${i}`));
 	cPointDiv[i].position.set(point.x, point.y, point.z);
+	sphereMesh[i] = createCpointMesh(point.content, point.x, point.y, point.z-5);
 	scene.add(cPointDiv[i]);
+	scene.add(sphereMesh[i]);
 });
+
+// create PointMesh
+function createCpointMesh (name, x, y, z) {
+	const geo = new THREE.SphereGeometry(2);
+	const mat = new THREE.MeshBasicMaterial({color: 0xFF0000});
+	const mesh = new THREE.Mesh(geo, mat);
+	mesh.position.set(x, y, z);
+	mesh.name = name;
+	return mesh;
+}
 
 
 // OBJLoader
@@ -105,14 +120,14 @@ manager.onError = function ( url ) {
 };
 const objLoader = new OBJLoader(manager);
 objLoader.load(
-	'./Obj/ranh3.obj', 
+	'./Obj/line1.obj', 
 	function (object) {
 		object.traverse(node => {
 			if(node.isMesh){
-				node.material.color.set(0xf6ace1);
+				// node.material.color.set(0xff0000);
 			}
 		});
-		object.position.z = 100;
+		object.position.z = 50;
 		scene.add(object);
 	}, (xhr) => {
 		console.log('>>>ObjLoader:',(xhr.loaded / xhr.total * 100) + ' %loaded');
@@ -120,60 +135,33 @@ objLoader.load(
 		console.log('>>>ObjLoader Status: Error Happened');
 	}
 );
-objLoader.load(
-	'./Obj/tuyen1.obj',
-	(object) => {
-		object.traverse(node => {
-			if(node.isMesh){
-				node.material.color.set(0x32a852);
-			}
-		});
-		scene.add(object);
-	}, (xhr) => {
-		console.log('>>>ObjLoader:',(xhr.loaded / xhr.total * 100) + ' %loaded');
-	}, (error) => {
-		console.log('>>>ObjLoader Status: Error Happened');
-	}
-);
-
 
 // GLTFLoader
 const loader = new GLTFLoader();
-loader.load(
-	// resource URL
-	'./GLB/mygia.glb',
-	// called when the resource is loaded
-	function ( gltf ) {
-		gltf.scene.position.z = 50;
-		scene.add( gltf.scene );
-	},
-	// called while loading is progressing
-	function ( xhr ) {
-		// console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-	},
-	// called when loading has errors
-	function ( error ) {
-		console.log( 'An error happened' );
-	}
-);
-loader.load(
-	// resource URL
-	'./GLB/MyGia1.glb',
-	// called when the resource is loaded
-	function ( gltf ) {
-		gltf.scene.position.z = 50;
-		scene.add( gltf.scene );
-	},
-	// called while loading is progressing
-	function ( xhr ) {
-		// console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-	},
-	// called when loading has errors
-	function ( error ) {
-		console.log( 'An error happened' );
-	}
-);
-
+function loadGLTFModel() {
+	loader.load(
+		// resource URL
+		'./GLB/mygia.glb',
+		// called when the resource is loaded
+		function ( gltf ) {
+			gltf.scene.position.z = 50;
+			scene.add( gltf.scene );
+		},
+		// called while loading is progressing
+		function ( xhr ) {
+			// console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+		},
+		// called when loading has errors
+		function ( error ) {
+			console.log( 'An error happened' );
+		}
+	);
+};
+loadGLTFModel();
+/* const btnModel = document.querySelector('.btnModel');
+btnModel.addEventListener('mousedown', () => {
+	loadGLTFModel();
+}); */
 
 const raycaster = new THREE.Raycaster();
 window.addEventListener('dblclick', zoomCam)
@@ -186,8 +174,9 @@ function onMouseWheel(event){
 	let cameraPosition = camera.position.clone();
 	let distance = cameraPosition.distanceTo(cPointLabel.position);
 	console.log(distance);
-	if(distance > 100 || distance < 10){
+	if(distance > 300 || distance < 10){
 		scene.remove(cPointLabel);
+		scene.remove(cPointDiv);
 	} else {
 		scene.add(cPointLabel);
 	}
@@ -286,13 +275,10 @@ function animate() {
 }
 
 window.addEventListener('resize', () => {
-
 	camera.aspect = window.innerWidth / window.innerHeight;
-
 	camera.updateProjectionMatrix();
-
 	renderer.setSize( window.innerWidth, window.innerHeight );
-
+	labelRenderer.setSize( window.innerWidth, window.innerHeight );
 })
 
 

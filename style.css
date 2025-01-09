@@ -1,7 +1,28 @@
 body{
     margin: 0;
 }
+.sidenav{
+    position: fixed;
+    height: 100%;
+    display: block;
+}
 
+.sidenav button{
+    margin-top: 10px;
+    margin-left: 10px;
+    transition: .5s;
+}
+
+.inputModelContainer{
+    width: 0;
+    overflow-x: hidden;
+    transition: .5s;
+    display: flex;
+    align-items: center;
+}
+.threeContainer{
+    transition: .5s;
+}
 .tagContainer{
     display: none;
     position: absolute;
@@ -40,3 +61,4 @@ body{
 .exitBtn:active{
     background-color: hsl(0, 86%, 50%);
 }
+
