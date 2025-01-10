@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { OBJLoader, RGBELoader} from 'three/examples/jsm/Addons.js';
+import { KMZLoader, OBJLoader, RGBELoader} from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
 
 
@@ -99,6 +99,34 @@ function createCpointMesh (name, x, y, z) {
 	mesh.name = name;
 	return mesh;
 }
+// search Function
+const searchInput = document.querySelector('.searchInput');
+const searchBtn = document.querySelector('.searchBtn');
+searchBtn.addEventListener('mousedown', () => {
+	const valueSearch = searchInput.value.replace(/\s/g, '').split(",");
+	console.log(valueSearch);
+	scene.add(createCpointMesh ('checkPoint1', Number(valueSearch[0]), Number(valueSearch[1]), 5));
+	let target = new THREE.Vector3(Number(valueSearch[0]), Number(valueSearch[1]), 10);
+	let cameraPosition = camera.position.clone();
+	let distance = cameraPosition.sub(target);
+	let direction = distance.normalize();
+	let offset = distance.clone().sub(direction.multiplyScalar(20.0));
+	let newPos = target.clone().sub(offset);
+	zoomAt(target, newPos);
+
+});
+
+// original Position
+const oriBtn = document.querySelector('.oriBtn');
+oriBtn.addEventListener('mousedown', () => {
+	let target = new THREE.Vector3(0, 0, 0);
+	let cameraPosition = camera.position.clone();
+	let distance = cameraPosition.sub(target);
+	let direction = distance.normalize();
+	let offset = distance.clone().sub(direction.multiplyScalar(200.0));
+	let newPos = new THREE.Vector3(100, -100, 100);
+	zoomAt(target, newPos);
+})
 
 
 // OBJLoader
@@ -135,23 +163,28 @@ objLoader.load(
 		console.log('>>>ObjLoader Status: Error Happened');
 	}
 );
+// KMZLoader
+const loaderKmz = new KMZLoader();
+loaderKmz.load(
+	'./kmz/path1.kmz', function (kmz) {
+		scene.add(kmz.scene);
+		animate();
+	}
+)
+
 
 // GLTFLoader
 const loader = new GLTFLoader();
 function loadGLTFModel() {
 	loader.load(
-		// resource URL
 		'./GLB/mygia.glb',
-		// called when the resource is loaded
 		function ( gltf ) {
 			gltf.scene.position.z = 50;
 			scene.add( gltf.scene );
 		},
-		// called while loading is progressing
 		function ( xhr ) {
 			// console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
 		},
-		// called when loading has errors
 		function ( error ) {
 			console.log( 'An error happened' );
 		}
@@ -164,10 +197,10 @@ btnModel.addEventListener('mousedown', () => {
 }); */
 
 const raycaster = new THREE.Raycaster();
-window.addEventListener('dblclick', zoomCam)
-window.addEventListener('mousedown', onMouseDownGltf)
+window.addEventListener('dblclick', zoomCam);
+window.addEventListener('mousedown', onMouseDownGltf);
 window.addEventListener('mousedown', onMouseDown);
-window.addEventListener( 'mousemove', onMouseMove );
+window.addEventListener('mousemove', onMouseMove);
 window.addEventListener('mousewheel', onMouseWheel);
 
 function onMouseWheel(event){
@@ -176,11 +209,10 @@ function onMouseWheel(event){
 	console.log(distance);
 	if(distance > 300 || distance < 10){
 		scene.remove(cPointLabel);
-		scene.remove(cPointDiv);
 	} else {
 		scene.add(cPointLabel);
 	}
-}
+};
 
 
 
@@ -203,9 +235,8 @@ function zoomCam( event ) {
 		// console.log('>>CamPosition:', camera.position);
 		// console.log('>>TargetPosition:', target)
 		// console.log('>>Direction:', direction);
-	} else {
-		
-}}
+	} 
+};
 
 
 function onMouseMove( event ) {
@@ -226,9 +257,8 @@ function onMouseMove( event ) {
 		cubes.forEach(cube => {
 			cube.material.color.set(cube.userData.origionalColor);
 		})
-}}
+}};
 function onMouseDownGltf( event ) {
-	event.preventDefault();
 	const coords = new THREE.Vector3();
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
@@ -242,11 +272,9 @@ function onMouseDownGltf( event ) {
 		cubes.forEach(cube => {
 			cube.material.color.set(cube.userData.origionalColor);
 		})
-}}
-
+}};
 
 function onMouseDown( event ) {
-	event.preventDefault();
 	const coords = new THREE.Vector3();
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
@@ -262,25 +290,21 @@ function onMouseDown( event ) {
 		});
 		// zoomAt(intersects[0].object, camera);
 	}
-}
-
-
-
+};
 
 
 function animate() {
     controls.update();
 	labelRenderer.render(scene, camera);
 	renderer.render( scene, camera );
-}
+};
 
 window.addEventListener('resize', () => {
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	labelRenderer.setSize( window.innerWidth, window.innerHeight );
-})
-
+});
 
 // Interact JS
 const tagContainer = document.querySelector('.tagContainer');
@@ -293,7 +317,7 @@ function showLabel(object){
 	const contentContainer = document.querySelector('.contentContainer');
 	contentContainer.textContent = object;
 	tagContainer.style.display = 'flex';
-}
+};
 
 // Zoome Gsap
 const zoomAt = (target, newPos) => {
@@ -311,4 +335,3 @@ const zoomAt = (target, newPos) => {
 		z: target.z,
 	} );
 };
-
