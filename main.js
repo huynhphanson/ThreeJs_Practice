@@ -1,10 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { KMZLoader, OBJLoader, RGBELoader} from 'three/examples/jsm/Addons.js';
+import { OBJLoader, RGBELoader} from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
-
-
 
 
 const scene = new THREE.Scene();
@@ -31,13 +29,42 @@ new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmen
 	scene.environment = environmentMap;
 })
 
+// Add ShapeGeometry
+
+let shape = [];
+let shapeGeometry = [];
+// Fetch Json
+let meshShapes = [];
+let shapes = [];
+fetch('./JSON/MyGia.json')
+	.then(res => res.json())
+	.then(values => {
+		values.forEach((value, i) => {
+			shape[i] = new THREE.Shape();
+			shape[i].moveTo(value.geo.coors[0][0], value.geo.coors[0][1]);
+			(value.geo.coors.forEach(coor => {
+				shape[i].lineTo(coor[0], coor[1]);
+			}));
+			shapeGeometry = new THREE.ExtrudeGeometry(shape[i]);
+			const shapeMaterial = new THREE.MeshBasicMaterial({
+				color: 0xeba134
+			});
+			meshShapes = new THREE.Mesh(shapeGeometry, shapeMaterial);
+			meshShapes.position.z = 0;
+			scene.add(meshShapes);
+		});
+	});
+
+
+
+// Add Cubes
 let cubes = [];
 const geometry = new THREE.BoxGeometry( 10, 10, 10 );
 const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 const cube1 = new THREE.Mesh( geometry, material );
 cube1.userData.origionalColor = 0x00ff00;
 cube1.userData.label = "Thông tin 1";
-cube1.position.set(0, 0, 10);
+cube1.position.set(-20, 40, 10);
 cubes.push(cube1);
 
 const cube2 = new THREE.Mesh( 
@@ -113,7 +140,6 @@ searchBtn.addEventListener('mousedown', () => {
 	let offset = distance.clone().sub(direction.multiplyScalar(20.0));
 	let newPos = target.clone().sub(offset);
 	zoomAt(target, newPos);
-
 });
 
 // original Position
@@ -127,7 +153,6 @@ oriBtn.addEventListener('mousedown', () => {
 	let newPos = new THREE.Vector3(100, -100, 100);
 	zoomAt(target, newPos);
 })
-
 
 // OBJLoader
 const manager = new THREE.LoadingManager();
@@ -163,15 +188,6 @@ objLoader.load(
 		console.log('>>>ObjLoader Status: Error Happened');
 	}
 );
-// KMZLoader
-const loaderKmz = new KMZLoader();
-loaderKmz.load(
-	'./kmz/path1.kmz', function (kmz) {
-		scene.add(kmz.scene);
-		animate();
-	}
-)
-
 
 // GLTFLoader
 const loader = new GLTFLoader();
@@ -214,8 +230,6 @@ function onMouseWheel(event){
 	}
 };
 
-
-
 function zoomCam( event ) {
 	event.preventDefault();
 	const coords = new THREE.Vector3();
@@ -237,7 +251,6 @@ function zoomCam( event ) {
 		// console.log('>>Direction:', direction);
 	} 
 };
-
 
 function onMouseMove( event ) {
 	event.preventDefault();
