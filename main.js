@@ -1,15 +1,16 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { OBJLoader, RGBELoader} from 'three/examples/jsm/Addons.js';
+import { EffectComposer, FXAAShader, OBJLoader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
 
+const obj3d = new THREE.Object3D;
+const group = new THREE.Group;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
 camera.up = new THREE.Vector3(0, 0, 1);
 camera.position.set(165, -50, 150);
-// scene.add(camera);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
@@ -29,43 +30,40 @@ new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmen
 	scene.environment = environmentMap;
 })
 
-// Add ShapeGeometry
 
-let shape = [];
-let shapeGeometry = [];
-// Fetch Json
-let meshShapes = [];
-let shapes = [];
-fetch('./JSON/MyGia.json')
+
+// Add ShapeGeometry
+async function loadJson() {
+	await fetch('./JSON/MyGia.json') // Fetch Json data
 	.then(res => res.json())
 	.then(values => {
-		values.forEach((value, i) => {
-			shape[i] = new THREE.Shape();
-			shape[i].moveTo(value.geo.coors[0][0], value.geo.coors[0][1]);
+		values.forEach(value => {
+			const shape = new THREE.Shape();
+			shape.moveTo(value.geo.coors[0][0], value.geo.coors[0][1]);
 			(value.geo.coors.forEach(coor => {
-				shape[i].lineTo(coor[0], coor[1]);
+				shape.lineTo(coor[0], coor[1]);
 			}));
-			shapeGeometry = new THREE.ExtrudeGeometry(shape[i]);
+			const shapeGeometry = new THREE.ExtrudeGeometry(shape);
 			const shapeMaterial = new THREE.MeshBasicMaterial({
 				color: 0xeba134
 			});
-			meshShapes = new THREE.Mesh(shapeGeometry, shapeMaterial);
+			const meshShapes = new THREE.Mesh(shapeGeometry, shapeMaterial);
 			meshShapes.position.z = 0;
-			scene.add(meshShapes);
+			obj3d.add(meshShapes);
 		});
 	});
-
+};
+loadJson();
 
 
 // Add Cubes
-let cubes = [];
 const geometry = new THREE.BoxGeometry( 10, 10, 10 );
 const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 const cube1 = new THREE.Mesh( geometry, material );
 cube1.userData.origionalColor = 0x00ff00;
 cube1.userData.label = "Thông tin 1";
 cube1.position.set(-20, 40, 10);
-cubes.push(cube1);
+obj3d.add(cube1);
 
 const cube2 = new THREE.Mesh( 
 	new THREE.BoxGeometry(4, 4, 4),
@@ -74,11 +72,12 @@ const cube2 = new THREE.Mesh(
 cube2.userData.origionalColor = 0xffffff;
 cube2.userData.label = "Thông tin 2";
 cube2.position.set(-5, -18, 20);
-cubes.push(cube2);
+obj3d.add(cube2);
 
-cubes.forEach((cube, index) => {
-	scene.add(cube);
-})
+
+// add group3d to scene
+group.add(obj3d);
+scene.add(group);
 
 // CSS2DRenderer
 const labelRenderer = new CSS2DRenderer();
@@ -126,6 +125,7 @@ function createCpointMesh (name, x, y, z) {
 	mesh.name = name;
 	return mesh;
 }
+
 // search Function
 const searchInput = document.querySelector('.searchInput');
 const searchBtn = document.querySelector('.searchBtn');
@@ -223,7 +223,7 @@ function onMouseWheel(event){
 	let cameraPosition = camera.position.clone();
 	let distance = cameraPosition.distanceTo(cPointLabel.position);
 	console.log(distance);
-	if(distance > 300 || distance < 10){
+	if(distance > 300 || distance < 70){
 		scene.remove(cPointLabel);
 	} else {
 		scene.add(cPointLabel);
@@ -252,25 +252,53 @@ function zoomCam( event ) {
 	} 
 };
 
+// Outline
+let composer, effectFXAA, outlinePass;
+
+composer = new EffectComposer(renderer);
+
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+outlinePass = new OutlinePass (new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
+composer.addPass(outlinePass);
+
+// selectedObjects
+let selectedObjects = [];
+function addSelectedObject( object ) {
+
+	selectedObjects = [];
+	selectedObjects.push( object );
+
+}
+
+const outputPass = new OutputPass();
+composer.addPass(outputPass);
+
+effectFXAA = new ShaderPass(FXAAShader);
+effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+composer.addPass(effectFXAA);
+
+
+
 function onMouseMove( event ) {
 	event.preventDefault();
+
 	const coords = new THREE.Vector3();
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	raycaster.setFromCamera(coords, camera);
 
-	const intersects = raycaster.intersectObjects(cubes);
+
+	const intersects = raycaster.intersectObjects(obj3d.children);
 	if(intersects.length > 0){
-		cubes.forEach(cube => {
-			if(intersects[0].object === cube){
-				cube.material.color.set(0xff0000);
-			}
-		})
+		const selectedObject = intersects[0].object;
+		addSelectedObject(selectedObject);
+		outlinePass.selectedObjects = selectedObjects;
 	} else {
-		cubes.forEach(cube => {
-			cube.material.color.set(cube.userData.origionalColor);
-		})
+		outlinePass.selectedObjects = [];
 }};
+
 function onMouseDownGltf( event ) {
 	const coords = new THREE.Vector3();
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
@@ -281,11 +309,8 @@ function onMouseDownGltf( event ) {
 	if(intersects.length > 0){
 		const p = intersects[0].point;
 		console.log('Tọa độ:',p.x, p.y, p.z);
-	} else {
-		cubes.forEach(cube => {
-			cube.material.color.set(cube.userData.origionalColor);
-		})
-}};
+	}
+};
 
 function onMouseDown( event ) {
 	const coords = new THREE.Vector3();
@@ -293,23 +318,23 @@ function onMouseDown( event ) {
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	raycaster.setFromCamera(coords, camera);
 
-	const intersects = raycaster.intersectObjects(cubes);
+	const intersects = raycaster.intersectObjects(obj3d.children);
 	if(intersects.length > 0){
-		cubes.forEach(cube => {
-			if(intersects[0].object === cube){
+		obj3d.children.forEach(obj => {
+			if(intersects[0].object === obj){
 				// console.log(cube.userData.label);
-				showLabel(cube.userData.label);
+				showLabel(obj.userData.label);
 			}
 		});
-		// zoomAt(intersects[0].object, camera);
 	}
 };
 
 
 function animate() {
-    controls.update();
+  controls.update();
 	labelRenderer.render(scene, camera);
 	renderer.render( scene, camera );
+	composer.render();
 };
 
 window.addEventListener('resize', () => {
@@ -317,6 +342,9 @@ window.addEventListener('resize', () => {
 	camera.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	labelRenderer.setSize( window.innerWidth, window.innerHeight );
+	effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+	composer.setSize(window.innerWidth, window.innerHeight);
+	
 });
 
 // Interact JS
