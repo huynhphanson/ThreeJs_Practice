@@ -34,13 +34,14 @@ new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmen
 
 // Add ShapeGeometry
 async function loadJson() {
-	await fetch('./JSON/MyGia.json') // Fetch Json data
+	await fetch('./JSON/path2.geojson') // Fetch Json data
 	.then(res => res.json())
-	.then(values => {
-		values.forEach(value => {
+	.then(data => {
+		data.forEach(
+			value => {
 			const shape = new THREE.Shape();
-			shape.moveTo(value.geo.coors[0][0], value.geo.coors[0][1]);
-			(value.geo.coors.forEach(coor => {
+			shape.moveTo(value.geometry.coordinates[0][0][0], value.geometry.coordinates[0][0][1]);
+			(value.geometry.coordinates[0].forEach(coor => {
 				shape.lineTo(coor[0], coor[1]);
 			}));
 			const shapeGeometry = new THREE.ExtrudeGeometry(shape);
