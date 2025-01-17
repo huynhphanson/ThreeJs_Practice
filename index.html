@@ -4,51 +4,44 @@
 		<meta charset="utf-8">
 		<title>Test three.js app</title>
 		<link rel="stylesheet" href="style.css">
-		
 	</head>
 	<body>
-		<div class="sidenav_left">
-			<button class="menuBtn">&#9776;</button>
-			<div class="inputModelContainer">
-				<button class="btnModel"> Model </button>
-			</div>
-			<button class="oriBtn">&#x2680;</button>
-		</div>
-		<div class="sidenav_right">
-			<div class="searchContainer">
-				<input type="text" class="searchInput">
-				<button class="searchBtn" type="">&#128270;</button>
-			</div>
-		</div>
 		<div class="threeContainer">
-			<p class="label"></p>
-			<div class="tagContainer">
-				<p class="contentContainer">
-					Lorem ipsum dolor sit amet consectetur adipisicing elit. Fugiat laboriosam voluptatibus pariatur eum corporis dolore praesentium impedit deserunt beatae, quasi culpa corrupti ipsam dolorum quas dolor eius odio illum error.
-				</p>
-				<p class="btnContainer">
-					<button class="exitBtn"> X </button>
-				</p>
+			<div class="progressContainer">
+				<div class="progress-bar"></div>
 			</div>
+			<div class="sidenav_left">
+				<div class="icon-bar">
+					<div class="homeContainer">
+						<i class="fa-solid fa-house"></i>
+					</div>
+					<div class="searchContainer">
+						<input type="search" class="searchInput">
+						<i class="fa-solid fa-magnifying-glass searchBtn"></i>
+					</div>
+					<div class="checkContainer">
+						<input type="checkbox" name="gltf" class="gltfBox" checked> 3D Model
+					</div>
+					<div class="locationContainer">
+						<i class="fa-solid fa-location-dot locationBtn"></i>
+					</div>
+				</div>
+			</div>
+			<p class="label"></p>
 		</div>
-		<script src="https://cdn.jsdelivr.net/npm/gsap@3.3.4/dist/gsap.min.js"></script>
-		<script>
-			const menuBtn = document.querySelector('.menuBtn');
-			let menuOpen = false;
-			menuBtn.addEventListener('click', () => {
-				if(!menuOpen){
-					document.querySelector('.inputModelContainer').style.width = '150px';
-					document.querySelector('.threeContainer').style.marginLeft = '150px';
-					document.querySelector('.menuBtn').style.marginLeft = '160px';
-					menuOpen = true;
-				} else {
-					document.querySelector('.inputModelContainer').style.width = '0';
-					document.querySelector('.threeContainer').style.marginLeft = '0';
-					document.querySelector('.menuBtn').style.marginLeft = '10px';
-					menuOpen = false;
-				}
-			});
-		</script>
 		<script type="module" src="/main.js"></script>
+		<script src="https://kit.fontawesome.com/3f74ce293c.js" crossorigin="anonymous"></script>
+		<script>
+	
+			const searchInput = document.querySelector('.searchInput');
+			const searchContainer = document.querySelector('.searchContainer');
+			searchInput.oninput = (event) => {
+				if(searchInput.value.length > 0){
+					searchContainer.classList.add('searchContainerActive');
+				} else{
+					searchContainer.classList.remove('searchContainerActive');
+				}
+			}
+		</script>
 	</body>
 </html>

@@ -3,9 +3,11 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer, FXAAShader, OBJLoader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
+import gsap from 'gsap';
 
 const obj3d = new THREE.Object3D;
 const group = new THREE.Group;
+const raycaster = new THREE.Raycaster();
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
@@ -24,57 +26,87 @@ controls.enableDamping = true;
 const ambientLight = new THREE.AmbientLight(0xffffff);
 scene.add(ambientLight);
 
+// Environment
 new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmentMap) => {
 	environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 	// scene.background = environmentMap;
 	scene.environment = environmentMap;
 })
 
-
+// Texture
+function texture(path) {
+	const textureLoader = new THREE.TextureLoader().load(path);
+	textureLoader.wrapS = THREE.RepeatWrapping;
+	textureLoader.wrapT = THREE.RepeatWrapping;
+	textureLoader.repeat.set(0.05, 0.05);
+	return textureLoader;
+};
+const buildMaterial = [];
+buildMaterial.push(new THREE.MeshBasicMaterial({map: texture('./texture/2.png')}));
+buildMaterial.push(new THREE.MeshBasicMaterial({map: texture('./texture/apartments4.png')}));
 
 // Add ShapeGeometry
-async function loadJson() {
-	await fetch('./JSON/path2.geojson') // Fetch Json data
+async function loadJson(path, [shapeP, shapeL], lineC) {
+	await fetch(path) // Fetch Json data
 	.then(res => res.json())
 	.then(data => {
 		data.forEach(
 			value => {
 			const shape = new THREE.Shape();
-			shape.moveTo(value.geometry.coordinates[0][0][0], value.geometry.coordinates[0][0][1]);
-			(value.geometry.coordinates[0].forEach(coor => {
-				shape.lineTo(coor[0], coor[1]);
-			}));
-			const shapeGeometry = new THREE.ExtrudeGeometry(shape);
-			const shapeMaterial = new THREE.MeshBasicMaterial({
-				color: 0xeba134
+			const points = [];
+			if(value.geometry.type === 'Polygon'){
+				shape.moveTo(value.geometry.coordinates[0][0][0], value.geometry.coordinates[0][0][1]);
+				value.geometry.coordinates[0].forEach(coor => {
+					shape.lineTo(coor[0], coor[1]);
+				});
+			};
+			if(value.geometry.type === 'LineString'){
+				value.geometry.coordinates.forEach(coor => {
+					points.push(new THREE.Vector3(coor[0], coor[1], coor[2]));
+				});
+			}
+			const shapeGeometry = new THREE.ExtrudeGeometry(shape, {
+				depth: 10,
 			});
-			const meshShapes = new THREE.Mesh(shapeGeometry, shapeMaterial);
+			const shapeMaterial = new THREE.MeshBasicMaterial({
+				color: shapeP,
+				map: texture('./texture/apartments4.png')
+			});
+			const meshShapes = new THREE.Mesh(shapeGeometry, buildMaterial);
 			meshShapes.position.z = 0;
 			obj3d.add(meshShapes);
+			// add border line
+			const edges = new THREE.EdgesGeometry(shapeGeometry);
+			const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+				color: shapeL,
+			}));
+			obj3d.add(line);
+
+			// add lineString
+			const lineStringGeo = new THREE.BufferGeometry().setFromPoints(points);
+			const lineStringMat = new THREE.LineBasicMaterial({
+				color: lineC,
+				linewidth: 10,
+				vertexColors: false
+			})
+			const lineString = new THREE.Line(lineStringGeo, lineStringMat);
+			obj3d.add(lineString);
 		});
 	});
 };
-loadJson();
+loadJson('./JSON/path2.geojson', ['', 0x7b03fc], 0x3281a8);
+loadJson('./JSON/path3.geojson', [0x32a852, 0x32a889], 0xfc9803);
 
 
 // Add Cubes
 const geometry = new THREE.BoxGeometry( 10, 10, 10 );
-const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+const material = new THREE.MeshBasicMaterial( { 
+	map: texture('./texture/apartments4.png')
+} );
 const cube1 = new THREE.Mesh( geometry, material );
-cube1.userData.origionalColor = 0x00ff00;
 cube1.userData.label = "Thông tin 1";
 cube1.position.set(-20, 40, 10);
 obj3d.add(cube1);
-
-const cube2 = new THREE.Mesh( 
-	new THREE.BoxGeometry(4, 4, 4),
-	new THREE.MeshBasicMaterial({color: 0xffffff})
-);
-cube2.userData.origionalColor = 0xffffff;
-cube2.userData.label = "Thông tin 2";
-cube2.position.set(-5, -18, 20);
-obj3d.add(cube2);
-
 
 // add group3d to scene
 group.add(obj3d);
@@ -144,7 +176,7 @@ searchBtn.addEventListener('mousedown', () => {
 });
 
 // original Position
-const oriBtn = document.querySelector('.oriBtn');
+const oriBtn = document.querySelector('.locationBtn');
 oriBtn.addEventListener('mousedown', () => {
 	let target = new THREE.Vector3(0, 0, 0);
 	let cameraPosition = camera.position.clone();
@@ -173,31 +205,36 @@ manager.onError = function ( url ) {
 	console.log( 'There was an error loading ' + url );
 };
 const objLoader = new OBJLoader(manager);
-objLoader.load(
-	'./Obj/line1.obj', 
-	function (object) {
-		object.traverse(node => {
-			if(node.isMesh){
-				// node.material.color.set(0xff0000);
-			}
-		});
-		object.position.z = 50;
-		scene.add(object);
-	}, (xhr) => {
-		console.log('>>>ObjLoader:',(xhr.loaded / xhr.total * 100) + ' %loaded');
-	}, (error) => {
-		console.log('>>>ObjLoader Status: Error Happened');
-	}
-);
+function objModel(path, ele, color) {
+	objLoader.load(path, 
+		function (object, color) {
+			object.traverse(node => {
+				if(node.isMesh){
+					node.material.color.set(color);
+				}
+			});
+			object.position.z = ele;
+			obj3d.add(object);
+		}, (xhr) => {
+			console.log('>>>ObjLoader:',(xhr.loaded / xhr.total * 100) + ' %loaded');
+		}, (error) => {
+			console.log('>>>ObjLoader Status: Error Happened');
+		}
+	);
+};
+objModel('./Obj/line1.obj', 55, '0xeb34d8');
 
 // GLTFLoader
 const loader = new GLTFLoader();
-function loadGLTFModel() {
+function loadGLTFModel(path) {
 	loader.load(
-		'./GLB/mygia.glb',
+		path,
 		function ( gltf ) {
+			console.time();
 			gltf.scene.position.z = 50;
+			gltf.scene.name = 'gltf model';
 			scene.add( gltf.scene );
+			console.timeEnd();
 		},
 		function ( xhr ) {
 			// console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
@@ -207,23 +244,35 @@ function loadGLTFModel() {
 		}
 	);
 };
-loadGLTFModel();
-/* const btnModel = document.querySelector('.btnModel');
-btnModel.addEventListener('mousedown', () => {
-	loadGLTFModel();
-}); */
+loadGLTFModel('./GLB/mygia.glb');
+const gltfBox = document.querySelector('.gltfBox');
+gltfBox.addEventListener('click', () => {
+	if(gltfBox.checked){
+		loadGLTFModel('./GLB/mygia.glb');
+	}	else{
+		scene.remove(scene.children.pop());
+	}
+});
 
-const raycaster = new THREE.Raycaster();
 window.addEventListener('dblclick', zoomCam);
-window.addEventListener('mousedown', onMouseDownGltf);
-window.addEventListener('mousedown', onMouseDown);
+
+document.onpointerdown = (event) => {
+	switch(event.button){
+		case 0:
+			lClick(event);// Left Click Function
+			break;
+		case 2:
+			/* rClick(event); // Right Click Fucntion */
+			break;
+	}
+};
 window.addEventListener('mousemove', onMouseMove);
 window.addEventListener('mousewheel', onMouseWheel);
+
 
 function onMouseWheel(event){
 	let cameraPosition = camera.position.clone();
 	let distance = cameraPosition.distanceTo(cPointLabel.position);
-	console.log(distance);
 	if(distance > 300 || distance < 70){
 		scene.remove(cPointLabel);
 	} else {
@@ -290,7 +339,6 @@ function onMouseMove( event ) {
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	raycaster.setFromCamera(coords, camera);
 
-
 	const intersects = raycaster.intersectObjects(obj3d.children);
 	if(intersects.length > 0){
 		const selectedObject = intersects[0].object;
@@ -300,7 +348,7 @@ function onMouseMove( event ) {
 		outlinePass.selectedObjects = [];
 }};
 
-function onMouseDownGltf( event ) {
+function lClick( event ) {
 	const coords = new THREE.Vector3();
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
@@ -312,24 +360,6 @@ function onMouseDownGltf( event ) {
 		console.log('Tọa độ:',p.x, p.y, p.z);
 	}
 };
-
-function onMouseDown( event ) {
-	const coords = new THREE.Vector3();
-	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-	raycaster.setFromCamera(coords, camera);
-
-	const intersects = raycaster.intersectObjects(obj3d.children);
-	if(intersects.length > 0){
-		obj3d.children.forEach(obj => {
-			if(intersects[0].object === obj){
-				// console.log(cube.userData.label);
-				showLabel(obj.userData.label);
-			}
-		});
-	}
-};
-
 
 function animate() {
   controls.update();
@@ -347,19 +377,6 @@ window.addEventListener('resize', () => {
 	composer.setSize(window.innerWidth, window.innerHeight);
 	
 });
-
-// Interact JS
-const tagContainer = document.querySelector('.tagContainer');
-const exitBtn = document.querySelector('.exitBtn');
-exitBtn.addEventListener('click', () => {
-	tagContainer.style.display = 'none';
-});
-
-function showLabel(object){
-	const contentContainer = document.querySelector('.contentContainer');
-	contentContainer.textContent = object;
-	tagContainer.style.display = 'flex';
-};
 
 // Zoome Gsap
 const zoomAt = (target, newPos) => {
