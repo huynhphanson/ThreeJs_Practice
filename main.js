@@ -1,15 +1,12 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer, FXAAShader, OBJLoader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
 import gsap from 'gsap';
-import { loadJson, texture, obj3d, group, loadGLTFModel } from './src/three.func';
+import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh } from './src/three.func';
 
 // Config
-
 const raycaster = new THREE.Raycaster();
-
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
 camera.up = new THREE.Vector3(0, 0, 1);
@@ -27,6 +24,10 @@ controls.enableDamping = true;
 const ambientLight = new THREE.AmbientLight(0xffffff);
 scene.add(ambientLight);
 
+// add group3d to scene
+group.add(obj3d);
+scene.add(group);
+
 // Environment
 new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmentMap) => {
 	environmentMap.mapping = THREE.EquirectangularReflectionMapping;
@@ -38,21 +39,6 @@ new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmen
 loadJson('./JSON/path2.geojson', ['', 0x7b03fc], 0x3281a8);
 loadJson('./JSON/path3.geojson', [0x32a852, 0x32a889], 0xfc9803);
 
-
-// Add Cubes
-const geometry = new THREE.BoxGeometry( 10, 10, 10 );
-const material = new THREE.MeshBasicMaterial( { 
-	map: texture('./texture/apartments4.png')
-} );
-const cube1 = new THREE.Mesh( geometry, material );
-cube1.userData.label = "Thông tin 1";
-cube1.position.set(-20, 40, 10);
-obj3d.add(cube1);
-
-// add group3d to scene
-group.add(obj3d);
-scene.add(group);
-
 // CSS2DRenderer
 const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -62,43 +48,26 @@ labelRenderer.domElement.style.pointerEvents = 'none';
 document.querySelector('.three-Container').appendChild(labelRenderer.domElement);
 
 // CSS2DObject
-const label = document.querySelector('.label');
-label.textContent = 'Hello_World';
-const cPointLabel = new CSS2DObject(label);
-cPointLabel.position.set(0, 10, 50);
-scene.add(cPointLabel);
 const points = [
 	{"content": "Điểm 1", "x": "37", "y": "-110", "z": "50"},
 	{"content": "Điểm 2", "x": "-90", "y": "-90", "z": "50"},
 	{"content": "Điểm 3", "x": "175", "y": "-10", "z": "50"},
 	{"content": "Điểm 4", "x": "25", "y": "105", "z": "50"},
 ];
-let div = [];
-let node = [];
-let cPointDiv = [];
-let sphereMesh = [];
+let cPointDivs = [];
 points.forEach((point, i) => {
+	let div = [], node = [],  sphereMesh = [];
 	div[i] = document.createElement('div');
 	div[i].classList.add(`div${i}`);
 	node[i] = document.createTextNode(point.content);
 	div[i].appendChild(node[i]);
 	labelRenderer.domElement.appendChild(div[i]);
-	cPointDiv[i] = new CSS2DObject(document.querySelector(`.div${i}`));
-	cPointDiv[i].position.set(point.x, point.y, point.z);
+	cPointDivs[i] = new CSS2DObject(document.querySelector(`.div${i}`));
+	cPointDivs[i].position.set(point.x, point.y, point.z);
 	sphereMesh[i] = createCpointMesh(point.content, point.x, point.y, point.z-5);
-	obj3d.add(cPointDiv[i]);
+	obj3d.add(cPointDivs[i]);
 	obj3d.add(sphereMesh[i]);
 });
-
-// create PointMesh
-function createCpointMesh (name, x, y, z) {
-	const geo = new THREE.SphereGeometry(2);
-	const mat = new THREE.MeshBasicMaterial({color: 0xFF0000});
-	const mesh = new THREE.Mesh(geo, mat);
-	mesh.position.set(x, y, z);
-	mesh.name = name;
-	return mesh;
-}
 
 // search Function
 const searchInput = document.querySelector('.search-Input');
@@ -194,7 +163,6 @@ gltfBox.addEventListener('click', async () => {
 	}
 });
 
-
 window.addEventListener('dblclick', zoomCam);
 
 document.onpointerdown = (event) => {
@@ -210,14 +178,18 @@ document.onpointerdown = (event) => {
 window.addEventListener('mousemove', onMouseMove);
 window.addEventListener('mousewheel', onMouseWheel);
 
-
 function onMouseWheel(event){
 	let cameraPosition = camera.position.clone();
-	let distance = cameraPosition.distanceTo(cPointLabel.position);
+	let distance = cameraPosition.distanceTo(new THREE.Vector3(0,0,0));
+	console.log(distance)
 	if(distance > 300 || distance < 70){
-		scene.remove(cPointLabel);
+		cPointDivs.forEach(cPointDiv => {
+			obj3d.remove(cPointDiv);
+		})
 	} else {
-		scene.add(cPointLabel);
+		cPointDivs.forEach(cPointDiv => {
+			obj3d.add(cPointDiv);
+		})
 	}
 };
 
@@ -227,7 +199,6 @@ function zoomCam( event ) {
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	raycaster.setFromCamera(coords, camera);
-
 	const intersects = raycaster.intersectObjects(scene.children);
 	if(intersects.length > 0){
 		let target = intersects[0].point;
@@ -245,41 +216,31 @@ function zoomCam( event ) {
 
 // Outline
 let composer, effectFXAA, outlinePass;
-
 composer = new EffectComposer(renderer);
-
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
-
 outlinePass = new OutlinePass (new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
 composer.addPass(outlinePass);
 
 // selectedObjects
 let selectedObjects = [];
 function addSelectedObject( object ) {
-
 	selectedObjects = [];
 	selectedObjects.push( object );
-
 }
 
 const outputPass = new OutputPass();
 composer.addPass(outputPass);
-
 effectFXAA = new ShaderPass(FXAAShader);
 effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
 composer.addPass(effectFXAA);
 
-
-
 function onMouseMove( event ) {
 	event.preventDefault();
-
 	const coords = new THREE.Vector3();
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	raycaster.setFromCamera(coords, camera);
-
 	const intersects = raycaster.intersectObjects(obj3d.children);
 	if(intersects.length > 0){
 		const selectedObject = intersects[0].object;
@@ -294,7 +255,6 @@ function lClick( event ) {
 	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	raycaster.setFromCamera(coords, camera);
-
 	const intersects = raycaster.intersectObjects(scene.children);
 	if(intersects.length > 0){
 		const p = intersects[0].point;
@@ -316,7 +276,6 @@ window.addEventListener('resize', () => {
 	labelRenderer.setSize( window.innerWidth, window.innerHeight );
 	effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
 	composer.setSize(window.innerWidth, window.innerHeight);
-	
 });
 
 // Zoome Gsap
