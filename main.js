@@ -4,9 +4,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer, FXAAShader, OBJLoader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
 import gsap from 'gsap';
+import { loadJson, texture, obj3d, group, loadGLTFModel } from './src/three.func';
 
-const obj3d = new THREE.Object3D;
-const group = new THREE.Group;
+// Config
+
 const raycaster = new THREE.Raycaster();
 
 const scene = new THREE.Scene();
@@ -17,7 +18,7 @@ camera.position.set(165, -50, 150);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setAnimationLoop( animate );
-document.querySelector('.threeContainer').appendChild( renderer.domElement );
+document.querySelector('.three-Container').appendChild( renderer.domElement );
 const controls = new OrbitControls( camera, renderer.domElement );
 controls.target = new THREE.Vector3(25, -30, -90);
 controls.update();
@@ -33,67 +34,7 @@ new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmen
 	scene.environment = environmentMap;
 })
 
-// Texture
-function texture(path) {
-	const textureLoader = new THREE.TextureLoader().load(path);
-	textureLoader.wrapS = THREE.RepeatWrapping;
-	textureLoader.wrapT = THREE.RepeatWrapping;
-	textureLoader.repeat.set(0.05, 0.05);
-	return textureLoader;
-};
-const buildMaterial = [];
-buildMaterial.push(new THREE.MeshBasicMaterial({map: texture('./texture/2.png')}));
-buildMaterial.push(new THREE.MeshBasicMaterial({map: texture('./texture/apartments4.png')}));
-
 // Add ShapeGeometry
-async function loadJson(path, [shapeP, shapeL], lineC) {
-	await fetch(path) // Fetch Json data
-	.then(res => res.json())
-	.then(data => {
-		data.forEach(
-			value => {
-			const shape = new THREE.Shape();
-			const points = [];
-			if(value.geometry.type === 'Polygon'){
-				shape.moveTo(value.geometry.coordinates[0][0][0], value.geometry.coordinates[0][0][1]);
-				value.geometry.coordinates[0].forEach(coor => {
-					shape.lineTo(coor[0], coor[1]);
-				});
-			};
-			if(value.geometry.type === 'LineString'){
-				value.geometry.coordinates.forEach(coor => {
-					points.push(new THREE.Vector3(coor[0], coor[1], coor[2]));
-				});
-			}
-			const shapeGeometry = new THREE.ExtrudeGeometry(shape, {
-				depth: 10,
-			});
-			const shapeMaterial = new THREE.MeshBasicMaterial({
-				color: shapeP,
-				map: texture('./texture/apartments4.png')
-			});
-			const meshShapes = new THREE.Mesh(shapeGeometry, buildMaterial);
-			meshShapes.position.z = 0;
-			obj3d.add(meshShapes);
-			// add border line
-			const edges = new THREE.EdgesGeometry(shapeGeometry);
-			const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
-				color: shapeL,
-			}));
-			obj3d.add(line);
-
-			// add lineString
-			const lineStringGeo = new THREE.BufferGeometry().setFromPoints(points);
-			const lineStringMat = new THREE.LineBasicMaterial({
-				color: lineC,
-				linewidth: 10,
-				vertexColors: false
-			})
-			const lineString = new THREE.Line(lineStringGeo, lineStringMat);
-			obj3d.add(lineString);
-		});
-	});
-};
 loadJson('./JSON/path2.geojson', ['', 0x7b03fc], 0x3281a8);
 loadJson('./JSON/path3.geojson', [0x32a852, 0x32a889], 0xfc9803);
 
@@ -118,7 +59,7 @@ labelRenderer.setSize(window.innerWidth, window.innerHeight);
 labelRenderer.domElement.style.position = 'absolute';
 labelRenderer.domElement.style.top = '0px';
 labelRenderer.domElement.style.pointerEvents = 'none';
-document.querySelector('.threeContainer').appendChild(labelRenderer.domElement);
+document.querySelector('.three-Container').appendChild(labelRenderer.domElement);
 
 // CSS2DObject
 const label = document.querySelector('.label');
@@ -145,8 +86,8 @@ points.forEach((point, i) => {
 	cPointDiv[i] = new CSS2DObject(document.querySelector(`.div${i}`));
 	cPointDiv[i].position.set(point.x, point.y, point.z);
 	sphereMesh[i] = createCpointMesh(point.content, point.x, point.y, point.z-5);
-	scene.add(cPointDiv[i]);
-	scene.add(sphereMesh[i]);
+	obj3d.add(cPointDiv[i]);
+	obj3d.add(sphereMesh[i]);
 });
 
 // create PointMesh
@@ -160,7 +101,7 @@ function createCpointMesh (name, x, y, z) {
 }
 
 // search Function
-const searchInput = document.querySelector('.searchInput');
+const searchInput = document.querySelector('.search-Input');
 const searchBtn = document.querySelector('.searchBtn');
 searchBtn.addEventListener('mousedown', () => {
 	const valueSearch = searchInput.value.replace(/\s/g, '').split(",");
@@ -194,7 +135,7 @@ manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
 };
 
 manager.onLoad = function ( ) {
-	console.log( 'Loading complete!');
+	console.log( 'Loading OBJ complete!');
 };
 
 manager.onProgress = function ( url, itemsLoaded, itemsTotal ) {
@@ -224,35 +165,35 @@ function objModel(path, ele, color) {
 };
 objModel('./Obj/line1.obj', 55, '0xeb34d8');
 
-// GLTFLoader
-const loader = new GLTFLoader();
-function loadGLTFModel(path) {
-	loader.load(
-		path,
-		function ( gltf ) {
-			console.time();
-			gltf.scene.position.z = 50;
-			gltf.scene.name = 'gltf model';
-			scene.add( gltf.scene );
-			console.timeEnd();
-		},
-		function ( xhr ) {
-			// console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-		},
-		function ( error ) {
-			console.log( 'An error happened' );
-		}
-	);
-};
-loadGLTFModel('./GLB/mygia.glb');
-const gltfBox = document.querySelector('.gltfBox');
-gltfBox.addEventListener('click', () => {
+// Load GLTF Model
+loadGLTFModel('./GLB/mygia.glb').then(gltf => obj3d.add(gltf.scene));
+const gltfBox = document.querySelector('.gltfBox'); // Load Gtlf Model Button
+gltfBox.addEventListener('click', async () => {
 	if(gltfBox.checked){
-		loadGLTFModel('./GLB/mygia.glb');
+		let start = Date.now();
+		await loadGLTFModel('./GLB/mygia.glb');
+		let end = Date.now();
+		let timeLoad = end - start;
+		const progressBar = document.querySelector('.progress-bar');
+		progressBar.style.display = 'flex';
+		progressBar.animate([
+			{
+				width: '0%'
+			},
+			{
+				width: '100%'
+			}
+		], {
+			duration: timeLoad,
+			fill: 'forwards'
+		});
+		await loadGLTFModel('./GLB/mygia.glb').then(gltf => obj3d.add(gltf.scene));
+		progressBar.style.display = 'none';
 	}	else{
-		scene.remove(scene.children.pop());
+		scene.remove(obj3d.children.pop());
 	}
 });
+
 
 window.addEventListener('dblclick', zoomCam);
 
