@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {OBJLoader} from 'three/examples/jsm/Addons.js';
 
 // Config
 export const obj3d = new THREE.Object3D;
@@ -94,6 +95,42 @@ export function createCpointMesh (name, x, y, z) {
 	const mat = new THREE.MeshBasicMaterial({color: 0xFF0000});
 	const mesh = new THREE.Mesh(geo, mat);
 	mesh.position.set(x, y, z);
-	mesh.name = name;
+	mesh.name = name || 'point';
 	return mesh;
 }
+
+// OBJLoader
+const manager = new THREE.LoadingManager();
+manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
+  console.log( 'Started loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+};
+
+manager.onLoad = function ( ) {
+  console.log( 'Loading OBJ complete!');
+};
+
+manager.onProgress = function ( url, itemsLoaded, itemsTotal ) {
+  console.log( 'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+};
+
+manager.onError = function ( url ) {
+  console.log( 'There was an error loading ' + url );
+};
+const objLoader = new OBJLoader(manager);
+export function objModel(path, ele, color) {
+  objLoader.load(path, 
+    function (object) {
+      object.traverse(node => {
+        if(node.isMesh){
+          node.material.color.set(color);
+        }
+      });
+      object.position.z = ele;
+      obj3d.add(object);
+    }, (xhr) => {
+      console.log('>>>ObjLoader:',(xhr.loaded / xhr.total * 100) + ' %loaded');
+    }, (error) => {
+      console.log('>>>ObjLoader Status: Error Happened');
+    }
+  );
+};

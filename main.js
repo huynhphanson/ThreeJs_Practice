@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EffectComposer, FXAAShader, OBJLoader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
+import { EffectComposer, FXAAShader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
 import gsap from 'gsap';
-import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh } from './src/three.func';
+import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh, objModel } from './src/three.func';
 
 // Config
 const raycaster = new THREE.Raycaster();
@@ -74,7 +74,6 @@ const searchInput = document.querySelector('.search-Input');
 const searchBtn = document.querySelector('.searchBtn');
 searchBtn.addEventListener('mousedown', () => {
 	const valueSearch = searchInput.value.replace(/\s/g, '').split(",");
-	console.log(valueSearch);
 	scene.add(createCpointMesh ('checkPoint1', Number(valueSearch[0]), Number(valueSearch[1]), 5));
 	let target = new THREE.Vector3(Number(valueSearch[0]), Number(valueSearch[1]), 10);
 	let cameraPosition = camera.position.clone();
@@ -85,7 +84,7 @@ searchBtn.addEventListener('mousedown', () => {
 	zoomAt(target, newPos);
 });
 
-// original Position
+// location Position
 const oriBtn = document.querySelector('.locationBtn');
 oriBtn.addEventListener('mousedown', () => {
 	let target = new THREE.Vector3(0, 0, 0);
@@ -97,42 +96,7 @@ oriBtn.addEventListener('mousedown', () => {
 	zoomAt(target, newPos);
 })
 
-// OBJLoader
-const manager = new THREE.LoadingManager();
-manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
-	console.log( 'Started loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
-};
-
-manager.onLoad = function ( ) {
-	console.log( 'Loading OBJ complete!');
-};
-
-manager.onProgress = function ( url, itemsLoaded, itemsTotal ) {
-	console.log( 'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
-};
-
-manager.onError = function ( url ) {
-	console.log( 'There was an error loading ' + url );
-};
-const objLoader = new OBJLoader(manager);
-function objModel(path, ele, color) {
-	objLoader.load(path, 
-		function (object, color) {
-			object.traverse(node => {
-				if(node.isMesh){
-					node.material.color.set(color);
-				}
-			});
-			object.position.z = ele;
-			obj3d.add(object);
-		}, (xhr) => {
-			console.log('>>>ObjLoader:',(xhr.loaded / xhr.total * 100) + ' %loaded');
-		}, (error) => {
-			console.log('>>>ObjLoader Status: Error Happened');
-		}
-	);
-};
-objModel('./Obj/line1.obj', 55, '0xeb34d8');
+objModel('./Obj/line1.obj', 55, 0xeb7134);
 
 // Load GLTF Model
 loadGLTFModel('./GLB/mygia.glb').then(gltf => obj3d.add(gltf.scene));

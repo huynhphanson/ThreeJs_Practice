@@ -15,32 +15,27 @@
 					<div class="home-Container">
 						<i class="fa-solid fa-house"></i>
 					</div>
-					<div class="search-Container">
-						<input type="search" class="search-Input">
-						<i class="fa-solid fa-magnifying-glass searchBtn"></i>
-					</div>
 					<div class="check-Container">
 						<input type="checkbox" name="gltf" class="gltfBox" checked> 3D Model
 					</div>
-					<div class="location-Container">
+				</div>
+			</div>
+			<div class="sidenav-right">
+				<div class="icon-bar">
+						<i class="fa-solid fa-magnifying-glass searchBtn"></i>
+						<i class="fa-solid fa-layer-group"></i>
 						<i class="fa-solid fa-location-dot locationBtn"></i>
+				</div>
+				<div class="content-Container">
+					<div class="search-Container">
+						<label for="" class="search-Label">Search</label>
+						<input type="search" class="search-Input" placeholder="Search...">
+						<i class="fa-solid fa-magnifying-glass searchBtn"></i>
 					</div>
 				</div>
 			</div>
 		</div>
 		<script type="module" src="/main.js"></script>
 		<script src="https://kit.fontawesome.com/3f74ce293c.js" crossorigin="anonymous"></script>
-		<script>
-	
-			const searchInput = document.querySelector('.search-Input');
-			const searchContainer = document.querySelector('.search-Container');
-			searchInput.oninput = (event) => {
-				if(searchInput.value.length > 0){
-					searchContainer.classList.add('search-ContainerActive');
-				} else{
-					searchContainer.classList.remove('search-ContainerActive');
-				}
-			}
-		</script>
 	</body>
 </html>
