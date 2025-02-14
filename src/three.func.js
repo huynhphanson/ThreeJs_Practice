@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {OBJLoader} from 'three/examples/jsm/Addons.js';
+import { DRACOLoader } from 'three/examples/jsm/Addons.js';
 
 // Config
 export const obj3d = new THREE.Object3D;
@@ -68,8 +69,14 @@ export async function loadJson(path, [shapeP, shapeL], lineC) {
   });
 };
 
+// DracoLoader
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath( 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/' );
+dracoLoader.setDecoderConfig( { type: 'js' } );
+
 // GLTFLoader
 const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
 export function loadGLTFModel(path) {
 	return new Promise((resolve) => {
     gltfLoader.load(

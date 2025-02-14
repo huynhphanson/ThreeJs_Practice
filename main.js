@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EffectComposer, FXAAShader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
+import { EffectComposer, FXAAShader, GLTFLoader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
+import { DRACOLoader } from 'three/examples/jsm/Addons.js';
 import gsap from 'gsap';
 import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh, objModel } from './src/three.func';
 
@@ -29,7 +30,7 @@ group.add(obj3d);
 scene.add(group);
 
 // Environment
-new RGBELoader().load('./environments/rogland_moonlit_night_4k.hdr', (environmentMap) => {
+new RGBELoader().load('./environments/qwantani_morning_4k.hdr', (environmentMap) => {
 	environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 	// scene.background = environmentMap;
 	scene.environment = environmentMap;
@@ -99,12 +100,14 @@ oriBtn.addEventListener('mousedown', () => {
 objModel('./Obj/line1.obj', 55, 0xeb7134);
 
 // Load GLTF Model
-loadGLTFModel('./GLB/mygia.glb').then(gltf => obj3d.add(gltf.scene));
+const gltfPath = './GLB/mygia-processed.glb'
+loadGLTFModel(gltfPath).then(gltf => scene.add(gltf.scene));
+console.log(scene.children);
 const gltfBox = document.querySelector('.gltfBox'); // Load Gtlf Model Button
 gltfBox.addEventListener('click', async () => {
 	if(gltfBox.checked){
 		let start = Date.now();
-		await loadGLTFModel('./GLB/mygia.glb');
+		await loadGLTFModel(gltfPath);
 		let end = Date.now();
 		let timeLoad = end - start;
 		const progressBar = document.querySelector('.progress-bar');
@@ -120,10 +123,14 @@ gltfBox.addEventListener('click', async () => {
 			duration: timeLoad,
 			fill: 'forwards'
 		});
-		await loadGLTFModel('./GLB/mygia.glb').then(gltf => obj3d.add(gltf.scene));
+		await loadGLTFModel(gltfPath).then(gltf => scene.add(gltf.scene));
 		progressBar.style.display = 'none';
 	}	else{
-		scene.remove(obj3d.children.pop());
+		scene.traverse((child) => {
+			if (child.name === 'gltf model') {
+				scene.remove(child);
+			}
+		})
 	}
 });
 
