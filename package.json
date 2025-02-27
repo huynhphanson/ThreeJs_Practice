@@ -1,8 +1,10 @@
 {
   "dependencies": {
+    "3d-tiles-renderer": "^0.4.6",
     "camera-controls": "^2.9.0",
     "gsap": "^3.3.4",
-    "three": "^0.171.0"
+    "three": "^0.171.0",
+    "three-loader-3dtiles": "^1.2.7"
   },
   "devDependencies": {
     "jeasings": "^0.0.16",

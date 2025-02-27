@@ -4,18 +4,29 @@ import { EffectComposer, FXAAShader, GLTFLoader, OutlinePass, OutputPass, Render
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
 import gsap from 'gsap';
 import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh, objModel } from './three-func.js';
+import { TilesRenderer } from '3d-tiles-renderer';
+
+
+function animate() {
+  controls.update();
+	labelRenderer.render(scene, camera);
+	renderer.render( scene, camera );
+	tilesRenderer.update();
+	composer.render();
+};
 
 // Config
 const raycaster = new THREE.Raycaster();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
 camera.up = new THREE.Vector3(0, 0, 1);
-camera.position.set(-10, -100, 150);
+camera.position.set(-10, -100, 250);
+
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setAnimationLoop( animate );
-document.querySelector('.three-Container').appendChild( renderer.domElement );
+document.querySelector('.three-container').appendChild( renderer.domElement );
 const controls = new OrbitControls( camera, renderer.domElement );
 controls.target = new THREE.Vector3(150, -130, -90);
 controls.update();
@@ -23,6 +34,33 @@ controls.enableDamping = true;
 
 const ambientLight = new THREE.AmbientLight(0xffffff);
 scene.add(ambientLight);
+
+// TilesRenderer
+const tilesRenderer = new TilesRenderer('../../resources/models/tileset/DungQuat/tileset.json');
+tilesRenderer.setCamera( camera );
+tilesRenderer.setResolutionFromRenderer( camera, renderer );
+
+tilesRenderer.addEventListener('load-tile-set', () => {
+	const sphere = new THREE.Sphere();
+	tilesRenderer.getBoundingSphere(sphere);
+
+	if (sphere.radius > 0) {
+			console.log('🌍 Bounding Sphere:', sphere);
+
+			// Đặt camera đến vị trí cách tâm một khoảng
+			const offset = new THREE.Vector3(0, 0, sphere.radius * 2); // Đẩy camera ra xa mô hình
+			const newPosition = sphere.center.clone().add(offset);
+
+			camera.position.copy(newPosition);
+			camera.lookAt(sphere.center);
+			controls.target.copy(sphere.center);
+      controls.update();
+
+			console.log('📸 New Camera Position:', camera.position);
+	}
+});
+
+scene.add( tilesRenderer.group );
 
 // add group3d to scene
 group.add(obj3d);
@@ -45,7 +83,7 @@ labelRenderer.setSize(window.innerWidth, window.innerHeight);
 labelRenderer.domElement.style.position = 'absolute';
 labelRenderer.domElement.style.top = '0px';
 labelRenderer.domElement.style.pointerEvents = 'none';
-document.querySelector('.three-Container').appendChild(labelRenderer.domElement);
+document.querySelector('.three-container').appendChild(labelRenderer.domElement);
 
 // CSS2DObject
 const points = [
@@ -70,8 +108,8 @@ points.forEach((point, i) => {
 });
 
 // search Function
-const searchInput = document.querySelector('.search-Input');
-const searchBtn = document.querySelector('.searchBtn');
+const searchInput = document.querySelector('.search-input');
+const searchBtn = document.querySelector('.btn-search');
 searchBtn.addEventListener('mousedown', () => {
 	const valueSearch = searchInput.value.replace(/\s/g, '').split(",");
 	scene.add(createCpointMesh ('checkPoint1', Number(valueSearch[0]), Number(valueSearch[1]), 5));
@@ -85,19 +123,18 @@ searchBtn.addEventListener('mousedown', () => {
 });
 
 // location Position
-
-const oriBtn = document.querySelector('.locationBtn');
+const oriBtn = document.querySelector('.btn-project-location');
 oriBtn.addEventListener('click', () => {
 	const gltfModel = scene.getObjectByName('gltf model');
 	const boundingBox = new THREE.Box3().setFromObject(gltfModel);
-	const center = new THREE.Vector3();
-	boundingBox.getCenter(center);
+	const centerTarget = new THREE.Vector3();
+	boundingBox.getCenter(centerTarget);
 	let cameraPosition = camera.position.clone();
-	let distance = cameraPosition.sub(center);
+	let distance = cameraPosition.sub(centerTarget);
 	let direction = distance.normalize();
 	let offset = distance.clone().sub(direction.multiplyScalar(200.0));
 	let newPos = new THREE.Vector3(100, -100, 100);
-	zoomAt(center, newPos);
+	zoomAt(centerTarget, newPos);
 })
 
 objModel('./resources/models/obj/line1.obj', 55, 0xeb7134);
@@ -247,13 +284,6 @@ function lClick( event ) {
 		const p = intersects[0].point;
 		console.log('Tọa độ:',p.x, p.y, p.z);
 	}
-};
-
-function animate() {
-  controls.update();
-	labelRenderer.render(scene, camera);
-	renderer.render( scene, camera );
-	composer.render();
 };
 
 window.addEventListener('resize', () => {
