@@ -5,14 +5,18 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
 import gsap from 'gsap';
 import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh, objModel } from './three-func.js';
 import { TilesRenderer } from '3d-tiles-renderer';
-
+import { Loader3DTiles } from 'three-loader-3dtiles';
 
 function animate() {
   controls.update();
 	labelRenderer.render(scene, camera);
 	renderer.render( scene, camera );
-	tilesRenderer.update();
+	// tilesRenderer.update();
 	composer.render();
+	const dt = clock.getDelta()
+	if (tilesRuntime) {
+		tilesRuntime.update(dt, camera);
+	}
 };
 
 // Config
@@ -36,17 +40,14 @@ const ambientLight = new THREE.AmbientLight(0xffffff);
 scene.add(ambientLight);
 
 // TilesRenderer
-const tilesRenderer = new TilesRenderer('../../resources/models/tileset/DungQuat/tileset.json');
+const tilesRenderer = new TilesRenderer('../../resources/models/3d-tiles/TilesetWithDiscreteLOD/tileset.json');
 tilesRenderer.setCamera( camera );
 tilesRenderer.setResolutionFromRenderer( camera, renderer );
-
 tilesRenderer.addEventListener('load-tile-set', () => {
 	const sphere = new THREE.Sphere();
 	tilesRenderer.getBoundingSphere(sphere);
-
+	console.log(tilesRenderer);
 	if (sphere.radius > 0) {
-			console.log('🌍 Bounding Sphere:', sphere);
-
 			// Đặt camera đến vị trí cách tâm một khoảng
 			const offset = new THREE.Vector3(0, 0, sphere.radius * 2); // Đẩy camera ra xa mô hình
 			const newPosition = sphere.center.clone().add(offset);
@@ -61,6 +62,46 @@ tilesRenderer.addEventListener('load-tile-set', () => {
 });
 
 scene.add( tilesRenderer.group );
+
+// Loader3DTiles
+
+const queryParams = new URLSearchParams(document.location.search);
+const clock = new THREE.Clock();
+loadTileset();
+let tilesRuntime = null;
+async function loadTileset() {
+  try {
+    const result = await Loader3DTiles.load({
+      url:
+			'../../resources/models/3d-tiles/DungQuat/tileset.json',
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio
+      },
+      options: {
+        dracoDecoderPath: 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco',
+        basisTranscoderPath: 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/basis',
+				resetTransform: true
+      }
+    });
+
+    const { model, runtime } = result;
+    tilesRuntime = runtime;
+		console.log('tilesRuntime Inside:', tilesRuntime)
+		const bbox = new THREE.Box3().setFromObject(model);
+		const center = bbox.getCenter(new THREE.Vector3());
+		model.position.set(-center.x, -center.y, -center.z)
+		const helper = new THREE.Box3Helper(bbox, 0xff0000); // Màu đỏ
+		scene.add(helper);
+    scene.add(model);
+  } catch (error) {
+    console.error('Failed to load tileset:', error);
+  }
+}
+
+console.log('tilesRuntime Outside:', tilesRuntime);
+
 
 // add group3d to scene
 group.add(obj3d);
@@ -137,10 +178,10 @@ oriBtn.addEventListener('click', () => {
 	zoomAt(centerTarget, newPos);
 })
 
-objModel('./resources/models/obj/line1.obj', 55, 0xeb7134);
+// objModel('./resources/models/obj/line1.obj', 55, 0xeb7134);
 
 // Load GLTF Model
-async function loadGLTFPath() {
+/* async function loadGLTFPath() {
 	const response = await fetch(`http://localhost:3008/uploads`);
 	const data = await response.json();
 	const gltfPath = data.url;
@@ -148,7 +189,7 @@ async function loadGLTFPath() {
 }
 loadGLTFPath().then(gltfPath => {
 	loadGLTFModel(gltfPath).then(gltf => scene.add(gltf.scene))
-});
+}); */
 
 const gltfBox = document.querySelector('.gltfBox'); // Load Gtlf Model Button;
 const progressBar = document.querySelector('.progress-bar');
@@ -205,7 +246,7 @@ window.addEventListener('mousewheel', onMouseWheel);
 function onMouseWheel(event){
 	let cameraPosition = camera.position.clone();
 	let distance = cameraPosition.distanceTo(new THREE.Vector3(0,0,0));
-	console.log(distance)
+	// console.log(distance);
 	if(distance > 300 || distance < 70){
 		cPointDivs.forEach(cPointDiv => {
 			obj3d.remove(cPointDiv);
