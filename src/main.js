@@ -1,89 +1,42 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EffectComposer, FXAAShader, GLTFLoader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
+import { threeInit } from './three/three-init.js'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
 import gsap from 'gsap';
-import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh, objModel } from './three-func.js';
-import { TilesRenderer } from '3d-tiles-renderer';
+import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh, objModel } from './three/three-func.js';
+import { animateLoop } from './three/three-animate.js';
+import { outlinePass } from './three/three-outline.js';
 
-
-function animate() {
-  controls.update();
-	labelRenderer.render(scene, camera);
-	renderer.render( scene, camera );
-	tilesRenderer.update();
-	composer.render();
-};
-
-// Config
+const {scene, camera, renderer, controls, labelRenderer, composer} = threeInit();
+console.log('composer',composer);
 const raycaster = new THREE.Raycaster();
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
-camera.up = new THREE.Vector3(0, 0, 1);
-camera.position.set(-10, -100, 250);
+document.querySelector('.three-container').appendChild(renderer.domElement);
+document.querySelector('.three-container').appendChild(labelRenderer.domElement);
 
+animateLoop(controls, scene, camera, renderer, labelRenderer, composer);
+// selectedObjects
+let selectedObjects = [];
+function addSelectedObject( object ) {
+  selectedObjects = [];
+  selectedObjects.push( object );
+}
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setAnimationLoop( animate );
-document.querySelector('.three-container').appendChild( renderer.domElement );
-const controls = new OrbitControls( camera, renderer.domElement );
-controls.target = new THREE.Vector3(150, -130, -90);
-controls.update();
-controls.enableDamping = true;
-
-const ambientLight = new THREE.AmbientLight(0xffffff);
-scene.add(ambientLight);
-
-// TilesRenderer
-const tilesRenderer = new TilesRenderer('../../resources/models/tileset/DungQuat/tileset.json');
-tilesRenderer.setCamera( camera );
-tilesRenderer.setResolutionFromRenderer( camera, renderer );
-
-tilesRenderer.addEventListener('load-tile-set', () => {
-	const sphere = new THREE.Sphere();
-	tilesRenderer.getBoundingSphere(sphere);
-
-	if (sphere.radius > 0) {
-			console.log('🌍 Bounding Sphere:', sphere);
-
-			// Đặt camera đến vị trí cách tâm một khoảng
-			const offset = new THREE.Vector3(0, 0, sphere.radius * 2); // Đẩy camera ra xa mô hình
-			const newPosition = sphere.center.clone().add(offset);
-
-			camera.position.copy(newPosition);
-			camera.lookAt(sphere.center);
-			controls.target.copy(sphere.center);
-      controls.update();
-
-			console.log('📸 New Camera Position:', camera.position);
-	}
-});
-
-scene.add( tilesRenderer.group );
-
+function onMouseMove( event ) {
+  event.preventDefault();
+  const coords = new THREE.Vector3();
+  coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+  coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+  raycaster.setFromCamera(coords, camera);
+  const intersects = raycaster.intersectObjects(obj3d.children);
+  if(intersects.length > 0){
+    const selectedObject = intersects[0].object;
+    addSelectedObject(selectedObject);
+    outlinePass.selectedObjects = selectedObjects;
+  } else {
+    outlinePass.selectedObjects = [];
+}};
 // add group3d to scene
 group.add(obj3d);
 scene.add(group);
-
-// Environment
-new RGBELoader().load('./environments/qwantani_morning_4k.hdr', (environmentMap) => {
-	environmentMap.mapping = THREE.EquirectangularReflectionMapping;
-	// scene.background = environmentMap;
-	scene.environment = environmentMap;
-})
-
-// Add ShapeGeometry
-loadJson('./JSON/path2.geojson', ['', 0x7b03fc], 0x3281a8);
-loadJson('./JSON/path3.geojson', [0x32a852, 0x32a889], 0xfc9803);
-
-// CSS2DRenderer
-const labelRenderer = new CSS2DRenderer();
-labelRenderer.setSize(window.innerWidth, window.innerHeight);
-labelRenderer.domElement.style.position = 'absolute';
-labelRenderer.domElement.style.top = '0px';
-labelRenderer.domElement.style.pointerEvents = 'none';
-document.querySelector('.three-container').appendChild(labelRenderer.domElement);
 
 // CSS2DObject
 const points = [
@@ -205,7 +158,6 @@ window.addEventListener('mousewheel', onMouseWheel);
 function onMouseWheel(event){
 	let cameraPosition = camera.position.clone();
 	let distance = cameraPosition.distanceTo(new THREE.Vector3(0,0,0));
-	console.log(distance)
 	if(distance > 300 || distance < 70){
 		cPointDivs.forEach(cPointDiv => {
 			obj3d.remove(cPointDiv);
@@ -237,42 +189,6 @@ function zoomCam( event ) {
 		// console.log('>>Direction:', direction);
 	} 
 };
-
-// Outline
-let composer, effectFXAA, outlinePass;
-composer = new EffectComposer(renderer);
-const renderPass = new RenderPass(scene, camera);
-composer.addPass(renderPass);
-outlinePass = new OutlinePass (new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
-composer.addPass(outlinePass);
-
-// selectedObjects
-let selectedObjects = [];
-function addSelectedObject( object ) {
-	selectedObjects = [];
-	selectedObjects.push( object );
-}
-
-const outputPass = new OutputPass();
-composer.addPass(outputPass);
-effectFXAA = new ShaderPass(FXAAShader);
-effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
-composer.addPass(effectFXAA);
-
-function onMouseMove( event ) {
-	event.preventDefault();
-	const coords = new THREE.Vector3();
-	coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-	coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-	raycaster.setFromCamera(coords, camera);
-	const intersects = raycaster.intersectObjects(obj3d.children);
-	if(intersects.length > 0){
-		const selectedObject = intersects[0].object;
-		addSelectedObject(selectedObject);
-		outlinePass.selectedObjects = selectedObjects;
-	} else {
-		outlinePass.selectedObjects = [];
-}};
 
 function lClick( event ) {
 	const coords = new THREE.Vector3();
