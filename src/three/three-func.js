@@ -75,6 +75,13 @@ dracoLoader.setDecoderPath( 'https://www.gstatic.com/draco/versioned/decoders/1.
 dracoLoader.setDecoderConfig( { type: 'js' } );
 
 // GLTFLoader
+export async function loadGLTFPath() {
+	const response = await fetch(`http://localhost:3008/uploads`);
+	const data = await response.json();
+	const gltfPath = data.url;
+	return gltfPath
+}
+
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 export function loadGLTFModel(path) {
