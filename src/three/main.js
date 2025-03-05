@@ -1,28 +1,24 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EffectComposer, FXAAShader, GLTFLoader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
+import { DRACOLoader, EffectComposer, FXAAShader, GLTFLoader, OutlinePass, OutputPass, RenderPass, RGBELoader, ShaderPass} from 'three/examples/jsm/Addons.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/Addons.js';
 import gsap from 'gsap';
 import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh, objModel } from './three-func.js';
-import { TilesRenderer } from '3d-tiles-renderer';
 import { Loader3DTiles } from 'three-loader-3dtiles';
+import { TilesRenderer } from '3d-tiles-renderer';
 
 function animate() {
   controls.update();
 	labelRenderer.render(scene, camera);
 	renderer.render( scene, camera );
-	// tilesRenderer.update();
+	tilesRenderer.update();
 	composer.render();
-	const dt = clock.getDelta()
-	if (tilesRuntime) {
-		tilesRuntime.update(dt, camera);
-	}
 };
 
 // Config
 const raycaster = new THREE.Raycaster();
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
+const camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 0.1, 2000 );
 camera.up = new THREE.Vector3(0, 0, 1);
 camera.position.set(-10, -100, 250);
 
@@ -39,69 +35,42 @@ controls.enableDamping = true;
 const ambientLight = new THREE.AmbientLight(0xffffff);
 scene.add(ambientLight);
 
-// TilesRenderer
-const tilesRenderer = new TilesRenderer('../../resources/models/3d-tiles/TilesetWithDiscreteLOD/tileset.json');
-tilesRenderer.setCamera( camera );
-tilesRenderer.setResolutionFromRenderer( camera, renderer );
-tilesRenderer.addEventListener('load-tile-set', () => {
-	const sphere = new THREE.Sphere();
-	tilesRenderer.getBoundingSphere(sphere);
-	console.log(tilesRenderer);
-	if (sphere.radius > 0) {
-			// Đặt camera đến vị trí cách tâm một khoảng
-			const offset = new THREE.Vector3(0, 0, sphere.radius * 2); // Đẩy camera ra xa mô hình
-			const newPosition = sphere.center.clone().add(offset);
-
-			camera.position.copy(newPosition);
-			camera.lookAt(sphere.center);
-			controls.target.copy(sphere.center);
-      controls.update();
-
-			console.log('📸 New Camera Position:', camera.position);
-	}
-});
-
-scene.add( tilesRenderer.group );
-
 // Loader3DTiles
+const sphere = new THREE.Sphere();
+const tilesRenderer = new TilesRenderer('../../resources/models/3d-tiles/nhatrangjpeg1.0/tileset.json');
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath( 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/' );
+dracoLoader.setDecoderConfig( { type: 'js' } );
 
-const queryParams = new URLSearchParams(document.location.search);
-const clock = new THREE.Clock();
-loadTileset();
-let tilesRuntime = null;
-async function loadTileset() {
-  try {
-    const result = await Loader3DTiles.load({
-      url:
-			'../../resources/models/3d-tiles/DungQuat/tileset.json',
-      viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        devicePixelRatio: window.devicePixelRatio
-      },
-      options: {
-        dracoDecoderPath: 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco',
-        basisTranscoderPath: 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/basis',
-				resetTransform: true
-      }
-    });
+const loader = new GLTFLoader( tilesRenderer.manager );
+loader.setDRACOLoader( dracoLoader );
 
-    const { model, runtime } = result;
-    tilesRuntime = runtime;
-		console.log('tilesRuntime Inside:', tilesRuntime)
-		const bbox = new THREE.Box3().setFromObject(model);
-		const center = bbox.getCenter(new THREE.Vector3());
-		model.position.set(-center.x, -center.y, -center.z)
-		const helper = new THREE.Box3Helper(bbox, 0xff0000); // Màu đỏ
-		scene.add(helper);
-    scene.add(model);
-  } catch (error) {
-    console.error('Failed to load tileset:', error);
-  }
-}
+tilesRenderer.manager.addHandler( /\.(gltf|glb)$/g, loader );
 
-console.log('tilesRuntime Outside:', tilesRuntime);
+tilesRenderer.setCamera(camera);
+tilesRenderer.setResolutionFromRenderer(camera, renderer);
+tilesRenderer.addEventListener('load-tile-set', () => {
+	console.log('Mô hình:', tilesRenderer.group);
+	// tilesRenderer.group.rotation.y = Math.PI / 2;
+	tilesRenderer.group.name = 'tiles';
+	tilesRenderer.getBoundingSphere( sphere );
+	let newPos = new THREE.Vector3(sphere.center.x - 400, sphere.center.y - 400, sphere.center.z + 700);
+	console.log('Sphere:', sphere);
+	console.log('new position', newPos);
+	console.log('sphere center', sphere.center);
+	camera.position.set(newPos.x, newPos.y, newPos.z);
+	camera.lookAt(sphere.center);
+	controls.target.set(sphere.center.x, sphere.center.y, sphere.center.z)
+	controls.update()
+});
+scene.add(tilesRenderer.group);
 
+// location Position
+const oriBtn = document.querySelector('.btn-project-location');
+oriBtn.addEventListener('click', () => {
+	let newPos = new THREE.Vector3(sphere.center.x - 400, sphere.center.y - 400, sphere.center.z + 700);
+	zoomAt(sphere.center, newPos);
+})
 
 // add group3d to scene
 group.add(obj3d);
@@ -113,10 +82,6 @@ new RGBELoader().load('./environments/qwantani_morning_4k.hdr', (environmentMap)
 	// scene.background = environmentMap;
 	scene.environment = environmentMap;
 })
-
-// Add ShapeGeometry
-loadJson('./JSON/path2.geojson', ['', 0x7b03fc], 0x3281a8);
-loadJson('./JSON/path3.geojson', [0x32a852, 0x32a889], 0xfc9803);
 
 // CSS2DRenderer
 const labelRenderer = new CSS2DRenderer();
@@ -163,20 +128,7 @@ searchBtn.addEventListener('mousedown', () => {
 	zoomAt(target, newPos);
 });
 
-// location Position
-const oriBtn = document.querySelector('.btn-project-location');
-oriBtn.addEventListener('click', () => {
-	const gltfModel = scene.getObjectByName('gltf model');
-	const boundingBox = new THREE.Box3().setFromObject(gltfModel);
-	const centerTarget = new THREE.Vector3();
-	boundingBox.getCenter(centerTarget);
-	let cameraPosition = camera.position.clone();
-	let distance = cameraPosition.sub(centerTarget);
-	let direction = distance.normalize();
-	let offset = distance.clone().sub(direction.multiplyScalar(200.0));
-	let newPos = new THREE.Vector3(100, -100, 100);
-	zoomAt(centerTarget, newPos);
-})
+
 
 // objModel('./resources/models/obj/line1.obj', 55, 0xeb7134);
 
