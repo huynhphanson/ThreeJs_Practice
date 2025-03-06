@@ -1,10 +1,108 @@
 import * as Cesium from "cesium";
+import "cesium/Build/Cesium/Widgets/widgets.css";
 
-Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1OGM1YmMzMy1kYjI1LTRjNGItOTY5Ni1jZmUyMmMxMzRiNDYiLCJpZCI6MjM2MjU0LCJpYXQiOjE3MjQyOTI4Nzh9.Jf658KQXXGt0BQHXyg3YcVdNzqRtWUgbkv1ppatp79M";
+export function initCesium() {
+  const cesiumContainer = document.getElementById('cesium-container');
 
-export async function initCesium() {
-  const viewer = new Cesium.Viewer("cesiumContainer", {
-    terrain: Cesium.Terrain.fromWorldTerrain(),
+  Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxMWM2NzhhMS04Mjg1LTQ5NDQtOGMyMS1iNDE5NWEwMzc1Y2MiLCJpZCI6MjgxMjAyLCJpYXQiOjE3NDExNDM4ODd9.m4Y1TPGxWchdX4DAN61hT7MiBCUxPDFq5OAmkPIgQbk";
+
+  const cesiumViewer = new Cesium.Viewer(cesiumContainer, {
+      useDefaultRenderLoop: false,
+      selectionIndicator: false,
+      homeButton: false,
+      sceneModePicker: false,
+      navigationHelpButton: false,
+      infoBox: false,
+      navigationHelpButton: false,
+      navigationInstructionsInitiallyVisible: false,
+      animation: false,
+      timeline: false,
+      fullscreenButton: false,
+      targetFrameRate: 60,
+      imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+        url: 'https://a.tile.openstreetmap.org/'
+      }),
+      contextOptions:{
+        webgl: {
+            alpha: false,
+            antialias: true,
+            preserveDrawingBuffer : true,
+            failIfMajorPerformanceCaveat: false,
+            depth:true,
+            stencil:false,
+            anialias:false
+        },
+      },
+      orderIndependentTranslucency: true,
+      baseLayerPicker: false,
+      geocoder: false,
+      automaticallyTrackDataSourceClocks: false,
+      dataSources: null,
+      clock: null,
+      terrainShadows: Cesium.ShadowMode.DISABLED
+    }
+  );
+  cesiumViewer.scene.globe.depthTestAgainstTerrain = true;
+
+  const axisLength = 6378137 * 2;
+
+  const xAxisEnd = new Cesium.Cartesian3(axisLength, 0, 0);
+  const yAxisEnd = new Cesium.Cartesian3(0, axisLength, 0);
+  const zAxisEnd = new Cesium.Cartesian3(0, 0, axisLength);
+
+  cesiumViewer.entities.add({
+    polyline : {
+      positions : [ new Cesium.Cartesian3(1,0,0), xAxisEnd ],
+      width: 10,
+      arcType: Cesium.ArcType.NONE,
+      material: new Cesium.PolylineArrowMaterialProperty(
+          Cesium.Color.RED
+      )
+    }
   });
-  return viewer;
+
+  cesiumViewer.entities.add({
+    polyline : {
+      positions : [ new Cesium.Cartesian3(1, 0, 0), yAxisEnd],
+      width: 10,
+      arcType: Cesium.ArcType.NONE,
+      material: new Cesium.PolylineArrowMaterialProperty(
+          Cesium.Color.YELLOW
+      )
+    }
+  });
+
+  cesiumViewer.entities.add({
+    polyline : {
+      positions : [ new Cesium.Cartesian3(1,0,0), zAxisEnd],
+      width: 10,
+      arcType: Cesium.ArcType.NONE,
+      material: new Cesium.PolylineArrowMaterialProperty(
+          Cesium.Color.BLUE
+      )
+    }
+  });
+  var minWGS84 = [109.182779, 12.190223];
+  var maxWGS84 = [109.189507, 12.197322];
+  const center = Cesium.Cartesian3.fromDegrees(
+    (minWGS84[0] + maxWGS84[0]) / 2,
+    ((minWGS84[1] + maxWGS84[1]) / 2),
+    2000
+  );
+  console.log(center);
+  cesiumViewer.camera.flyTo({
+    destination : center,
+    orientation : {
+        heading : Cesium.Math.toRadians(0),
+        pitch : Cesium.Math.toRadians(-80),
+        roll : Cesium.Math.toRadians(0)
+    },
+    duration: .1
+  })
+  return cesiumViewer;
+}
+
+// Chuyển đổi tọa độ địa lý sang Cartesian3
+export function toCartesian(lon, lat, height = 0) {
+  return Cesium.Cartesian3.fromDegrees(lon, lat, height);
 }

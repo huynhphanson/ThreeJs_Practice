@@ -13,24 +13,24 @@ export function createCamera () {
   const fov = 75;
   const aspect = window.innerWidth / window.innerHeight;
   const near = 0.01;
-  const far = 2000;
+  const far = 20000;
 
   const camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
 
   camera.up = new THREE.Vector3(0, 0, 1);
-  camera.position.set(-10, -100, 250);
+  camera.position.set(-2049757, 5890689, 1338984);
   return camera
 }
 
 export function createRenderer () {
-  const renderer = new THREE.WebGLRenderer();
+  const renderer = new THREE.WebGLRenderer({alpha: true})
   renderer.setSize( window.innerWidth, window.innerHeight);
   return renderer
 }
 
 export function createControls (camera, renderer) {
   const controls = new OrbitControls (camera, renderer.domElement)
-  controls.target = new THREE.Vector3(150, -130, -90);
+  controls.target = new THREE.Vector3(-2049757, 5890689, 1338784);
   controls.update();
   controls.enableDamping = true;
   return controls

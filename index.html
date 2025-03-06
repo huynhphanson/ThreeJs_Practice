@@ -4,9 +4,14 @@
 		<meta charset="utf-8">
 		<title>Test three.js app</title>
 		<link rel="stylesheet" href="public/css/style-ui.css">
+		<script src="https://cesium.com/downloads/cesiumjs/releases/1.97/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.97/Build/Cesium/Widgets/widgets.css">
+		<!-- <link rel="stylesheet" href="public/css/cesium-style.css"> -->
+		<!-- <link rel="stylesheet" href="public/css/three-style.css"> -->
 	</head>
 	<body>
-		<div class="three-container">
+		<div id="cesium-container" style="width: 100vw; height: 100vh"></div>
+		<div class="three-container" style="position: absolute; top: 0; left: 0; pointer-events: auto;">
 			<div class="progress-container">
 				<div class="progress-bar"></div>
 			</div>
