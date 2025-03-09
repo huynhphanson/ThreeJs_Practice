@@ -18,8 +18,7 @@ function animate() {
 // Config
 const raycaster = new THREE.Raycaster();
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 0.1, 2000 );
-camera.up = new THREE.Vector3(0, 0, 1);
+const camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 0.1, 20000 );
 camera.position.set(-10, -100, 250);
 
 
@@ -37,7 +36,7 @@ scene.add(ambientLight);
 
 // Loader3DTiles
 const sphere = new THREE.Sphere();
-const tilesRenderer = new TilesRenderer('../../resources/models/3d-tiles/nhatrangjpeg1.0/tileset.json');
+const tilesRenderer = new TilesRenderer('../../resources/models/3d-tiles/ason/tileset.json');
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath( 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/' );
 dracoLoader.setDecoderConfig( { type: 'js' } );
@@ -50,25 +49,28 @@ tilesRenderer.manager.addHandler( /\.(gltf|glb)$/g, loader );
 tilesRenderer.setCamera(camera);
 tilesRenderer.setResolutionFromRenderer(camera, renderer);
 tilesRenderer.addEventListener('load-tile-set', () => {
-	console.log('Mô hình:', tilesRenderer.group);
-	// tilesRenderer.group.rotation.y = Math.PI / 2;
+	// Tạo chấm đỏ (dùng SphereGeometry)
+	const dotGeometry = new THREE.SphereGeometry(10, 16, 16); // Bán kính 10
+	const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Màu đỏ
+	const dotMesh = new THREE.Mesh(dotGeometry, dotMaterial);
+	const box = new THREE.Box3();
+	tilesRenderer.getBoundingBox(box);
+	dotMesh.position.copy(box.getCenter(new THREE.Vector3()));
+	obj3d.add(dotMesh)
+	const boxHelper = new THREE.Box3Helper(box, 0xffff00);
+	scene.add(boxHelper);
 	tilesRenderer.group.name = 'tiles';
 	tilesRenderer.getBoundingSphere( sphere );
-	let newPos = new THREE.Vector3(sphere.center.x - 400, sphere.center.y - 400, sphere.center.z + 700);
-	console.log('Sphere:', sphere);
-	console.log('new position', newPos);
-	console.log('sphere center', sphere.center);
+	let newPos = new THREE.Vector3(sphere.center.x + 400, sphere.center.y + 400, sphere.center.z + 700);
 	camera.position.set(newPos.x, newPos.y, newPos.z);
-	camera.lookAt(sphere.center);
-	controls.target.set(sphere.center.x, sphere.center.y, sphere.center.z)
-	controls.update()
+	controls.target = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
 });
 scene.add(tilesRenderer.group);
 
 // location Position
 const oriBtn = document.querySelector('.btn-project-location');
 oriBtn.addEventListener('click', () => {
-	let newPos = new THREE.Vector3(sphere.center.x - 400, sphere.center.y - 400, sphere.center.z + 700);
+	let newPos = new THREE.Vector3(sphere.center.x + 400, sphere.center.y + 400, sphere.center.z + 700);
 	zoomAt(sphere.center, newPos);
 })
 
