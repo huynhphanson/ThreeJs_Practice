@@ -1,0 +1,111 @@
+body{
+    margin: 0;
+    box-sizing: border-box;
+}
+/* Progress bar */
+.progress-container{
+    position: fixed;
+    left: 50%;
+    top: 10px;
+    height: 20px;
+    width: 200px;
+}
+.progress-container .progress-bar{
+    position: absolute;
+    height: 100%;
+    background-color: rgb(131, 189, 189);
+    display: none;
+}
+
+/* Sidenav left */
+.sidenav-left{
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    height: 100%;
+}
+
+/* Sidenav right */
+.sidenav-right{
+    position: fixed;
+    display: flex;
+    flex-direction: row-reverse;
+    top: 10px;
+    right: 10px;
+}
+
+.icon-bar-right i{
+    display: flex;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 30px;
+    height: 20px;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid greenyellow;
+    background-color: hsl(167, 79%, 30%);
+    cursor: pointer;
+}
+.icon-bar-right i:hover{
+    background-color: hsl(167, 79%, 40%);
+}
+.icon-bar-right i:active{
+    background-color: hsl(167, 79%, 30%);
+}
+
+.panel-container{
+    display: flex;
+    flex-direction: column;
+    justify-items: center;
+    align-items: center;
+    width: 240px;
+}
+
+/* Vùng tạo công cụ tìm kiếm tọa độ */
+.hidden{
+    display: none;
+}
+.active{
+    display: block;
+}
+
+.panel{
+    display: none;
+    padding-left: 10px;
+    padding-right: 10px;
+    position: relative;
+    width: 200px;
+    /* height: 70px; */
+    background-color: hsl(0, 3%, 90%);
+    margin-bottom: 4px;
+}
+.panel.active{
+    display: block;
+}
+
+.title-label{
+    font-size: 1.2rem;
+    color: red;
+}
+.search-input{
+    /* position: absolute; */
+    height: 30px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+    width: 200px;
+    margin-left: 2px;
+    border-radius: 4px;
+    border: none;
+}
+.search-input::-webkit-search-cancel-button{
+    position: absolute;
+    right: 32px;
+    font-size: 1.4rem;
+    font-weight: 100;
+}
+.btn-search{
+    position: absolute;
+    bottom: 12px;
+    right: 20px;
+    cursor: pointer;
+}

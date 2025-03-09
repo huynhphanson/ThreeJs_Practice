@@ -3,39 +3,54 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Test three.js app</title>
-		<link rel="stylesheet" href="./src/style/style.css">
+		<link rel="stylesheet" href="public/css/style-ui.css">
+		<script src="https://cesium.com/downloads/cesiumjs/releases/1.97/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.97/Build/Cesium/Widgets/widgets.css">
+		<!-- <link rel="stylesheet" href="public/css/cesium-style.css"> -->
+		<!-- <link rel="stylesheet" href="public/css/three-style.css"> -->
 	</head>
 	<body>
-		<div class="three-Container">
-			<div class="progress-Container">
+		<div id="cesium-container" style="width: 100vw; height: 100vh"></div>
+		<div class="three-container" style="position: absolute; top: 0; left: 0; pointer-events: auto;">
+			<div class="progress-container">
 				<div class="progress-bar"></div>
 			</div>
 			<div class="sidenav-left">
 				<div class="icon-bar">
-					<div class="home-Container">
+					<div class="home-container">
 						<i class="fa-solid fa-house"></i>
 					</div>
-					<div class="check-Container">
+					<div class="check-container">
 						<input type="checkbox" name="gltf" class="gltfBox" checked> 3D Model
 					</div>
 				</div>
 			</div>
 			<div class="sidenav-right">
-				<div class="icon-bar">
-						<i class="fa-solid fa-magnifying-glass"></i>
-						<i class="fa-solid fa-layer-group"></i>
-						<i class="fa-solid fa-location-dot locationBtn"></i>
+				<div class="icon-bar-right">
+						<i class="fa-solid fa-magnifying-glass menu-btn" data-panel="search-panel"></i>
+						<i class="fa-solid fa-layer-group menu-btn" data-panel="layer-panel"></i>
+						<i class="fa-solid fa-location-dot btn-project-location"></i>
 				</div>
-				<div class="content-Container">
-					<div class="search-Container">
-						<label for="" class="search-Label">Search</label>
-						<input type="search" class="search-Input" placeholder="Search...">
-						<i class="fa-solid fa-magnifying-glass searchBtn"></i>
+				<div class="panel-container">
+					<div id="search-panel" class="panel">
+						<label for="" class="title-label">Search</label>
+						<input type="search" class="search-input" placeholder="...">
+						<i class="fa-solid fa-magnifying-glass btn-search"></i>
+					</div>
+					<div id="layer-panel" class="panel">
+						<label for="" class="title-label">Layer</label>
+							<li><input type="checkbox"> Layer 1</li>
+							<li><input type="checkbox"> Layer 2</li>
+							<li><input type="checkbox"> Layer 3</li>
+							<li><input type="checkbox"> Layer 1</li>
+							<li><input type="checkbox"> Layer 2</li>
+							<li><input type="checkbox"> Layer 3</li>
 					</div>
 				</div>
 			</div>
 		</div>
-		<script type="module" src="./src/three/main.js"></script>
+		<script type="module" src="./src/main.js"></script>
+		<script type="module" src="./public/js/ui.js"></script>
 		<script src="https://kit.fontawesome.com/3f74ce293c.js" crossorigin="anonymous"></script>
 	</body>
 </html>

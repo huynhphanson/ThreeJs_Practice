@@ -75,6 +75,13 @@ dracoLoader.setDecoderPath( 'https://www.gstatic.com/draco/versioned/decoders/1.
 dracoLoader.setDecoderConfig( { type: 'js' } );
 
 // GLTFLoader
+export async function loadGLTFPath() {
+	const response = await fetch(`http://localhost:3008/uploads`);
+	const data = await response.json();
+	const gltfPath = data.url;
+	return gltfPath
+}
+
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 export function loadGLTFModel(path) {
@@ -82,7 +89,9 @@ export function loadGLTFModel(path) {
     gltfLoader.load(
       path, 
       function (gltf) {
-        gltf.scene.position.z = 0;
+        gltf.scene.position.x = -2049757,
+        gltf.scene.position.y = 5890689,
+        gltf.scene.position.z = 1338784,
         gltf.scene.name = 'gltf model';
         resolve(gltf);
       },
@@ -109,15 +118,15 @@ export function createCpointMesh (name, x, y, z) {
 // OBJLoader
 const manager = new THREE.LoadingManager();
 manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
-  console.log( 'Started loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+  // console.log( 'Started loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
 };
 
 manager.onLoad = function ( ) {
-  console.log( 'Loading OBJ complete!');
+  // console.log( 'Loading OBJ complete!');
 };
 
 manager.onProgress = function ( url, itemsLoaded, itemsTotal ) {
-  console.log( 'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+  // console.log( 'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
 };
 
 manager.onError = function ( url ) {
@@ -135,7 +144,7 @@ export function objModel(path, ele, color) {
       object.position.z = ele;
       obj3d.add(object);
     }, (xhr) => {
-      console.log('>>>ObjLoader:',(xhr.loaded / xhr.total * 100) + ' %loaded');
+      // console.log('>>>ObjLoader:',(xhr.loaded / xhr.total * 100) + ' %loaded');
     }, (error) => {
       console.log('>>>ObjLoader Status: Error Happened');
     }
