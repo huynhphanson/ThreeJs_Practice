@@ -91,8 +91,6 @@ window.onpointerdown = (event) => {
 group.add(obj3d);
 scene.add(group);
 
-// Load Obj Model
-objModel('./resources/models/obj/line1.obj', 55, 0xeb7134);
 
 // Load GLTF Model
 loadGLTFPath().then(gltfPath => {
