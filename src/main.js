@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { threeInit } from './three/three-init.js'
 import { CSS2DObject } from 'three/examples/jsm/Addons.js';
-import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh, objModel, loadGLTFPath } from './three/three-func.js';
+import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh, objModel, loadGLTFPath, projectPosition } from './three/three-func.js';
 import { animateLoop } from './three/three-animate.js';
 import { outlinePass, effectFXAA } from './three/three-outline.js';
 import { onMouseMove, onMouseWheel, findPosition, findProjectPosition, zoomTarget, resizeScreen, getCoordinate } from './three/three-controls.js';
@@ -10,22 +10,18 @@ import { initCesium } from './cesium/cesium-init.js';
 import * as Cesium from 'cesium';
 import proj4 from 'proj4';
 
+const cesiumViewer = initCesium();
 // Định nghĩa hệ tọa độ WGS84 (EPSG:4326) và UTM Zone 48N (EPSG:32648)
 proj4.defs([
 	["EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs"],
 	['EPSG:9217',
 			'+proj=tmerc +lat_0=0 +lon_0=108.25 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=-191.90441429,-39.30318279,-111.45032835,-0.00928836,0.01975479,-0.00427372,0.252906278 +units=m +no_defs +type=crs']
 ]);
-
-// Tọa độ WGS84 (Kinh độ, Vĩ độ)
-var lon = 109.182779;
-var lat = 12.190223;
-// Chuyển sang UTM
-var utmCoords = proj4("EPSG:4326", "EPSG:9217", [lon, lat]);
-// console.log("Tọa độ VN2000:", utmCoords);  // Kết quả [x, y] theo mét
+const toMap = proj4('EPSG:9217', 'EPSG:4326');
+const toScene = proj4('EPSG:4326', 'EPSG:9217');
 
 // Cesium
-const cesiumViewer = initCesium();
+
 function syncThreeToCesium () {
 	let threePosition = camera.position;
 	let threeDirection = new THREE.Vector3();
@@ -91,12 +87,17 @@ window.onpointerdown = (event) => {
 group.add(obj3d);
 scene.add(group);
 
-// Load Obj Model
-objModel('./resources/models/obj/line1.obj', 55, 0xeb7134);
-
 // Load GLTF Model
 loadGLTFPath().then(gltfPath => {
-	loadGLTFModel(gltfPath).then(gltf => scene.add(gltf.scene))
+	loadGLTFModel(gltfPath).then(gltf => {
+		scene.add(gltf.scene);
+		const box = new THREE.Box3().setFromObject(gltf.scene);
+		const helper = new THREE.Box3Helper(box, 0xff0000); // Màu đỏ
+		const centerPosition = projectPosition(gltf.scene);
+		console.log(centerPosition);
+		scene.add(helper);
+	});
+	
 });
 
 const gltfBox = document.querySelector('.gltfBox'); // Load Gtlf Model Button;

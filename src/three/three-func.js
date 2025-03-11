@@ -69,6 +69,15 @@ export async function loadJson(path, [shapeP, shapeL], lineC) {
   });
 };
 
+// Project Position
+export function projectPosition (scene) {
+    const gltfModel = scene.getObjectByName('gltf model');
+    const boundingBox = new THREE.Box3().setFromObject(gltfModel);
+    const centerModel = new THREE.Vector3();
+    boundingBox.getCenter(centerModel);
+    return centerModel;
+}
+
 // DracoLoader
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath( 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/' );
@@ -76,9 +85,10 @@ dracoLoader.setDecoderConfig( { type: 'js' } );
 
 // GLTFLoader
 export async function loadGLTFPath() {
-	const response = await fetch(`http://localhost:3008/uploads`);
+/* 	const response = await fetch(`http://localhost:3008/uploads`);
 	const data = await response.json();
-	const gltfPath = data.url;
+	const gltfPath = data.url; */
+  const gltfPath = '../../resources/models/glb/mv84Z.glb';
 	return gltfPath
 }
 
@@ -89,9 +99,7 @@ export function loadGLTFModel(path) {
     gltfLoader.load(
       path, 
       function (gltf) {
-        gltf.scene.position.x = -2049757,
-        gltf.scene.position.y = 5890689,
-        gltf.scene.position.z = 1338784,
+        // gltf.scene.position.set(-2049757, 5890689, 1338784)
         gltf.scene.name = 'gltf model';
         resolve(gltf);
       },

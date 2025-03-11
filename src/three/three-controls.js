@@ -82,7 +82,7 @@ export function findProjectPosition (scene, camera, controls) {
   const boundingBox = new THREE.Box3().setFromObject(gltfModel);
   const centerTarget = new THREE.Vector3();
   boundingBox.getCenter(centerTarget);
-  let newPos = new THREE.Vector3(centerTarget.x, centerTarget.y, centerTarget.z + 100);
+  let newPos = new THREE.Vector3(centerTarget.x - 100, centerTarget.y - 100, centerTarget.z + 100);
   zoomAt(centerTarget, newPos, camera, controls);
 }
 
