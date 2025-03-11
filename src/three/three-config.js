@@ -18,19 +18,22 @@ export function createCamera () {
   const camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
 
   camera.up = new THREE.Vector3(0, 0, 1);
-  camera.position.set(-2049757, 5890689, 1338984);
+  camera.position.set(-100, -200, 200);
   return camera
 }
 
 export function createRenderer () {
-  const renderer = new THREE.WebGLRenderer({alpha: true})
+  const renderer = new THREE.WebGLRenderer({
+    alpha: true,
+    preserveDrawingBuffer: false,
+  })
   renderer.setSize( window.innerWidth, window.innerHeight);
   return renderer
 }
 
 export function createControls (camera, renderer) {
   const controls = new OrbitControls (camera, renderer.domElement)
-  controls.target = new THREE.Vector3(-2049757, 5890689, 1338784);
+  controls.target = new THREE.Vector3(38, -110, 0);
   controls.update();
   controls.enableDamping = true;
   return controls

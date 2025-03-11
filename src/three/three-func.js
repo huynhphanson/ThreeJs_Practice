@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {OBJLoader} from 'three/examples/jsm/Addons.js';
 import { DRACOLoader } from 'three/examples/jsm/Addons.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 
 // Config
 export const obj3d = new THREE.Object3D;
@@ -76,22 +77,22 @@ dracoLoader.setDecoderConfig( { type: 'js' } );
 
 // GLTFLoader
 export async function loadGLTFPath() {
-	const response = await fetch(`http://localhost:3008/uploads`);
+/* 	const response = await fetch(`http://localhost:3008/uploads`);
 	const data = await response.json();
-	const gltfPath = data.url;
+	const gltfPath = data.url; */
+  const gltfPath = '../../resources/models/glb/ar.glb'
 	return gltfPath
 }
 
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
+gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 export function loadGLTFModel(path) {
 	return new Promise((resolve) => {
     gltfLoader.load(
       path, 
       function (gltf) {
-        gltf.scene.position.x = -2049757,
-        gltf.scene.position.y = 5890689,
-        gltf.scene.position.z = 1338784,
+        gltf.scene.rotateX(Math.PI / 2);
         gltf.scene.name = 'gltf model';
         resolve(gltf);
       },
@@ -99,7 +100,7 @@ export function loadGLTFModel(path) {
         // console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
       },
       function ( error ) {
-        console.log( 'An error happened' );
+        console.log( 'An error happened', error );
       }
     );
   })
