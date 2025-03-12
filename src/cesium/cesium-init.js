@@ -1,5 +1,5 @@
 import * as Cesium from "cesium";
-import "cesium/Build/Cesium/Widgets/widgets.css";
+// import "cesium/Build/Cesium/Widgets/widgets.css";
 
 export function initCesium() {
   const cesiumContainer = document.getElementById('cesium-container');
@@ -44,45 +44,7 @@ export function initCesium() {
   );
   cesiumViewer.scene.globe.depthTestAgainstTerrain = true;
 
-  const axisLength = 6378137 * 2;
-
-  const xAxisEnd = new Cesium.Cartesian3(axisLength, 0, 0);
-  const yAxisEnd = new Cesium.Cartesian3(0, axisLength, 0);
-  const zAxisEnd = new Cesium.Cartesian3(0, 0, axisLength);
-
-  cesiumViewer.entities.add({
-    polyline : {
-      positions : [ new Cesium.Cartesian3(1,0,0), xAxisEnd ],
-      width: 10,
-      arcType: Cesium.ArcType.NONE,
-      material: new Cesium.PolylineArrowMaterialProperty(
-          Cesium.Color.RED
-      )
-    }
-  });
-
-  cesiumViewer.entities.add({
-    polyline : {
-      positions : [ new Cesium.Cartesian3(1, 0, 0), yAxisEnd],
-      width: 10,
-      arcType: Cesium.ArcType.NONE,
-      material: new Cesium.PolylineArrowMaterialProperty(
-          Cesium.Color.YELLOW
-      )
-    }
-  });
-
-  cesiumViewer.entities.add({
-    polyline : {
-      positions : [ new Cesium.Cartesian3(1,0,0), zAxisEnd],
-      width: 10,
-      arcType: Cesium.ArcType.NONE,
-      material: new Cesium.PolylineArrowMaterialProperty(
-          Cesium.Color.BLUE
-      )
-    }
-  });
-  var minWGS84 = [109.182779, 12.190223];
+/*   var minWGS84 = [109.182779, 12.190223];
   var maxWGS84 = [109.189507, 12.197322];
   const center = Cesium.Cartesian3.fromDegrees(
     (minWGS84[0] + maxWGS84[0]) / 2,
@@ -98,7 +60,7 @@ export function initCesium() {
         roll : Cesium.Math.toRadians(0)
     },
     duration: .1
-  })
+  }) */
   return cesiumViewer;
 }
 

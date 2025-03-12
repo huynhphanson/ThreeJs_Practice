@@ -17,8 +17,7 @@ export function createCamera () {
 
   const camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
 
-  camera.up = new THREE.Vector3(0, 0, 1);
-  camera.position.set(-2049757, 5890689, 1338984);
+  camera.up = new THREE.Vector3(0, 1, 0);
   return camera
 }
 
@@ -30,7 +29,7 @@ export function createRenderer () {
 
 export function createControls (camera, renderer) {
   const controls = new OrbitControls (camera, renderer.domElement)
-  controls.target = new THREE.Vector3(-2049757, 5890689, 1338784);
+  controls.target = new THREE.Vector3(-1657258, 6060949, 1091769);
   controls.update();
   controls.enableDamping = true;
   return controls

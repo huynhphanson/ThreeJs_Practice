@@ -1,50 +1,90 @@
 import * as THREE from 'three';
 import { threeInit } from './three/three-init.js'
-import { CSS2DObject } from 'three/examples/jsm/Addons.js';
+import { CSS2DObject, DRACOLoader, GLTFLoader } from 'three/examples/jsm/Addons.js';
 import { loadJson, obj3d, group, loadGLTFModel, createCpointMesh, objModel, loadGLTFPath } from './three/three-func.js';
 import { animateLoop } from './three/three-animate.js';
 import { outlinePass, effectFXAA } from './three/three-outline.js';
 import { onMouseMove, onMouseWheel, findPosition, findProjectPosition, zoomTarget, resizeScreen, getCoordinate } from './three/three-controls.js';
 import { progressBarModel } from './utils/ui.js';
 import { initCesium } from './cesium/cesium-init.js';
+import { TilesRenderer } from '3d-tiles-renderer';
 import * as Cesium from 'cesium';
 import proj4 from 'proj4';
-
+const {scene, camera, renderer, controls, labelRenderer, composer} = threeInit();
 // Định nghĩa hệ tọa độ WGS84 (EPSG:4326) và UTM Zone 48N (EPSG:32648)
 proj4.defs([
 	["EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs"],
 	['EPSG:9217',
 			'+proj=tmerc +lat_0=0 +lon_0=108.25 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=-191.90441429,-39.30318279,-111.45032835,-0.00928836,0.01975479,-0.00427372,0.252906278 +units=m +no_defs +type=crs']
 ]);
-
-// Tọa độ WGS84 (Kinh độ, Vĩ độ)
-var lon = 109.182779;
-var lat = 12.190223;
-// Chuyển sang UTM
-var utmCoords = proj4("EPSG:4326", "EPSG:9217", [lon, lat]);
-// console.log("Tọa độ VN2000:", utmCoords);  // Kết quả [x, y] theo mét
-
+let pointcloudProjection = proj4("EPSG:9217");
+let mapProjection = proj4.defs("EPSG:4326");
+let toMap = proj4(pointcloudProjection, mapProjection);
 // Cesium
 const cesiumViewer = initCesium();
-function syncThreeToCesium () {
-	let threePosition = camera.position;
-	let threeDirection = new THREE.Vector3();
-	camera.getWorldDirection(threeDirection);
 
-	// Chuyen doi vi tri tu theejs sang cesium
-	let cesiumPosition = new Cesium.Cartesian3(threePosition.x, threePosition.y, threePosition.z);
-	let cesiumDirection = new Cesium.Cartesian3(threeDirection.x, threeDirection.y, threeDirection.z);
-	cesiumViewer.camera.setView({
-		destination: cesiumPosition,
-		orientation: {
-			direction: cesiumDirection,
-			up: new Cesium.Cartesian3(0,0,1)
-		}
-	})
+function syncThreeToCesium() {
+  {
+
+		let pPos = new THREE.Vector3(0, 0, 0).applyMatrix4(camera.matrixWorld);
+		let pRight = new THREE.Vector3(600, 0, 0).applyMatrix4(camera.matrixWorld);
+		let pUp = new THREE.Vector3(0, 600, 0).applyMatrix4(camera.matrixWorld);
+		let pTarget = controls.target;
+
+		let toCes = (pos) => {
+			let xy = [pos.x, pos.y];
+			let height = pos.z;
+			let deg = toMap.forward(xy);
+			let cPos = Cesium.Cartesian3.fromDegrees(...deg, height);
+
+			return cPos;
+		};
+
+		let cPos = new Cesium.Cartesian3(pPos.x, pPos.y, pPos.z);
+		let cUpTarget = new Cesium.Cartesian3(pUp.x, pUp.y, pUp.z);
+		let cTarget = new Cesium.Cartesian3(pTarget.x, pTarget.y, pTarget.z);
+
+		let cDir = Cesium.Cartesian3.subtract(cTarget, cPos, new Cesium.Cartesian3());
+		let cUp = Cesium.Cartesian3.subtract(cUpTarget, cPos, new Cesium.Cartesian3());
+
+		cDir = Cesium.Cartesian3.normalize(cDir, new Cesium.Cartesian3());
+		cUp = Cesium.Cartesian3.normalize(cUp, new Cesium.Cartesian3());
+
+		cesiumViewer.camera.setView({
+			destination : cPos,
+			orientation : {
+				direction : cDir,
+				up : cUp
+			}
+		});
+		
+	}
+
+	let aspect = camera.aspect;
+	if(aspect < 1){
+		let fovy = Math.PI * (camera.fov / 180);
+		cesiumViewer.camera.frustum.fov = fovy;
+	}else{
+		let fovy = Math.PI * (camera.fov / 180);
+		let fovx = Math.atan(Math.tan(0.5 * fovy) * aspect) * 2
+		cesiumViewer.camera.frustum.fov = fovx;
+	}
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 // Three
-const {scene, camera, renderer, controls, labelRenderer, composer} = threeInit();
+
 const raycaster = new THREE.Raycaster();
 const threeContainer = document.querySelector('.three-container');
 threeContainer.appendChild(renderer.domElement);
@@ -58,8 +98,49 @@ function loop () {
 	labelRenderer.render(scene, camera);
 	renderer.render(scene, camera);
 	composer.render();
-	syncThreeToCesium();
+	tilesRenderer.update();
+	try {
+		syncThreeToCesium(); // Đồng bộ với Cesium
+} catch (error) {
+		console.error("Error syncing cameras:", error);
 }
+}
+
+
+// Loader3DTiles
+const sphere = new THREE.Sphere();
+const tilesRenderer = new TilesRenderer('../../resources/models/3d-tiles/full_shape/tileset.json');
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath( 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/' );
+dracoLoader.setDecoderConfig( { type: 'js' } );
+
+const loader = new GLTFLoader( tilesRenderer.manager );
+loader.setDRACOLoader( dracoLoader );
+
+tilesRenderer.manager.addHandler( /\.(gltf|glb)$/g, loader );
+
+tilesRenderer.setCamera(camera);
+tilesRenderer.setResolutionFromRenderer(camera, renderer);
+tilesRenderer.addEventListener('load-tile-set', () => {
+	// Tạo chấm đỏ (dùng SphereGeometry)
+	const dotGeometry = new THREE.SphereGeometry(10, 16, 16); // Bán kính 10
+	const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Màu đỏ
+	const dotMesh = new THREE.Mesh(dotGeometry, dotMaterial);
+	const box = new THREE.Box3();
+	tilesRenderer.getBoundingBox(box);
+	dotMesh.position.copy(box.getCenter(new THREE.Vector3()));
+	obj3d.add(dotMesh)
+	const boxHelper = new THREE.Box3Helper(box, 0xffff00);
+	// scene.add(boxHelper);
+	tilesRenderer.group.name = 'tiles';
+	tilesRenderer.getBoundingSphere( sphere );
+	let newPos = new THREE.Vector3(sphere.center.x + 400, sphere.center.y + 400, sphere.center.z + 700);
+	camera.position.set(newPos.x, newPos.y, newPos.z);
+	controls.target = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
+});
+scene.add(tilesRenderer.group);
+
+
 loop();
 // window events
 window.addEventListener('mousemove', (event) => onMouseMove( event, raycaster, camera, obj3d, outlinePass ));
@@ -93,9 +174,9 @@ scene.add(group);
 
 
 // Load GLTF Model
-loadGLTFPath().then(gltfPath => {
+/* loadGLTFPath().then(gltfPath => {
 	loadGLTFModel(gltfPath).then(gltf => scene.add(gltf.scene))
-});
+}); */
 
 const gltfBox = document.querySelector('.gltfBox'); // Load Gtlf Model Button;
 const progressBar = document.querySelector('.progress-bar');
