@@ -4,8 +4,8 @@ import { CSS2DRenderer, RGBELoader } from 'three/examples/jsm/Addons.js';
 
 export function createScene () {
   const scene = new THREE.Scene();
-  const ambientLight = new THREE.AmbientLight(0xffffff);
-  scene.add(ambientLight);
+  // const ambientLight = new THREE.AmbientLight(0xffffff);
+  // scene.add(ambientLight);
   return scene
 }
 
@@ -29,7 +29,7 @@ export function createRenderer () {
 
 export function createControls (camera, renderer) {
   const controls = new OrbitControls (camera, renderer.domElement)
-  controls.target = new THREE.Vector3(-1657258, 6060949, 1091769);
+  controls.target = new THREE.Vector3(6378137, 0, 0);
   controls.update();
   controls.enableDamping = true;
   return controls

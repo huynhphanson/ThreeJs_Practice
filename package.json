@@ -5,6 +5,7 @@
     "cesium": "1.97",
     "gsap": "^3.3.4",
     "proj4": "^2.15.0",
+    "stats.js": "^0.17.0",
     "three": "^0.171.0",
     "three-loader-3dtiles": "^1.2.7"
   },

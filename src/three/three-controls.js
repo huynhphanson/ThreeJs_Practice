@@ -113,5 +113,6 @@ export function getCoordinate (event, raycaster, scene, camera) {
   if(intersects.length > 0){
     const p = intersects[0].point;
     console.log('Tọa độ:',p.x, p.y, p.z);
+    console.log('Đang chọn:', intersects[0].object)
   }
 }
