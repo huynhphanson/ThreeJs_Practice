@@ -1,3 +1,4 @@
 node_modules
 environments
-resources
+resources/models/3d-tiles/
+resources/models/glb/
