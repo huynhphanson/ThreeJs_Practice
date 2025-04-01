@@ -25,7 +25,7 @@ threeContainer.appendChild(renderer.domElement);
 threeContainer.appendChild(labelRenderer.domElement);
 // Load 3d Tiles Model
 const tilesPath = '../../resources/models/3d-tiles/songCho/tileset.json'
-const tilesRenderer = load3dTilesModel(tilesPath, camera, renderer, controls, scene);
+const { tilesRenderer, dispose } = load3dTilesModel(tilesPath, camera, renderer, controls, scene);
 // Load GLTF Model
 const gltfPath = '../../resources/models/glb/songChoBlueDra.glb';
 loadGLTFModel(gltfPath, scene, camera, controls);
@@ -37,18 +37,17 @@ function loop () {
 	tilesRenderer.update();
 	try {
 		syncThreeToCesium(camera, controls, cesiumViewer); // Đồng bộ với Cesium
-} catch (error) {
+	} catch (error) {
 		console.error("Error syncing cameras:", error);
-}
+	}
 }
 loop();
 
 
-
-
-
-
 // window events
+window.addEventListener('beforeunload', () => {
+  dispose();
+});
 window.addEventListener('click', (event) => onMouseMove( event, raycaster, camera, obj3d, outlinePass ));
 window.addEventListener('mousewheel', (event) => onMouseWheel(event, camera, obj3d, cPointDivs) );
 window.addEventListener('resize', () => resizeScreen(camera, renderer, labelRenderer, effectFXAA, composer));

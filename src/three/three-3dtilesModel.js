@@ -17,6 +17,7 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
   
   tilesRenderer.setCamera(camera);
   tilesRenderer.setResolutionFromRenderer(camera, renderer);
+
   tilesRenderer.addEventListener('load-tile-set', () => {
     // Tạo chấm đỏ (dùng SphereGeometry)
     const dotGeometry = new THREE.SphereGeometry(10, 16, 16); // Bán kính 10
@@ -27,7 +28,7 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
     dotMesh.position.copy(box.getCenter(new THREE.Vector3()));
     scene.add(dotMesh)
     const boxHelper = new THREE.Box3Helper(box, 0xffff00);
-    // scene.add(boxHelper);
+    scene.add(boxHelper);
     tilesRenderer.group.name = 'tiles';
     tilesRenderer.getBoundingSphere( sphere );
     let newPos = new THREE.Vector3(sphere.center.x + 400, sphere.center.y + 400, sphere.center.z + 700);
@@ -36,5 +37,21 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
   });
   scene.add(tilesRenderer.group);
 
-  return tilesRenderer
+  // Giải phóng bộ nhớ khi không sử dụng
+  const disposeTilesRenderer = () => {
+    tilesRenderer.removeEventListener('load-tile-set', onTileSetLoaded);
+    tilesRenderer.dispose();  // Giải phóng tài nguyên của TilesRenderer
+    tilesRenderer.group.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.geometry.dispose();
+        object.material.dispose();
+      }
+    });
+    // Nếu bạn có các đối tượng khác trong scene, bạn cũng nên giải phóng chúng
+    scene.remove(tilesRenderer.group);
+  };
+
+  // Trả về hàm giải phóng bộ nhớ khi không cần sử dụng nữa
+  return { tilesRenderer, dispose: disposeTilesRenderer };
+
 }
