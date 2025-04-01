@@ -15,6 +15,9 @@ gltfLoader.setDRACOLoader(dracoLoader);
 gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 export function loadGLTFModel(path, scene, camera, controls) {
+  // 🛑 Xóa mô hình cũ trước khi load mới
+  clearPreviousModel(scene);
+
   gltfLoader.load(
     path,
     function (gltf) {
@@ -205,4 +208,40 @@ export function loadGLTFModel(path, scene, camera, controls) {
       }
     }
   );
+}
+
+function clearPreviousModel(scene) {
+  const objectsToRemove = [];
+  
+  scene.traverse((child) => {
+    if (child.isMesh) {
+      objectsToRemove.push(child);
+    }
+  });
+
+  objectsToRemove.forEach((object) => {
+    // 🛑 Giải phóng bộ nhớ của geometry
+    if (object.geometry) {
+      object.geometry.dispose();
+    }
+
+    // 🛑 Giải phóng bộ nhớ của material
+    if (object.material) {
+      if (Array.isArray(object.material)) {
+        object.material.forEach((material) => disposeMaterial(material));
+      } else {
+        disposeMaterial(object.material);
+      }
+    }
+
+    scene.remove(object);
+  });
+}
+
+function disposeMaterial(material) {
+  Object.keys(material).forEach((key) => {
+    if (material[key] && material[key].dispose) {
+      material[key].dispose();
+    }
+  });
 }

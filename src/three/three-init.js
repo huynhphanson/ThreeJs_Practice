@@ -8,7 +8,6 @@ import {
   createEnvironment,
 } from './three-config.js'
 import { outline } from './three-outline.js';
-import { toCartesian } from '../cesium/cesium-init.js';
 
 export function threeInit () {
 

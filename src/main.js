@@ -7,9 +7,10 @@ import { outlinePass, effectFXAA } from './three/three-outline.js';
 import { onMouseMove, onMouseWheel, findPosition, findProjectPosition, zoomTarget, resizeScreen, getCoordinate } from './three/three-controls.js';
 import { progressBarModel } from './utils/ui.js';
 import { initCesium } from './cesium/cesium-init.js';
-import { TilesRenderer } from '3d-tiles-renderer';
+
 import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
 import { loadGLTFModel } from './three/three-gltfModel.js';
+import { load3dTilesModel } from './three/three-3dtilesModel.js';
 
 const {scene, camera, renderer, controls, labelRenderer, composer} = threeInit();
 
@@ -22,39 +23,12 @@ const raycaster = new THREE.Raycaster();
 const threeContainer = document.querySelector('.three-container');
 threeContainer.appendChild(renderer.domElement);
 threeContainer.appendChild(labelRenderer.domElement);
-
-// Loader3DTiles
-const sphere = new THREE.Sphere();
-const tilesRenderer = new TilesRenderer('../../resources/models/3d-tiles/full/tileset.json');
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath( 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/' );
-dracoLoader.setDecoderConfig( { type: 'js' } );
-
-const loader = new GLTFLoader( tilesRenderer.manager );
-loader.setDRACOLoader( dracoLoader );
-
-tilesRenderer.manager.addHandler( /\.(gltf|glb)$/g, loader );
-
-tilesRenderer.setCamera(camera);
-tilesRenderer.setResolutionFromRenderer(camera, renderer);
-tilesRenderer.addEventListener('load-tile-set', () => {
-	// Tạo chấm đỏ (dùng SphereGeometry)
-	const dotGeometry = new THREE.SphereGeometry(10, 16, 16); // Bán kính 10
-	const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Màu đỏ
-	const dotMesh = new THREE.Mesh(dotGeometry, dotMaterial);
-	const box = new THREE.Box3();
-	tilesRenderer.getBoundingBox(box);
-	dotMesh.position.copy(box.getCenter(new THREE.Vector3()));
-	obj3d.add(dotMesh)
-	const boxHelper = new THREE.Box3Helper(box, 0xffff00);
-	// scene.add(boxHelper);
-	tilesRenderer.group.name = 'tiles';
-	tilesRenderer.getBoundingSphere( sphere );
-	let newPos = new THREE.Vector3(sphere.center.x + 400, sphere.center.y + 400, sphere.center.z + 700);
-	camera.position.set(newPos.x, newPos.y, newPos.z);
-	controls.target = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
-});
-scene.add(tilesRenderer.group);
+// Load 3d Tiles Model
+const tilesPath = '../../resources/models/3d-tiles/songCho/tileset.json'
+const tilesRenderer = load3dTilesModel(tilesPath, camera, renderer, controls, scene);
+// Load GLTF Model
+const gltfPath = '../../resources/models/glb/songChoBlueDra.glb';
+loadGLTFModel(gltfPath, scene, camera, controls);
 
 function loop () {
 	requestAnimationFrame(loop);
@@ -69,9 +43,10 @@ function loop () {
 }
 loop();
 
-// Load GLTF Model
-const gltfPath = '../../resources/models/glb/SCvndra.glb';
-loadGLTFModel(gltfPath, scene, camera, controls);
+
+
+
+
 
 // window events
 window.addEventListener('click', (event) => onMouseMove( event, raycaster, camera, obj3d, outlinePass ));
@@ -102,13 +77,6 @@ window.onpointerdown = (event) => {
 // add group3d to scene
 group.add(obj3d);
 scene.add(group);
-
-
-// Load GLTF Model
-/* loadGLTFPath().then(gltfPath => {
-	loadGLTFModel(gltfPath).then(gltf => scene.add(gltf.scene))
-}); */
-
 
 // CSS2DObject
 const points = [

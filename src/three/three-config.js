@@ -21,8 +21,14 @@ export function createCamera () {
   return camera
 }
 
+let renderer = null; // Biến toàn cục
 export function createRenderer () {
-  const renderer = new THREE.WebGLRenderer({alpha: true})
+  if (renderer) {
+    renderer.dispose();
+    renderer.forceContextLoss();
+    renderer = null;
+  }
+  renderer = new THREE.WebGLRenderer({alpha: true})
   renderer.setSize( window.innerWidth, window.innerHeight);
   return renderer
 }
@@ -31,12 +37,16 @@ export function createControls (camera, renderer) {
   const controls = new OrbitControls (camera, renderer.domElement)
   controls.target = new THREE.Vector3(6378137, 0, 0);
   controls.update();
-  controls.enableDamping = true;
   return controls
 }
 
+let labelRenderer = null;
 export function createLabelRenderer() {
-  const labelRenderer = new CSS2DRenderer()
+  if (labelRenderer) {
+    labelRenderer.domElement.remove(); // Xóa khỏi DOM
+    labelRenderer = null;
+  }
+  labelRenderer = new CSS2DRenderer()
   labelRenderer.setSize(window.innerWidth, window.innerHeight);
   labelRenderer.domElement.style.position = 'absolute';
   labelRenderer.domElement.style.top = '0px';
