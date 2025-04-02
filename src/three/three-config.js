@@ -13,7 +13,7 @@ export function createCamera () {
   const fov = 75;
   const aspect = window.innerWidth / window.innerHeight;
   const near = 0.01;
-  const far = 20000;
+  const far = 200000;
 
   const camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
 

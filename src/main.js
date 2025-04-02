@@ -24,7 +24,7 @@ const threeContainer = document.querySelector('.three-container');
 threeContainer.appendChild(renderer.domElement);
 threeContainer.appendChild(labelRenderer.domElement);
 // Load 3d Tiles Model
-const tilesPath = '../../resources/models/3d-tiles/songCho/tileset.json'
+const tilesPath = '../../resources/models/3d-tiles/songcho/tileset.json'
 const { tilesRenderer, dispose } = load3dTilesModel(tilesPath, camera, renderer, controls, scene);
 // Load GLTF Model
 const gltfPath = '../../resources/models/glb/songChoBlueDra.glb';
@@ -32,11 +32,11 @@ loadGLTFModel(gltfPath, scene, camera, controls);
 
 function loop () {
 	requestAnimationFrame(loop);
-	cesiumViewer.render();
+	// cesiumViewer.render();
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
-	tilesRenderer.update();
+	// tilesRenderer.update();
 	try {
-		syncThreeToCesium(camera, controls, cesiumViewer); // Đồng bộ với Cesium
+		// syncThreeToCesium(camera, controls, cesiumViewer); //
 	} catch (error) {
 		console.error("Error syncing cameras:", error);
 	}

@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import gsap from 'gsap';
 import { createCpointMesh } from './three-func';
+import { convert } from 'three/tsl';
+import { convertEPSG9217 } from './three-convertCoor';
 
 let selectedObjects = [];
 function addSelectedObject( object ) {
@@ -82,7 +84,7 @@ export function findProjectPosition (scene, camera, controls) {
   const boundingBox = new THREE.Box3().setFromObject(gltfModel);
   const centerTarget = new THREE.Vector3();
   boundingBox.getCenter(centerTarget);
-  let newPos = new THREE.Vector3(centerTarget.x, centerTarget.y, centerTarget.z + 100);
+  let newPos = new THREE.Vector3(centerTarget.x - 400, centerTarget.y + 400, centerTarget.z + 400);
   zoomAt(centerTarget, newPos, camera, controls);
 }
 
@@ -98,7 +100,7 @@ export function zoomTarget (event, raycaster, scene, camera, controls) {
     let cameraPosition = camera.position.clone();
     let distance = cameraPosition.sub(target);
     let direction = distance.normalize();
-    let offset = distance.clone().sub(direction.multiplyScalar(20.0));
+    let offset = distance.clone().sub(direction.multiplyScalar(50.0));
     let newPos = target.clone().sub(offset);
     zoomAt(target, newPos, camera, controls);
   } 
@@ -112,7 +114,8 @@ export function getCoordinate (event, raycaster, scene, camera) {
   const intersects = raycaster.intersectObjects(scene.children);
   if(intersects.length > 0){
     const p = intersects[0].point;
-    // console.log('Tọa độ:',p.x, p.y, p.z);
+    const pEPSG = convertEPSG9217(p.x, p.y, p.z)
+    console.log('Tọa độ:',pEPSG.x, pEPSG.y, pEPSG.z);
     // console.log('Đang chọn:', intersects[0].object)
   }
 }

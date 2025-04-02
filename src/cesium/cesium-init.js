@@ -4,7 +4,7 @@ export function initCesium() {
   Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxMWM2NzhhMS04Mjg1LTQ5NDQtOGMyMS1iNDE5NWEwMzc1Y2MiLCJpZCI6MjgxMjAyLCJpYXQiOjE3NDExNDM4ODd9.m4Y1TPGxWchdX4DAN61hT7MiBCUxPDFq5OAmkPIgQbk";
 
   const cesiumViewer = new Cesium.Viewer(cesiumContainer, {
-      useDefaultRenderLoop: false, // Nếu bạn dùng Three.js để render chính, nên tắt
+      useDefaultRenderLoop: false,
       selectionIndicator: false,
       homeButton: false,
       sceneModePicker: false,
@@ -24,7 +24,7 @@ export function initCesium() {
         webgl: {
             alpha: false,
             antialias: true,
-            preserveDrawingBuffer: true, // Giữ frame để có thể capture ảnh
+            preserveDrawingBuffer: true,
             failIfMajorPerformanceCaveat: false,
             depth: true,
             stencil: false
@@ -34,6 +34,10 @@ export function initCesium() {
   });
 
   cesiumViewer.scene.globe.depthTestAgainstTerrain = true;
+  cesiumViewer.scene.globe.depthTestAgainstTerrain = true;
+  cesiumViewer.scene.highDynamicRange = false;
+  cesiumViewer.scene.useDepthPicking = false;
+
 
   return cesiumViewer;
 }

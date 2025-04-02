@@ -21,3 +21,25 @@ export function convertToECEF(x, y, z) {
   const matrix = Cesium.Transforms.eastNorthUpToFixedFrame(ecef);
   return new THREE.Vector3(matrix[12], matrix[13], matrix[14]);
 }
+
+export function convertEPSG9217(ecefX, ecefY, ecefZ) {
+  // Bước 1: Chuyển từ ECEF về WGS84 (Kinh độ, vĩ độ, cao độ)
+  const cartesian = new Cesium.Cartesian3(ecefX, ecefY, ecefZ);
+  const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+  
+  const lon = Cesium.Math.toDegrees(cartographic.longitude);
+  const lat = Cesium.Math.toDegrees(cartographic.latitude);
+  const height = cartographic.height;
+
+  // Bước 2: Định nghĩa hệ tọa độ EPSG:9217 (VN-2000)
+  proj4.defs('EPSG:9217',
+    '+proj=tmerc +lat_0=0 +lon_0=108.25 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=-191.90441429,-39.30318279,-111.45032835,-0.00928836,0.01975479,-0.00427372,0.252906278 +units=m +no_defs +type=crs');
+
+  // Bước 3: Chuyển từ WGS84 → VN-2000 (EPSG:9217)
+  const pointcloudProjection = proj4('EPSG:9217');
+  const mapProjection = proj4.defs('WGS84');
+  const toVN2000 = proj4(mapProjection, pointcloudProjection);
+  const [x, y] = toVN2000.forward([lon, lat]);
+
+  return new THREE.Vector3(x, y, height) ;
+}

@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/Addons.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import { convertToECEF } from './three-convertCoor.js';
+import { convertToECEF, convertEPSG9217 } from './three-convertCoor.js';
 
 // DracoLoader
 const dracoLoader = new DRACOLoader();
@@ -96,18 +96,47 @@ export function loadGLTFModel(path, scene, camera, controls) {
         bbox.expandByObject(mesh);
         mesh.frustumCulled = false;
         mesh.material.roughness = 1;  // Bề mặt hoàn toàn nhám (tắt phản chiếu)
-        scene.add(mesh);
+      });
+      // 🔹 Tính toán tâm của mô hình theo hệ ECEF
+      const centerECEF = new THREE.Vector3();
+      bbox.getCenter(centerECEF);
+
+      // 🔹 Dịch chuyển tất cả các điểm về trung tâm mới
+      mergedMeshes.forEach(mesh => {
+          mesh.geometry.applyMatrix4(new THREE.Matrix4().makeTranslation(-centerECEF.x, -centerECEF.y, -centerECEF.z));
+          mesh.position.set(centerECEF.x, centerECEF.y, centerECEF.z);
+          scene.add(mesh);
       });
 
       // Focus camera on model
-      const boxHelper = new THREE.Box3Helper(bbox);
-      scene.add(boxHelper);
-      const center = new THREE.Vector3();
-      bbox.getCenter(center);
-      camera.position.set(center.x + 30, center.y + 20, center.z + 20);
-      controls.target = center;
+      const upVector = new THREE.Vector3(centerECEF.x, centerECEF.y, centerECEF.z).normalize();
+      scene.up.copy(upVector);
+      camera.up.copy(upVector);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.1;  // Adjust damping for smoother transitions
 
-      // Xử lý click để đổi màu đối tượng
+      const centerEPSG = convertEPSG9217(centerECEF.x, centerECEF.y, centerECEF.z);
+      const size = new THREE.Vector3();
+      const maxLength = bbox.getSize(size).length();
+      const cameraEPSG = {
+        x: centerEPSG.x,
+        y: centerEPSG.y - maxLength * 0.6, 
+        z: centerEPSG.z + maxLength * 1.2
+      };
+
+      // Convert EPSG back to ECEF and set camera position
+      const cameraECEF = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
+      camera.position.set(cameraECEF.x, cameraECEF.y, cameraECEF.z);
+
+      controls.target.set(centerECEF.x, centerECEF.y, centerECEF.z);  // 
+
+      // Limit the camera's vertical rotation to prevent gimbal lock
+      controls.maxPolarAngle = Math.PI * 0.45;  // Limit vertical rotation (45 degrees above/below the horizon)
+      controls.minPolarAngle = Math.PI * 0.15;  // Optional: Allow some movement below horizon
+
+      const boxHelper = new THREE.Box3Helper(bbox, 0xff00ff);
+      scene.add(boxHelper);
+
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
       let previousObject = null;
