@@ -1,11 +1,10 @@
 import * as THREE from 'three';
 import { threeInit } from './three/three-init.js'
 import { CSS2DObject, DRACOLoader, GLTFLoader } from 'three/examples/jsm/Addons.js';
-import { loadJson, obj3d, group, createCpointMesh, objModel} from './three/three-func.js';
+import { obj3d, group, createCpointMesh} from './three/three-func.js';
 import { animateLoop } from './three/three-animate.js';
 import { outlinePass, effectFXAA } from './three/three-outline.js';
 import { onMouseMove, onMouseWheel, findPosition, findProjectPosition, zoomTarget, resizeScreen, getCoordinate } from './three/three-controls.js';
-import { progressBarModel } from './utils/ui.js';
 import { initCesium } from './cesium/cesium-init.js';
 
 import { syncThreeToCesium } from './cesium/cesium-syncThree.js';

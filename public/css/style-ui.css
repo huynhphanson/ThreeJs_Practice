@@ -58,7 +58,7 @@ body{
     flex-direction: column;
     justify-items: center;
     align-items: center;
-    width: 240px;
+    width: 310px;
 }
 
 /* Vùng tạo công cụ tìm kiếm tọa độ */
@@ -74,8 +74,16 @@ body{
     padding-left: 10px;
     padding-right: 10px;
     position: relative;
-    width: 200px;
-    /* height: 70px; */
+    width: 280px;
+    background-color: hsl(0, 3%, 90%);
+    margin-bottom: 4px;
+}
+.panel-info{
+    display: block;
+    padding-left: 10px;
+    padding-right: 10px;
+    position: relative;
+    width: 280px;
     background-color: hsl(0, 3%, 90%);
     margin-bottom: 4px;
 }

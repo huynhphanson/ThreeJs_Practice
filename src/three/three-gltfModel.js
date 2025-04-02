@@ -181,6 +181,10 @@ export function loadGLTFModel(path, scene, camera, controls) {
       });
 
       function handleSingleClick(event) {
+        // Get DOM Info-Panel
+        const infoPanel = document.getElementById('infoPanel');
+        const infoContent = document.getElementById('infoContent');
+
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -209,6 +213,21 @@ export function loadGLTFModel(path, scene, camera, controls) {
           // 🔹 Tìm thông tin đối tượng
           const objectInfo = clickedMesh.userData.metadata?.find(obj => obj.id === objectId);
           console.log("🔹 Thông tin đối tượng:", objectInfo);
+          const [xCoord, yCoord, zCoord] = objectInfo.userData.cartesian_point_offset.split(',').map(coord => parseFloat(coord).toFixed(3));
+          infoContent.innerHTML = `
+            <p><b>Name:</b> ${objectInfo.name || "Unknown"}</p>
+            <p><b>X-Coor:</b> ${xCoord || "Unknown"}</p>
+            <p><b>Y-Coor:</b> ${yCoord || "Unknown"}</p>
+            <p><b>Z-Coor:</b> ${zCoord || "Unknown"}</p>
+            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
+            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
+            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
+            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
+            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
+            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
+          `
+
+          // Màu sắc đối tượng
           if (previousObject && previousColors) {
             previousObject.geometry.attributes.color.array.set(previousColors);
             previousObject.geometry.attributes.color.needsUpdate = true;
