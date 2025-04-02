@@ -31,11 +31,11 @@ loadGLTFModel(gltfPath, scene, camera, controls);
 
 function loop () {
 	requestAnimationFrame(loop);
-	// cesiumViewer.render();
+	cesiumViewer.render();
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
 	// tilesRenderer.update();
 	try {
-		// syncThreeToCesium(camera, controls, cesiumViewer); //
+		syncThreeToCesium(camera, controls, cesiumViewer); //
 	} catch (error) {
 		console.error("Error syncing cameras:", error);
 	}
