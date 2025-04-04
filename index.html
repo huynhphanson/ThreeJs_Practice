@@ -6,8 +6,6 @@
 		<link rel="stylesheet" href="public/css/style-ui.css">
 		<script src="https://cesium.com/downloads/cesiumjs/releases/1.97/Build/Cesium/Cesium.js"></script>
     <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.97/Build/Cesium/Widgets/widgets.css">
-		<!-- <link rel="stylesheet" href="public/css/cesium-style.css"> -->
-		<!-- <link rel="stylesheet" href="public/css/three-style.css"> -->
 	</head>
 	<body>
 		<div id="cesium-container" style="width: 100vw; height: 100vh"></div>
@@ -31,12 +29,10 @@
 					</div>
 					<div id="layer-panel" class="panel">
 						<label for="" class="title-label">Layer</label>
-							<li><input type="checkbox"> Layer 1</li>
-							<li><input type="checkbox"> Layer 2</li>
-							<li><input type="checkbox"> Layer 3</li>
-							<li><input type="checkbox"> Layer 1</li>
-							<li><input type="checkbox"> Layer 2</li>
-							<li><input type="checkbox"> Layer 3</li>
+							<li><input type="checkbox" id="toggleSurface" checked> Bề mặt tự nhiên</li>
+							<li><input type="checkbox" id="toggleTrees" checked> Thực vật</li>
+							<li><input type="checkbox" id="toggleBuildings" checked> Nhà </li>
+							<li><input type="checkbox" id="toggleInfrastructure" checked> Hạ tầng</li>
 					</div>
 					<div id="info-panel" class="panel-info">
 						<label for="" class="title-label">Infomation</label>

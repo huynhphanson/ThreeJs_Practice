@@ -22,7 +22,7 @@ export function convertToECEF(x, y, z) {
   return new THREE.Vector3(matrix[12], matrix[13], matrix[14]);
 }
 
-export function convertEPSG9217(ecefX, ecefY, ecefZ) {
+export function convertTo9217(ecefX, ecefY, ecefZ) {
   // Bước 1: Chuyển từ ECEF về WGS84 (Kinh độ, vĩ độ, cao độ)
   const cartesian = new Cesium.Cartesian3(ecefX, ecefY, ecefZ);
   const cartographic = Cesium.Cartographic.fromCartesian(cartesian);

@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/Addons.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import { convertToECEF, convertEPSG9217 } from './three-convertCoor.js';
+import { convertToECEF, convertTo9217 } from './three-convertCoor.js';
 
 // DracoLoader
 const dracoLoader = new DRACOLoader();
@@ -14,10 +14,26 @@ const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
-export function loadGLTFModel(path, scene, camera, controls) {
+export const modelGroups = {
+  surface: [],
+  buildings: [],
+  infrastructure: []
+};
+
+let previousObjects = [];
+let previousColors = new Map();
+
+
+export function loadGLTFModel(path, scene, camera, controls, category) {
   // 🛑 Xóa mô hình cũ trước khi load mới
   clearPreviousModel(scene);
 
+  // Phân loại mô hình
+  if (!modelGroups[category]) {
+    modelGroups[category] = [];
+  }
+
+  // Thực hiện load mô hình
   gltfLoader.load(
     path,
     function (gltf) {
@@ -91,12 +107,16 @@ export function loadGLTFModel(path, scene, camera, controls) {
       const bbox = new THREE.Box3();
       // Thêm các mesh đã merge vào scene
       mergedMeshes.forEach(mesh => {
-        mesh.name = 'gltf model';
+        // Phân loại 
+        mesh.name = category;
+        modelGroups[category].push(mesh);
+
         mesh.geometry.computeBoundingBox();
         bbox.expandByObject(mesh);
         mesh.frustumCulled = false;
         mesh.material.roughness = 1;  // Bề mặt hoàn toàn nhám (tắt phản chiếu)
       });
+
       // 🔹 Tính toán tâm của mô hình theo hệ ECEF
       const centerECEF = new THREE.Vector3();
       bbox.getCenter(centerECEF);
@@ -115,7 +135,7 @@ export function loadGLTFModel(path, scene, camera, controls) {
       controls.enableDamping = true;
       controls.dampingFactor = 0.1;  // Adjust damping for smoother transitions
 
-      const centerEPSG = convertEPSG9217(centerECEF.x, centerECEF.y, centerECEF.z);
+      /* const centerEPSG = convertTo9217(centerECEF.x, centerECEF.y, centerECEF.z);
       const size = new THREE.Vector3();
       const maxLength = bbox.getSize(size).length();
       const cameraEPSG = {
@@ -127,11 +147,10 @@ export function loadGLTFModel(path, scene, camera, controls) {
       // Convert EPSG back to ECEF and set camera position
       const cameraECEF = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
       camera.position.set(cameraECEF.x, cameraECEF.y, cameraECEF.z);
-
-      controls.target.set(centerECEF.x, centerECEF.y, centerECEF.z);  // 
+      controls.target.set(centerECEF.x, centerECEF.y, centerECEF.z); */
 
       // Limit the camera's vertical rotation to prevent gimbal lock
-      controls.maxPolarAngle = Math.PI * 0.45;  // Limit vertical rotation (45 degrees above/below the horizon)
+      controls.maxPolarAngle = Math.PI * 0.75;  // Limit vertical rotation (45 degrees above/below the horizon)
       controls.minPolarAngle = Math.PI * 0.15;  // Optional: Allow some movement below horizon
 
       const boxHelper = new THREE.Box3Helper(bbox, 0xff00ff);
@@ -139,8 +158,6 @@ export function loadGLTFModel(path, scene, camera, controls) {
 
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
-      let previousObject = null;
-      let previousColors = null;
 
       let isMouseDown = false;
       let mouseDownTime = 0;
@@ -190,6 +207,24 @@ export function loadGLTFModel(path, scene, camera, controls) {
 
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(scene.children, true);
+        // 🔹 Khôi phục màu gốc cho tất cả đối tượng đã highlight trước đó
+        if (Array.isArray(previousObjects)) {
+          previousObjects.forEach(obj => {
+            const colorAttr = obj.geometry?.attributes?.color;
+            const originalColors = previousColors.get(obj);
+            if (colorAttr && originalColors) {
+              colorAttr.array.set(originalColors);
+              colorAttr.needsUpdate = true;
+            }
+          });
+        }
+
+        // Reset danh sách lưu trạng thái highlight
+        previousObjects = previousObjects || [];
+        previousColors = previousColors || new Map();
+        previousObjects.length = 0;  // Reset danh sách nhưng không gán lại thành null
+        previousColors.clear();
+        
 
         if (intersects.length > 0) {
           const clickedMesh = intersects[0].object;
@@ -210,6 +245,7 @@ export function loadGLTFModel(path, scene, camera, controls) {
           if (faceIndex === undefined) return;
 
           const objectId = objectIdAttr.array[faceIndex];
+
           // 🔹 Tìm thông tin đối tượng
           const objectInfo = clickedMesh.userData.metadata?.find(obj => obj.id === objectId);
           console.log("🔹 Thông tin đối tượng:", objectInfo);
@@ -219,39 +255,23 @@ export function loadGLTFModel(path, scene, camera, controls) {
             <p><b>X-Coor:</b> ${xCoord || "Unknown"}</p>
             <p><b>Y-Coor:</b> ${yCoord || "Unknown"}</p>
             <p><b>Z-Coor:</b> ${zCoord || "Unknown"}</p>
-            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
-            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
-            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
-            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
-            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
-            <p><b>ID:</b> ${objectInfo || "Unknown"}</p>
           `
 
-          // Màu sắc đối tượng
-          if (previousObject && previousColors) {
-            previousObject.geometry.attributes.color.array.set(previousColors);
-            previousObject.geometry.attributes.color.needsUpdate = true;
-          }
+          // 🔹 Lưu trạng thái màu ban đầu của đối tượng
+          const originalColors = new Float32Array(colorAttr.array);
+          previousObjects.push(clickedMesh);
+          previousColors.set(clickedMesh, originalColors);
 
-          previousColors = new Float32Array(colorAttr.array);
-          previousObject = clickedMesh;
-
+          // 🔹 Thay đổi màu sắc của đối tượng được chọn
           for (let i = 0; i < colorAttr.count; i++) {
             if (objectIdAttr.array[i] === objectId) {
               colorAttr.setXYZ(i, 0, 1, 0); // Màu xanh lá cây
             }
           }
-
           colorAttr.needsUpdate = true;
+
           clickedMesh.material.vertexColors = true;
           clickedMesh.material.needsUpdate = true;
-        } else {
-          if (previousObject && previousColors) {
-            previousObject.geometry.attributes.color.array.set(previousColors);
-            previousObject.geometry.attributes.color.needsUpdate = true;
-            previousObject = null;
-            previousColors = null;
-          }
         }
       }
     }
@@ -285,6 +305,7 @@ function clearPreviousModel(scene) {
     scene.remove(object);
   });
 }
+
 
 function disposeMaterial(material) {
   Object.keys(material).forEach((key) => {

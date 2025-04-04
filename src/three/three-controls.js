@@ -1,8 +1,7 @@
 import * as THREE from 'three'
 import gsap from 'gsap';
 import { createCpointMesh } from './three-func';
-import { convert } from 'three/tsl';
-import { convertEPSG9217 } from './three-convertCoor';
+import { convertTo9217, convertToECEF } from './three-convertCoor';
 
 let selectedObjects = [];
 function addSelectedObject( object ) {
@@ -19,7 +18,7 @@ export function resizeScreen (camera, renderer, labelRenderer, effectFXAA, compo
 }
 
 export function onMouseMove( event, raycaster, camera, obj3d, outlinePass ) {
-  event.preventDefault();
+  // event.preventDefault();
   const coords = new THREE.Vector2();
   coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
   coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
@@ -80,12 +79,22 @@ export function findPosition (scene, camera, controls) {
 }
 
 export function findProjectPosition (scene, camera, controls) {
-  const gltfModel = scene.getObjectByName('gltf model');
+  const gltfModel = scene.getObjectByName('3d-tiles');
   const boundingBox = new THREE.Box3().setFromObject(gltfModel);
-  const centerTarget = new THREE.Vector3();
-  boundingBox.getCenter(centerTarget);
-  let newPos = new THREE.Vector3(centerTarget.x - 400, centerTarget.y + 400, centerTarget.z + 400);
-  zoomAt(centerTarget, newPos, camera, controls);
+  const centerECEF = new THREE.Vector3();
+  boundingBox.getCenter(centerECEF);
+
+  const centerEPSG = convertTo9217(centerECEF.x, centerECEF.y, centerECEF.z);
+  const size = new THREE.Vector3();
+  const maxLength = boundingBox.getSize(size).length();
+  const cameraEPSG = {
+    x: centerEPSG.x,
+    y: centerEPSG.y - maxLength * 0.5, 
+    z: centerEPSG.z + maxLength * 0.5
+  };
+  // Convert EPSG back to ECEF and set camera position
+  const newPos = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
+  zoomAt(centerECEF, newPos, camera, controls);
 }
 
 export function zoomTarget (event, raycaster, scene, camera, controls) {
@@ -114,7 +123,7 @@ export function getCoordinate (event, raycaster, scene, camera) {
   const intersects = raycaster.intersectObjects(scene.children);
   if(intersects.length > 0){
     const p = intersects[0].point;
-    const pEPSG = convertEPSG9217(p.x, p.y, p.z)
+    const pEPSG = convertTo9217(p.x, p.y, p.z)
     console.log('Tọa độ:',pEPSG.x, pEPSG.y, pEPSG.z);
     // console.log('Đang chọn:', intersects[0].object)
   }

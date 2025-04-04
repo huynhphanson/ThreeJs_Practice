@@ -8,7 +8,7 @@ import { onMouseMove, onMouseWheel, findPosition, findProjectPosition, zoomTarge
 import { initCesium } from './cesium/cesium-init.js';
 
 import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
-import { loadGLTFModel } from './three/three-gltfModel.js';
+import { loadGLTFModel, modelGroups } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
 
 const {scene, camera, renderer, controls, labelRenderer, composer} = threeInit();
@@ -22,18 +22,24 @@ const raycaster = new THREE.Raycaster();
 const threeContainer = document.querySelector('.three-container');
 threeContainer.appendChild(renderer.domElement);
 threeContainer.appendChild(labelRenderer.domElement);
+
 // Load 3d Tiles Model
 const tilesPath = '../../resources/models/3d-tiles/songcho/tileset.json'
 const { tilesRenderer, dispose } = load3dTilesModel(tilesPath, camera, renderer, controls, scene);
+
 // Load GLTF Model
-const gltfPath = '../../resources/models/glb/songChoBlueDra.glb';
-loadGLTFModel(gltfPath, scene, camera, controls);
+
+const gltfPath1 = '../../resources/models/glb/songChoSurfaceDra.glb';
+loadGLTFModel(gltfPath1, scene, camera, controls, 'surface');
+const gltfPath2 = '../../resources/models/glb/songChoBlueDra.glb';
+loadGLTFModel(gltfPath2, scene, camera, controls, 'buildings');
+
 
 function loop () {
 	requestAnimationFrame(loop);
-	cesiumViewer.render();
+	// cesiumViewer.render();
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
-	// tilesRenderer.update();
+	tilesRenderer.update();
 	try {
 		syncThreeToCesium(camera, controls, cesiumViewer); //
 	} catch (error) {
@@ -94,6 +100,6 @@ points.forEach((point, i) => {
 	cPointDivs[i] = new CSS2DObject(document.querySelector(`.div${i}`));
 	cPointDivs[i].position.set(point.x, point.y, point.z);
 	sphereMesh[i] = createCpointMesh(point.content, point.x, point.y, point.z-5);
-	obj3d.add(cPointDivs[i]);
-	obj3d.add(sphereMesh[i]);
+	// obj3d.add(cPointDivs[i]);
+	// obj3d.add(sphereMesh[i]);
 });
