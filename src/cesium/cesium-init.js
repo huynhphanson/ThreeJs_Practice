@@ -58,5 +58,22 @@ export function initCesium() {
   // cesiumViewer.terrainProvider = Cesium.createWorldTerrain();
 
 
+
+/*   var minWGS84 = [109.182779, 12.190223];
+  var maxWGS84 = [109.189507, 12.197322];
+  const center = Cesium.Cartesian3.fromDegrees(
+    (minWGS84[0] + maxWGS84[0]) / 2,
+    ((minWGS84[1] + maxWGS84[1]) / 2),
+    2000
+  );
+  cesiumViewer.camera.flyTo({
+    destination : center,
+    orientation : {
+        heading : Cesium.Math.toRadians(0),
+        pitch : Cesium.Math.toRadians(-80),
+        roll : Cesium.Math.toRadians(0)
+    },
+    duration: .1
+  }) */
   return cesiumViewer;
 }
