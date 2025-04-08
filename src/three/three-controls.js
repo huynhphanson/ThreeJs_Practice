@@ -113,7 +113,7 @@ export function zoomTarget (event, raycaster, scene, camera, controls) {
     let cameraPosition = camera.position.clone();
     let distance = cameraPosition.sub(target);
     let direction = distance.normalize();
-    let offset = distance.clone().sub(direction.multiplyScalar(50.0));
+    let offset = distance.clone().sub(direction.multiplyScalar(20.0));
     let newPos = target.clone().sub(offset);
     zoomAt(target, newPos, camera, controls);
   } 
