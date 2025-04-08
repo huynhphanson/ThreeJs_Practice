@@ -33,7 +33,6 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
 
     tilesRenderer.group.name = '3d-tiles';
     tilesRenderer.getBoundingSphere( sphere );
-    console.log('sphere:', sphere)
     let centerECEF = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
     const centerEPSG = convertTo9217(centerECEF.x, centerECEF.y, centerECEF.z);
     const size = new THREE.Vector3();
