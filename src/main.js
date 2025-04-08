@@ -5,6 +5,7 @@ import { obj3d, group, createCpointMesh} from './three/three-func.js';
 import { animateLoop } from './three/three-animate.js';
 import { outlinePass, effectFXAA } from './three/three-outline.js';
 import { onMouseMove, onMouseWheel, findPosition, findProjectPosition, zoomTarget, resizeScreen, getCoordinate } from './three/three-controls.js';
+import { clearInfoTable } from '../public/js/ui.js';
 import { initCesium } from './cesium/cesium-init.js';
 
 import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
@@ -39,7 +40,7 @@ function loop () {
 	requestAnimationFrame(loop);
 	// cesiumViewer.render();
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
-	tilesRenderer.update();
+	// tilesRenderer.update();
 	try {
 		syncThreeToCesium(camera, controls, cesiumViewer); //
 	} catch (error) {
@@ -54,8 +55,9 @@ window.addEventListener('beforeunload', () => {
   dispose();
 });
 window.addEventListener('click', (event) => onMouseMove( event, raycaster, camera, obj3d, outlinePass ));
-window.addEventListener('mousewheel', (event) => onMouseWheel(event, camera, obj3d, cPointDivs) );
+window.addEventListener('click', (event) => clearInfoTable(event, raycaster, scene, camera));
 window.addEventListener('resize', () => resizeScreen(camera, renderer, labelRenderer, effectFXAA, composer));
+
 
 // functions
 const searchBtn = document.querySelector('.btn-search'); // find position
@@ -81,25 +83,3 @@ window.onpointerdown = (event) => {
 // add group3d to scene
 group.add(obj3d);
 scene.add(group);
-
-// CSS2DObject
-const points = [
-	{"content": "Điểm 1", "x": "37", "y": "-110", "z": "50"},
-	{"content": "Điểm 2", "x": "-90", "y": "-90", "z": "50"},
-	{"content": "Điểm 3", "x": "175", "y": "-10", "z": "50"},
-	{"content": "Điểm 4", "x": "25", "y": "105", "z": "50"},
-];
-let cPointDivs = [];
-points.forEach((point, i) => {
-	let div = [], node = [],  sphereMesh = [];
-	div[i] = document.createElement('div');
-	div[i].classList.add(`div${i}`);
-	node[i] = document.createTextNode(point.content);
-	div[i].appendChild(node[i]);
-	labelRenderer.domElement.appendChild(div[i]);
-	cPointDivs[i] = new CSS2DObject(document.querySelector(`.div${i}`));
-	cPointDivs[i].position.set(point.x, point.y, point.z);
-	sphereMesh[i] = createCpointMesh(point.content, point.x, point.y, point.z-5);
-	// obj3d.add(cPointDivs[i]);
-	// obj3d.add(sphereMesh[i]);
-});

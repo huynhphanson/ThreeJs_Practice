@@ -28,10 +28,12 @@ export function createRenderer () {
     renderer.forceContextLoss();
     renderer = null;
   }
-  renderer = new THREE.WebGLRenderer({alpha: true})
-  renderer.setSize( window.innerWidth, window.innerHeight);
-  return renderer
+  renderer = new THREE.WebGLRenderer({ alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  return renderer;
 }
+
 
 export function createControls (camera, renderer) {
   const controls = new OrbitControls (camera, renderer.domElement)

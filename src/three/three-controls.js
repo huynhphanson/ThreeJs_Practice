@@ -79,7 +79,11 @@ export function findPosition (scene, camera, controls) {
 }
 
 export function findProjectPosition (scene, camera, controls) {
-  const gltfModel = scene.getObjectByName('3d-tiles');
+  const gltfModel = scene.getObjectByName('3d-tiles') || scene.getObjectByName('surface');
+  if (!gltfModel) {
+    console.warn('Model not found!');
+    return;
+  };
   const boundingBox = new THREE.Box3().setFromObject(gltfModel);
   const centerECEF = new THREE.Vector3();
   boundingBox.getCenter(centerECEF);

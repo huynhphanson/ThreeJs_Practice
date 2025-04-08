@@ -71,21 +71,27 @@ body{
 
 .panel{
     display: none;
-    padding-left: 10px;
-    padding-right: 10px;
     position: relative;
     width: 280px;
-    background-color: hsl(0, 3%, 90%);
-    margin-bottom: 4px;
+    background: rgba(20, 20, 20, 0.95);
+    border-radius: 12px;
+    padding: 10px 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    color: #f1f1f1;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
 }
 .panel-info{
-    display: block;
-    padding-left: 10px;
-    padding-right: 10px;
+    display: none;
     position: relative;
     width: 280px;
-    background-color: hsl(0, 3%, 90%);
-    margin-bottom: 4px;
+    background: rgba(20, 20, 20, 0.95);
+    border-radius: 12px;
+    padding: 10px 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    color: #f1f1f1;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
 }
 .panel.active{
     display: block;
@@ -116,4 +122,26 @@ body{
     bottom: 12px;
     right: 20px;
     cursor: pointer;
+}
+
+#infoContent {
+margin-top: 10px;
+}
+
+.info-row {
+margin-bottom: 8px;
+display: flex;
+justify-content: space-between;
+}
+
+.info-label {
+color: #aaa;
+font-weight: 600;
+}
+
+.info-value {
+color: #fff;
+text-align: right;
+max-width: 150px;
+overflow-wrap: break-word;
 }
