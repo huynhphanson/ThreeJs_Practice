@@ -38,6 +38,9 @@ export function createRenderer () {
 export function createControls (camera, renderer) {
   const controls = new OrbitControls (camera, renderer.domElement)
   controls.target = new THREE.Vector3(6378137, 0, 0);
+  // Limit the camera's vertical rotation to prevent gimbal lock
+  controls.maxPolarAngle = Math.PI * 0.75;  // Limit vertical rotation (45 degrees above/below the horizon)
+  controls.minPolarAngle = Math.PI * 0.15;  // Optional: Allow some movement below horizon
   controls.update();
   return controls
 }

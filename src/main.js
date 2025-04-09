@@ -11,11 +11,13 @@ import { initCesium } from './cesium/cesium-init.js';
 import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
 import { loadGLTFModel, modelGroups } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
+import { setViewer } from './cesium/cesium-viewer.js';
 
 const {scene, camera, renderer, controls, labelRenderer, composer} = threeInit();
 
 // Cesium
-const cesiumViewer = initCesium();
+export const cesiumViewer = initCesium();
+setViewer(cesiumViewer);
 
 
 // Three

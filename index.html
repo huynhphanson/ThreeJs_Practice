@@ -4,6 +4,7 @@
 		<meta charset="utf-8">
 		<title>Test three.js app</title>
 		<link rel="stylesheet" href="public/css/style-ui.css">
+		<link rel="stylesheet" href="public/css/style-cesium.css">
 		<script src="https://cesium.com/downloads/cesiumjs/releases/1.97/Build/Cesium/Cesium.js"></script>
     <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.97/Build/Cesium/Widgets/widgets.css">
 	</head>
@@ -20,8 +21,8 @@
 						<i class="fa-solid fa-magnifying-glass menu-btn" data-panel="search-panel"></i>
 						<i class="fa-solid fa-layer-group menu-btn" data-panel="layer-panel"></i>
 						<i class="fa-solid fa-tags menu-btn" data-panel="tag-panel"></i>
+						<i class="fa-solid fa-map menu-btn" data-panel="map-panel" ></i>
 						<i class="fa-solid fa-location-dot btn-project-location"></i>
-
 				</div>
 				<div class="panel-container">
 					<div id="search-panel" class="panel">
@@ -40,11 +41,33 @@
 						<label for="" class="title-label">Infomation</label>
 						<div id="infoContent" ></div>
 					</div>
+					<div id="map-panel" class="panel">
+						<label for="" class="title-label">Basemap</label>
+						<div id="basemapGallery" class="basemap-gallery">
+							<div class="basemap-item" data-type="streets">
+								<img src="public/images/basemap/openStreetMap.png" alt="Mặc đinh">
+								<span>Hình ảnh</span>
+							</div>
+							<div class="basemap-item" data-type="terrain">
+								<img src="public/images/basemap/bingAerial.png" alt="Địa hình">
+								<span>Địa hình</span>
+							</div>
+							<div class="basemap-item" data-type="hybrid">
+								<img src="public/images/basemap/bingAerialLabels.png" alt="Đường phố">
+								<span>Đường phố</span>
+							</div>
+							<div class="basemap-item" data-type="traffic">
+								<img src="public/images/basemap/bingRoads.png" alt="traffic">
+								<span>Giao thông</span>
+							</div>
+						</div>
+					</div>					
 				</div>
 			</div>
 		</div>
 		<script type="module" src="./src/main.js"></script>
 		<script type="module" src="./public/js/ui.js"></script>
+		<script type="module" src="./public/js/cesium-ui.js"></script>
 		<script src="https://kit.fontawesome.com/3f74ce293c.js" crossorigin="anonymous"></script>
 	</body>
 </html>
