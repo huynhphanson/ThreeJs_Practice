@@ -1,147 +1,161 @@
-body{
-    margin: 0;
-    box-sizing: border-box;
+body {
+	margin: 0;
+	box-sizing: border-box;
+	background-color: #121212; /* nền tối hơn để đồng bộ */
+	color: #f0f0f0;
 }
+
 /* Progress bar */
-.progress-container{
-    position: fixed;
-    left: 50%;
-    top: 10px;
-    height: 20px;
-    width: 200px;
+.progress-container {
+	position: fixed;
+	left: 50%;
+	top: 10px;
+	height: 20px;
+	width: 200px;
 }
-.progress-container .progress-bar{
-    position: absolute;
-    height: 100%;
-    background-color: rgb(131, 189, 189);
-    display: none;
+.progress-container .progress-bar {
+	position: absolute;
+	height: 100%;
+	background-color: #888; /* màu xám trung tính */
+	display: none;
 }
 
 /* Sidenav left */
-.sidenav-left{
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    height: 100%;
+.sidenav-left {
+	position: fixed;
+	top: 10px;
+	left: 10px;
+	height: 100%;
 }
 
 /* Sidenav right */
-.sidenav-right{
-    position: fixed;
-    display: flex;
-    flex-direction: row-reverse;
-    top: 10px;
-    right: 10px;
+.sidenav-right {
+	position: fixed;
+	display: flex;
+	flex-direction: row-reverse;
+	top: 10px;
+	right: 10px;
 }
 
-.icon-bar-right i{
-    display: flex;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    width: 30px;
-    height: 20px;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid greenyellow;
-    background-color: hsl(167, 79%, 30%);
-    cursor: pointer;
+.icon-bar-right i {
+	display: flex;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	width: 30px;
+	height: 20px;
+	justify-content: center;
+	align-items: center;
+	border: 1px solid #555;
+	background-color: #333;
+	cursor: pointer;
+	color: #f0f0f0;
 }
-.icon-bar-right i:hover{
-    background-color: hsl(167, 79%, 40%);
+.icon-bar-right i:hover {
+	background-color: #444;
 }
-.icon-bar-right i:active{
-    background-color: hsl(167, 79%, 30%);
-}
-
-.panel-container{
-    display: flex;
-    flex-direction: column;
-    justify-items: center;
-    align-items: center;
-    width: 310px;
+.icon-bar-right i:active {
+	background-color: #333;
 }
 
-/* Vùng tạo công cụ tìm kiếm tọa độ */
-.hidden{
-    display: none;
-}
-.active{
-    display: block;
-}
-
-.panel{
-    display: none;
-    position: relative;
-    width: 280px;
-    background: rgba(20, 20, 20, 0.95);
-    border-radius: 12px;
-    padding: 10px 10px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-    color: #f1f1f1;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 14px;
-}
-.panel-info{
-    display: none;
-    position: relative;
-    width: 280px;
-    background: rgba(20, 20, 20, 0.95);
-    border-radius: 12px;
-    padding: 10px 10px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-    color: #f1f1f1;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 14px;
-}
-.panel.active{
-    display: block;
+.panel-container {
+	display: flex;
+	flex-direction: column;
+	justify-items: center;
+	align-items: center;
+	width: 310px;
 }
 
-.title-label{
-    font-size: 1.2rem;
-    color: red;
+.hidden {
+	display: none;
 }
-.search-input{
-    /* position: absolute; */
-    height: 30px;
-    margin-top: 6px;
-    margin-bottom: 6px;
-    width: 200px;
-    margin-left: 2px;
-    border-radius: 4px;
-    border: none;
+.active {
+	display: block;
 }
-.search-input::-webkit-search-cancel-button{
-    position: absolute;
-    right: 32px;
-    font-size: 1.4rem;
-    font-weight: 100;
+
+.panel {
+	display: none;
+	position: relative;
+	width: 280px;
+	background: rgba(20, 20, 20, 0.95);
+	border-radius: 12px;
+	padding: 10px;
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+	color: #f1f1f1;
+	font-family: 'Segoe UI', sans-serif;
+	font-size: 14px;
 }
-.btn-search{
-    position: absolute;
-    bottom: 12px;
-    right: 20px;
-    cursor: pointer;
+.panel.active {
+	display: block;
+}
+/* Tiêu đề của bảng */
+.title-label {
+	font-size: 1.2rem;
+	font-weight: bold;
+	padding-bottom: 6px;
+	margin-bottom: 10px;
+	color: #ffffff;
+}
+/* Phần tìm kiếm */
+.search-input {
+	width: 100%;
+	height: 36px;
+	padding: 0 36px 0 10px;
+	border-radius: 6px;
+	border: 1px solid #444;
+	background-color: #222;
+	color: #f0f0f0;
+	font-size: 14px;
+	box-sizing: border-box;
+}
+.search-input::-webkit-search-cancel-button {
+	position: absolute;
+	right: 32px;
+	font-size: 1.4rem;
+	font-weight: 100;
+}
+.btn-search {
+	position: absolute;
+	top: 55%;
+	right: 20px;
+	cursor: pointer;
+	color: #ccc;
+	font-size: 20px;
+}
+.btn-search:hover {
+	color: #fff;
 }
 
 #infoContent {
-margin-top: 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
 }
 
 .info-row {
-margin-bottom: 8px;
-display: flex;
-justify-content: space-between;
+	display: flex;
+	justify-content: space-between;
+	padding: 6px 10px;
+	border-radius: 4px;
+}
+
+.info-row:nth-child(odd) {
+	background-color: #2a2a2a; /* đen nhạt */
+	color: #f1f1f1;
+}
+
+.info-row:nth-child(even) {
+	background-color: #3a3a3a; /* xám */
+	color: #f1f1f1;
 }
 
 .info-label {
-color: #aaa;
-font-weight: 600;
+	font-weight: 600;
+	color: #ccc;
 }
 
 .info-value {
-color: #fff;
-text-align: right;
-max-width: 150px;
-overflow-wrap: break-word;
+	text-align: right;
+	color: #fff;
+	overflow-wrap: break-word;
+	max-width: 150px;
 }

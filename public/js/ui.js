@@ -3,7 +3,10 @@ import { modelGroups } from "../../src/three/three-gltfModel";
 
 const iconButtons = document.querySelectorAll('.menu-btn');
 const panels = document.querySelectorAll('.panel')
+const layerContent = document.getElementById('layerContent');
 
+
+// Lọc qua các nút, ấn nút nào sẽ hiện bảng thông tin lên
 iconButtons.forEach(button => {
   button.addEventListener('click', () => {
     const panelId = button.getAttribute('data-panel');
@@ -15,6 +18,7 @@ iconButtons.forEach(button => {
   })
 })
 
+// Export function để khi click ra ngoài màn hình (ngoại trùng vùng model) thì bảng thuộc tính sẽ tắt, cần phải export để raycaster clearInfoTable vào trong main.js
 export function clearInfoTable (event, raycaster, scene, camera) {
   
   const isClickInIcon = event.target.closest(".icon-bar-right");
@@ -37,9 +41,44 @@ export function clearInfoTable (event, raycaster, scene, camera) {
   }
 }
 
-document.getElementById('toggleBuildings').addEventListener('change', (e) => {
-  modelGroups.buildings.forEach(model => model.visible = e.target.checked);
+// Lọc qua các lớp đối tượng trong three-gltfModel, sau đó tạo danh sách trong layer và tính năng bật tắt
+let layerHTML = ''; // Khởi tạo chuỗi HTML
+
+Object.keys(modelGroups).forEach(groupName => {
+  const id = `toggle-${groupName}`;
+  // Thêm vào chuỗi HTML thay vì ghi đè
+  layerHTML += `
+  <div class="info-row">
+    <input type="checkbox" id="${id}" checked />
+    <label class="info-value" for="${id}">${groupName.charAt(0).toUpperCase() + groupName.slice(1)}</label>
+  </div>`;
+
 });
-document.getElementById('toggleSurface').addEventListener('change', (e) => {
-  modelGroups.surface.forEach(model => model.visible = e.target.checked);
-});
+
+// Cập nhật toàn bộ nội dung của layerContent chỉ một lần
+layerContent.innerHTML = layerHTML;
+
+// Sử dụng setTimeout để trì hoãn việc thêm sự kiện cho các checkbox
+setTimeout(() => {
+  Object.keys(modelGroups).forEach(groupName => {
+    const id = `toggle-${groupName}`;
+    
+    const checkbox = document.getElementById(id);
+    if (checkbox) {
+      // Sự kiện bật/tắt lớp
+      checkbox.addEventListener('change', (e) => {
+        const visible = e.target.checked;
+        toggleLayerVisibility(groupName, visible);
+      });
+    }
+  });
+}, 0); // Trì hoãn đến vòng lặp tiếp theo để đảm bảo các phần tử đã có trong DOM
+
+function toggleLayerVisibility(groupName, visible) {
+  const group = modelGroups[groupName];
+  group.forEach(obj => {
+    if (obj && obj.visible !== undefined) {
+      obj.visible = visible;
+    }
+  });
+}
