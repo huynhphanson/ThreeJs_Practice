@@ -17,11 +17,11 @@ export function initCesium() {
       geocoder: false,
       terrainShadows: Cesium.ShadowMode.DISABLED,
       targetFrameRate: 60,
-      // terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-      // imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-      //   url: 'https://a.tile.openstreetmap.org/',
-      //   maximumLevel: 18  // giới hạn để tránh zoom quá sâu gây lỗi
-      // }),
+      terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+      imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+        url: 'https://a.tile.openstreetmap.org/',
+        maximumLevel: 18  // giới hạn để tránh zoom quá sâu gây lỗi
+      }),
       contextOptions: {
         webgl: {
             alpha: false,
@@ -50,19 +50,15 @@ export async function setBasemap(type, cesiumViewer) {
         url: 'https://a.tile.openstreetmap.org/',
         maximumLevel: 18
       });
-      break;
-    case 'terrain':
-      imageryProvider = new Cesium.IonImageryProvider({ assetId: 2 });
-      cesiumViewer.terrainProvider = Cesium.createWorldTerrain({
-        requestVertexNormals: true,
-        requestWaterMask: true 
-      });
+      cesiumViewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
       break;
     case 'hybrid':
       imageryProvider = new Cesium.IonImageryProvider({ assetId: 3 });
+      cesiumViewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
       break;
     case 'traffic':
       imageryProvider = new Cesium.IonImageryProvider({ assetId: 4 });
+      cesiumViewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
       break;
     default:
       console.warn("Unknown basemap:", type);
