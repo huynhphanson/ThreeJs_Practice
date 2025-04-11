@@ -21,6 +21,8 @@ let previousColors = new Map();
 
 let clickHandlersRegistered = false;
 
+export let centerECEF, cameraECEF;
+
 // Get DOM Info-Panel
 const infoContent = document.getElementById('infoContent');
 infoContent.innerHTML = generateInfoDefault();
@@ -118,7 +120,7 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
       });
 
       // 🔹 Tính toán tâm của mô hình theo hệ ECEF
-      const centerECEF = new THREE.Vector3();
+      centerECEF = new THREE.Vector3();
       bbox.getCenter(centerECEF);
 
       // 🔹 Dịch chuyển tất cả các điểm về trung tâm mới
@@ -147,12 +149,12 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
       };
 
       // Convert EPSG back to ECEF and set camera position
-      const cameraECEF = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
+      cameraECEF = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
       camera.position.set(cameraECEF.x, cameraECEF.y, cameraECEF.z);
       controls.target.set(centerECEF.x, centerECEF.y, centerECEF.z);
 
       const boxHelper = new THREE.Box3Helper(bbox, 0xff00ff);
-      scene.add(boxHelper);
+      // scene.add(boxHelper); 
       
       // Creata Raycaster Event
       const raycaster = new THREE.Raycaster();

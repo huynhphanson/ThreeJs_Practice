@@ -32,10 +32,10 @@ const { tilesRenderer, dispose } = load3dTilesModel(tilesPath, camera, renderer,
 
 // Load GLTF Model
 
-const gltfPath1 = '../../resources/models/glb/songCho_NhaDra.glb';
+const gltfPath1 = '../../resources/models/glb/songChoSurfaceDra.glb';
 loadGLTFModel(gltfPath1, scene, camera, controls, 'surface');
 const gltfPath2 = '../../resources/models/glb/songChoBlueDra.glb';
-// loadGLTFModel(gltfPath2, scene, camera, controls, 'buildings');
+loadGLTFModel(gltfPath2, scene, camera, controls, 'buildings');
 
 
 function loop () {
@@ -66,7 +66,7 @@ const searchBtn = document.querySelector('.btn-search'); // find position
 searchBtn.addEventListener('click', () => findPosition(scene, camera, controls));
 
 const oriBtn = document.querySelector('.btn-project-location'); // find project position
-oriBtn.addEventListener('click', () => findProjectPosition(scene, camera, controls))
+oriBtn.addEventListener('click', () => findProjectPosition(camera, controls))
 
 window.addEventListener('dblclick', (event) => zoomTarget(event, raycaster, scene, camera, controls)); // zoom target position
 

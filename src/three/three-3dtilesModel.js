@@ -4,6 +4,9 @@ import { TilesRenderer } from '3d-tiles-renderer';
 import { convertTo9217, convertToECEF } from './three-convertCoor';
 import { addToModelGroup, modelGroups } from './three-modelGroups';
 
+
+export let centerECEFTiles, centerCameraTiles
+
 // Loader3DTiles
 export function load3dTilesModel (path, camera, renderer, controls, scene) {
   const sphere = new THREE.Sphere();
@@ -28,15 +31,16 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
     const bbox = new THREE.Box3();
     tilesRenderer.getBoundingBox(bbox);
     dotMesh.position.copy(bbox.getCenter(new THREE.Vector3()));
-    scene.add(dotMesh)
+    // scene.add(dotMesh)
     const boxHelper = new THREE.Box3Helper(bbox, 0xffff00);
     // scene.add(boxHelper);
+    tilesRenderer.group.name = 'Tiles3d';
 
     addToModelGroup('Tiles3d', tilesRenderer.group);
     
     tilesRenderer.getBoundingSphere( sphere );
-    let centerECEF = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
-    const centerEPSG = convertTo9217(centerECEF.x, centerECEF.y, centerECEF.z);
+    centerECEFTiles = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
+    const centerEPSG = convertTo9217(centerECEFTiles.x, centerECEFTiles.y, centerECEFTiles.z);
     const size = new THREE.Vector3();
     const maxLength = bbox.getSize(size).length();
     const cameraEPSG = {
@@ -45,8 +49,8 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
       z: centerEPSG.z + maxLength * 0.5
     };
     // Convert EPSG back to ECEF and set camera position
-    const newPos = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
-    camera.position.set(newPos.x, newPos.y, newPos.z);
+    centerCameraTiles = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
+    camera.position.set(centerCameraTiles.x, centerCameraTiles.y, centerCameraTiles.z);
     controls.target = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
   });
   scene.add(tilesRenderer.group);
