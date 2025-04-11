@@ -33,8 +33,8 @@ const { tilesRenderer, dispose } = load3dTilesModel(tilesPath, camera, renderer,
 // Load GLTF Model
 
 const gltfPath1 = '../../resources/models/glb/songChoSurfaceDra.glb';
-loadGLTFModel(gltfPath1, scene, camera, controls, 'surface');
-const gltfPath2 = '../../resources/models/glb/songChoBlueDra.glb';
+// loadGLTFModel(gltfPath1, scene, camera, controls, 'surface');
+const gltfPath2 = '../../resources/models/glb/songCho_NhaDra.glb';
 loadGLTFModel(gltfPath2, scene, camera, controls, 'buildings');
 
 
@@ -42,7 +42,7 @@ function loop () {
 	requestAnimationFrame(loop);
 	cesiumViewer.render();
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
-	tilesRenderer.update();
+	// tilesRenderer.update();
 	try {
 		syncThreeToCesium(camera, controls, cesiumViewer); //
 	} catch (error) {
