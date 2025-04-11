@@ -151,10 +151,6 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
       camera.position.set(cameraECEF.x, cameraECEF.y, cameraECEF.z);
       controls.target.set(centerECEF.x, centerECEF.y, centerECEF.z);
 
-      // Limit the camera's vertical rotation to prevent gimbal lock
-      controls.maxPolarAngle = Math.PI * 0.75;  // Limit vertical rotation (45 degrees above/below the horizon)
-      controls.minPolarAngle = Math.PI * 0.15;  // Optional: Allow some movement below horizon
-
       const boxHelper = new THREE.Box3Helper(bbox, 0xff00ff);
       scene.add(boxHelper);
       

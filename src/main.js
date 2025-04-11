@@ -11,11 +11,13 @@ import { initCesium } from './cesium/cesium-init.js';
 import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
 import { loadGLTFModel } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
+import { setViewer } from './cesium/cesium-viewer.js';
 
 const {scene, camera, renderer, controls, labelRenderer, composer} = threeInit();
 
 // Cesium
-const cesiumViewer = initCesium();
+export const cesiumViewer = initCesium();
+setViewer(cesiumViewer);
 
 
 // Three
@@ -30,10 +32,10 @@ const { tilesRenderer, dispose } = load3dTilesModel(tilesPath, camera, renderer,
 
 // Load GLTF Model
 
-const gltfPath1 = '../../resources/models/glb/songChoSurfaceDra.glb';
+const gltfPath1 = '../../resources/models/glb/songCho_NhaDra.glb';
 loadGLTFModel(gltfPath1, scene, camera, controls, 'surface');
 const gltfPath2 = '../../resources/models/glb/songChoBlueDra.glb';
-loadGLTFModel(gltfPath2, scene, camera, controls, 'buildings');
+// loadGLTFModel(gltfPath2, scene, camera, controls, 'buildings');
 
 
 function loop () {

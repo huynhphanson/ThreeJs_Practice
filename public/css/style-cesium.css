@@ -1,0 +1,42 @@
+.basemap-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.basemap-item {
+  display: flex;
+  align-items: center;
+  background-color: #1a1a1a;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  padding: 6px;
+  cursor: pointer;
+  transition: border 0.2s ease, background-color 0.2s ease;
+}
+
+.basemap-item:hover {
+  background-color: #2a2a2a;
+}
+
+.basemap-item.selected {
+  border: 1px solid #00baff;
+}
+
+.basemap-item img {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+.basemap-item span {
+  color: white;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  flex: 1;
+}
