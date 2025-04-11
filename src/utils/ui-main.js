@@ -1,14 +1,16 @@
 import * as THREE from 'three';
 import { modelGroups } from '../three/three-modelGroups';
 
+
 const iconButtons = document.querySelectorAll('.menu-btn');
 const panels = document.querySelectorAll('.panel')
-const layerContent = document.getElementById('layerContent');
-
 
 // Lọc qua các nút, ấn nút nào sẽ hiện bảng thông tin lên
 iconButtons.forEach(button => {
   button.addEventListener('click', () => {
+    iconButtons.forEach(btn => btn.classList.remove('i-active'));
+    button.classList.add('i-active');
+
     const panelId = button.getAttribute('data-panel');
     const panel = document.getElementById(panelId);
     panels.forEach(p => p.classList.remove('active'));
@@ -38,10 +40,12 @@ export function clearInfoTable (event, raycaster, scene, camera) {
 
   if (!isClickInIcon && !isClickInPanel && !isClickOnModel) {
     panels.forEach(p => p.classList.remove("active"));
+    iconButtons.forEach(btn => btn.classList.remove('i-active'));
   }
 }
 
-// Lọc qua các lớp đối tượng trong three-gltfModel, sau đó tạo danh sách trong layer và tính năng bật tắt
+// Layer: Lọc qua các lớp đối tượng trong three-gltfModel, sau đó tạo danh sách trong layer và tính năng bật tắt
+const layerContent = document.getElementById('layerContent');
 let layerHTML = ''; // Khởi tạo chuỗi HTML
 
 Object.keys(modelGroups).forEach(groupName => {
@@ -82,3 +86,5 @@ function toggleLayerVisibility(groupName, visible) {
     }
   });
 }
+
+

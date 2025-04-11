@@ -5,29 +5,6 @@ body {
 	color: #f0f0f0;
 }
 
-/* Progress bar */
-.progress-container {
-	position: fixed;
-	left: 50%;
-	top: 10px;
-	height: 20px;
-	width: 200px;
-}
-.progress-container .progress-bar {
-	position: absolute;
-	height: 100%;
-	background-color: #888; /* màu xám trung tính */
-	display: none;
-}
-
-/* Sidenav left */
-.sidenav-left {
-	position: fixed;
-	top: 10px;
-	left: 10px;
-	height: 100%;
-}
-
 /* Sidenav right */
 .sidenav-right {
 	position: fixed;
@@ -51,10 +28,16 @@ body {
 	color: #f0f0f0;
 }
 .icon-bar-right i:hover {
-	background-color: #444;
+	background-color: hsl(120, 100%, 34%);
+	border-color: hsl(150, 100%, 40%);
 }
 .icon-bar-right i:active {
-	background-color: #333;
+	background-color: hsl(120, 100%, 30%);
+	border-color: hsl(150, 100%, 50%);
+}
+.icon-bar-right i.i-active {
+	background-color: hsl(120, 100%, 30%);
+	border-color: hsl(150, 100%, 50%);
 }
 
 .panel-container {

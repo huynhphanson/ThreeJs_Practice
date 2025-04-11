@@ -12,6 +12,7 @@ import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
 import { loadGLTFModel } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
 import { setViewer } from './cesium/cesium-viewer.js';
+import { initRuler } from './three/three-ruler.js';
 
 const {scene, camera, renderer, controls, labelRenderer, composer} = threeInit();
 
@@ -40,7 +41,7 @@ loadGLTFModel(gltfPath2, scene, camera, controls, 'buildings');
 
 function loop () {
 	requestAnimationFrame(loop);
-	cesiumViewer.render();
+	// cesiumViewer.render();
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
 	// tilesRenderer.update();
 	try {
@@ -81,7 +82,19 @@ window.onpointerdown = (event) => {
 	}
 };
 
+// Ruler
+const rulerBtn = document.querySelector('.fa-ruler');
+let rulerInitialized = false;
+
+rulerBtn.addEventListener('click', () => {
+  if (!rulerInitialized) {
+    initRuler(scene, camera, renderer);
+    rulerInitialized = true;
+  }
+});
+
 
 // add group3d to scene
 group.add(obj3d);
 scene.add(group);
+
