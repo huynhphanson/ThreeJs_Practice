@@ -4,6 +4,8 @@ import { DRACOLoader } from 'three/examples/jsm/Addons.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { convertToECEF, convertTo9217 } from './three-convertCoor.js';
+import { generateInfoDefault, generateInfoHTML } from '../utils/generateInfoHTML.js';
+import { modelGroups } from './three-modelGroups.js';
 
 // DracoLoader
 const dracoLoader = new DRACOLoader();
@@ -14,16 +16,14 @@ const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
-export const modelGroups = {
-  surface: [],
-  buildings: [],
-  infrastructure: []
-};
-
 let previousObjects = [];
 let previousColors = new Map();
 
 let clickHandlersRegistered = false;
+
+// Get DOM Info-Panel
+const infoContent = document.getElementById('infoContent');
+infoContent.innerHTML = generateInfoDefault();
 export function loadGLTFModel(path, scene, camera, controls, category) {
   // 🛑 Xóa mô hình cũ trước khi load mới
   clearPreviousModel(scene);
@@ -206,8 +206,6 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
       }
 
       function handleSingleClick(event) {
-        // Get DOM Info-Panel
-        const infoContent = document.getElementById('infoContent');
 
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -273,24 +271,7 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
           const objectInfo = clickedMesh.userData.metadata?.find(obj => obj.id === objectId);
           console.log("🔹 Thông tin đối tượng:", objectInfo);
           const [xCoord, yCoord, zCoord] = objectInfo.userData.cartesian_point_offset.split(',').map(coord => parseFloat(coord).toFixed(3));
-          infoContent.innerHTML = `
-            <div class="info-row">
-              <span class="info-label">Name:</span>
-              <span class="info-value">${objectInfo.name || "Unknown"}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">X-Coor:</span>
-              <span class="info-value">${xCoord || "Unknown"}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Y-Coor:</span>
-              <span class="info-value">${yCoord || "Unknown"}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Z-Coor:</span>
-              <span class="info-value">${zCoord || "Unknown"}</span>
-            </div>
-          `
+          infoContent.innerHTML = generateInfoHTML(objectInfo)
         }
       }
     }

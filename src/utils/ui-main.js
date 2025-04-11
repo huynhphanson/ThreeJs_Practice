@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { modelGroups } from "../../src/three/three-gltfModel";
+import { modelGroups } from '../three/three-modelGroups';
 
 const iconButtons = document.querySelectorAll('.menu-btn');
 const panels = document.querySelectorAll('.panel')

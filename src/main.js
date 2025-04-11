@@ -5,11 +5,11 @@ import { obj3d, group, createCpointMesh} from './three/three-func.js';
 import { animateLoop } from './three/three-animate.js';
 import { outlinePass, effectFXAA } from './three/three-outline.js';
 import { onMouseMove, onMouseWheel, findPosition, findProjectPosition, zoomTarget, resizeScreen, getCoordinate } from './three/three-controls.js';
-import { clearInfoTable } from '../public/js/ui.js';
+import { clearInfoTable } from '../src/utils/ui-main.js';
 import { initCesium } from './cesium/cesium-init.js';
 
 import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
-import { loadGLTFModel, modelGroups } from './three/three-gltfModel.js';
+import { loadGLTFModel } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
 
 const {scene, camera, renderer, controls, labelRenderer, composer} = threeInit();

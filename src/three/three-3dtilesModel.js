@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { DRACOLoader, GLTFLoader } from 'three/examples/jsm/Addons.js';
 import { TilesRenderer } from '3d-tiles-renderer';
 import { convertTo9217, convertToECEF } from './three-convertCoor';
+import { addToModelGroup, modelGroups } from './three-modelGroups';
 
 // Loader3DTiles
 export function load3dTilesModel (path, camera, renderer, controls, scene) {
@@ -31,7 +32,8 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
     const boxHelper = new THREE.Box3Helper(bbox, 0xffff00);
     // scene.add(boxHelper);
 
-    tilesRenderer.group.name = '3d-tiles';
+    addToModelGroup('Tiles3d', tilesRenderer.group);
+    
     tilesRenderer.getBoundingSphere( sphere );
     let centerECEF = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
     const centerEPSG = convertTo9217(centerECEF.x, centerECEF.y, centerECEF.z);
