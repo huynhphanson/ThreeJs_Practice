@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { convertToECEF, convertTo9217 } from './three-convertCoor';
+import { CSS2DObject } from 'three/examples/jsm/Addons.js';
 
 let cameraRef, rendererRef, controlsRef;
 let rulerGroup = new THREE.Group();
@@ -35,7 +36,6 @@ export function initRuler(scene, camera, renderer, controls) {
 
       if (!rulerEnabled) return;
 
-      // Kiểm tra có click vào sphere để kéo
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -50,21 +50,24 @@ export function initRuler(scene, camera, renderer, controls) {
 
     rendererRef.domElement.addEventListener("mousemove", (event) => {
       if (!draggingSphere) return;
-
+    
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
+    
       raycaster.setFromCamera(mouse, cameraRef);
       const visibleMeshes = collectVisibleMeshes(cameraRef.scene || rulerGroup.parent, rulerGroup);
       const intersects = raycaster.intersectObjects(visibleMeshes, true);
-
+    
       if (intersects.length > 0) {
         const hit = intersects[0].point.clone();
         const localPos = hit.sub(originPoint);
         draggingSphere.position.copy(localPos);
-        updateAllMeasurements();
+    
+        // Cập nhật các phép đo và nhãn khi di chuyển điểm
+        updateAllMeasurements();  // Cập nhật lại nhãn mỗi lần điểm di chuyển
       }
     });
+    
 
     rendererRef.domElement.addEventListener("mouseup", (event) => {
       isMouseDown = false;
@@ -155,42 +158,36 @@ function createSphere(localPosition) {
   return sphere;
 }
 
-function createLabel(text, localPosition) {
-  const label = document.createElement('div');
-  label.className = 'ruler-label';
-  label.style.position = 'absolute';
-  label.style.color = 'white';
-  label.style.background = 'rgba(0,0,0,0.6)';
-  label.style.padding = '2px 6px';
-  label.style.borderRadius = '4px';
-  label.style.pointerEvents = 'none';
-  label.innerText = text;
-  document.body.appendChild(label);
+function createLabel(text, position) {
+  const div = document.createElement('div');
+  div.className = 'label';
+  div.textContent = text;
+  div.style.marginTop = '-1em';
+  div.style.color = 'white';
+  div.style.fontSize = '14px';
+  div.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+  div.style.padding = '2px 6px';
+  div.style.borderRadius = '4px';
 
-  allLabels.push({ label, getWorldPos: () => localPosition.clone().add(originPoint) });
+  const label = new CSS2DObject(div);
+  label.position.copy(position);
+  rulerGroup.add(label);
   return label;
 }
 
-function updateLabel(label, text, localPos) {
-  label.innerText = text;
-  const found = allLabels.find(item => item.label === label);
-  if (found) {
-    found.getWorldPos = () => localPos.clone().add(originPoint);
-  }
+function updateLabel(label, text, position) {
+  if (!label) return;
+  if (!position) return;
+
+  label.element.innerText = text;
+  label.position.copy(position); // Đặt lại vị trí của nhãn
 }
+
+
 
 function updateLine(line, p1, p2) {
   line.geometry.setFromPoints([p1, p2]);
   line.geometry.attributes.position.needsUpdate = true;
-}
-
-function updateAllLabelPositions() {
-  for (const { label, getWorldPos } of allLabels) {
-    const worldPos = getWorldPos();
-    const screenPos = worldPos.clone().project(cameraRef);
-    label.style.left = `${(screenPos.x + 1) / 2 * window.innerWidth}px`;
-    label.style.top = `${(-screenPos.y + 1) / 2 * window.innerHeight}px`;
-  }
 }
 
 function drawLine(p1, p2, color) {
@@ -229,6 +226,7 @@ function updateAllMeasurements() {
     const p1 = m.p1.position;
     const p2 = m.p2.position;
 
+    // Tính toán lại các điểm tam giác sau khi di chuyển
     const p1World = p1.clone().add(originPoint);
     const p2World = p2.clone().add(originPoint);
     const p1VN = convertTo9217(p1World.x, p1World.y, p1World.z);
@@ -237,13 +235,15 @@ function updateAllMeasurements() {
     const p3World = convertToECEF(p3VN.x, p3VN.y, p3VN.z);
     const p3 = p3World.clone().sub(originPoint);
 
+    // Cập nhật các đường đo
     updateLine(m.lines[0], p1, p3);
     updateLine(m.lines[1], p3, p2);
     updateLine(m.lines[2], p1, p2);
 
+    // Cập nhật nhãn với các vị trí của các điểm
     updateLabel(m.labels[0], `${p1.distanceTo(p3).toFixed(2)} m`, p1.clone().lerp(p3, 0.5));
     updateLabel(m.labels[1], `${p3.distanceTo(p2).toFixed(2)} m`, p3.clone().lerp(p2, 0.5));
-    updateLabel(m.labels[2], `${p1.distanceTo(p2).toFixed(2)} m`, p1.clone().lerp(p2, 0.5));
+    updateLabel(m.labels[2], `${p1.distanceTo(p2).toFixed(2)} m`, p1.clone().lerp(p2, 0.5));    
   }
 }
 
@@ -260,16 +260,13 @@ export function deactivateRuler() {
 
   document.querySelectorAll('.ruler-label').forEach(el => el.remove());
   allLabels = [];
-
   originPoint = null;
   allSpheres = [];
   measurements = [];
-
   draggingSphere = null;
 }
 
 function animateLabels() {
   requestAnimationFrame(animateLabels);
-  updateAllLabelPositions();
 }
 animateLabels();

@@ -101,21 +101,26 @@ export function findProjectPosition (camera, controls) {
 
 export function zoomTarget (event, raycaster, scene, camera, controls) {
   event.preventDefault();
+
   const coords = new THREE.Vector2();
-  coords.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-  coords.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+  coords.x = (event.clientX / window.innerWidth) * 2 - 1;
+  coords.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
   raycaster.setFromCamera(coords, camera);
   const intersects = raycaster.intersectObjects(scene.children);
-  if(intersects.length > 0){
-    let target = intersects[0].point;
-    let cameraPosition = camera.position.clone();
-    let distance = cameraPosition.sub(target);
-    let direction = distance.normalize();
-    let offset = distance.clone().sub(direction.multiplyScalar(20.0));
-    let newPos = target.clone().sub(offset);
+
+  if (intersects.length > 0) {
+    const target = intersects[0].point;
+    const cameraPosition = camera.position.clone();
+    const distance = cameraPosition.sub(target);
+    const direction = distance.normalize();
+    const offset = distance.clone().sub(direction.multiplyScalar(20.0));
+    const newPos = target.clone().sub(offset);
+
     zoomAt(target, newPos, camera, controls);
-  } 
+  }
 }
+
 
 export function getCoordinate (event, raycaster, scene, camera) {
   const coords = new THREE.Vector3();
