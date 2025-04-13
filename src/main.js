@@ -43,7 +43,7 @@ function loop () {
 	requestAnimationFrame(loop);
 	// cesiumViewer.render();
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
-	// tilesRenderer.update();
+	tilesRenderer.update();
 	try {
 		syncThreeToCesium(camera, controls, cesiumViewer); //
 	} catch (error) {
