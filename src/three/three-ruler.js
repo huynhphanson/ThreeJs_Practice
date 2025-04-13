@@ -1,18 +1,14 @@
 import * as THREE from 'three';
 import { convertToECEF, convertTo9217 } from './three-convertCoor';
-import { DragControls } from 'three/examples/jsm/Addons.js';
 
 let cameraRef, rendererRef, controlsRef;
 let rulerGroup = new THREE.Group();
 let originPoint = null;
 let rulerEnabled = false;
 let clickHandlersRegistered = false;
-let dragControls = null;
 let allSpheres = [];
 let measurements = [];
 let allLabels = [];
-
-
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -22,6 +18,8 @@ let mouseDownTime = 0;
 let mouseDownPosition = { x: 0, y: 0 };
 let lastClickTime = 0;
 let clickTimeout = null;
+
+let draggingSphere = null;
 
 export function initRuler(scene, camera, renderer, controls) {
   cameraRef = camera;
@@ -34,11 +32,44 @@ export function initRuler(scene, camera, renderer, controls) {
       isMouseDown = true;
       mouseDownTime = performance.now();
       mouseDownPosition = { x: event.clientX, y: event.clientY };
+
+      if (!rulerEnabled) return;
+
+      // Kiểm tra có click vào sphere để kéo
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, cameraRef);
+      const intersects = raycaster.intersectObjects(allSpheres, false);
+
+      if (intersects.length > 0) {
+        draggingSphere = intersects[0].object;
+        if (controlsRef) controlsRef.enabled = false;
+      }
+    });
+
+    rendererRef.domElement.addEventListener("mousemove", (event) => {
+      if (!draggingSphere) return;
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, cameraRef);
+      const visibleMeshes = collectVisibleMeshes(cameraRef.scene || rulerGroup.parent, rulerGroup);
+      const intersects = raycaster.intersectObjects(visibleMeshes, true);
+
+      if (intersects.length > 0) {
+        const hit = intersects[0].point.clone();
+        const localPos = hit.sub(originPoint);
+        draggingSphere.position.copy(localPos);
+        updateAllMeasurements();
+      }
     });
 
     rendererRef.domElement.addEventListener("mouseup", (event) => {
-      if (!isMouseDown) return;
       isMouseDown = false;
+      if (controlsRef) controlsRef.enabled = true;
+      draggingSphere = null;
 
       const timeDiff = performance.now() - mouseDownTime;
       const moveDistance = Math.sqrt(
@@ -57,7 +88,7 @@ export function initRuler(scene, camera, renderer, controls) {
       lastClickTime = now;
 
       clickTimeout = setTimeout(() => {
-        onMouseClick(event, scene);
+        onMouseClick(event, rulerGroup.parent);
       }, 180);
     });
 
@@ -72,7 +103,6 @@ function onMouseClick(event, scene) {
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
   raycaster.setFromCamera(mouse, cameraRef);
-
   const visibleMeshes = collectVisibleMeshes(scene, rulerGroup);
   const intersects = raycaster.intersectObjects(visibleMeshes, true);
 
@@ -95,8 +125,6 @@ function onMouseClick(event, scene) {
       const measurement = drawRightTriangle(p1, p2);
       measurements.push(measurement);
     }
-
-    enableDragging();
   }
 }
 
@@ -140,20 +168,16 @@ function createLabel(text, localPosition) {
   document.body.appendChild(label);
 
   allLabels.push({ label, getWorldPos: () => localPosition.clone().add(originPoint) });
-
   return label;
 }
 
-
 function updateLabel(label, text, localPos) {
   label.innerText = text;
-
   const found = allLabels.find(item => item.label === label);
   if (found) {
     found.getWorldPos = () => localPos.clone().add(originPoint);
   }
 }
-
 
 function updateLine(line, p1, p2) {
   line.geometry.setFromPoints([p1, p2]);
@@ -168,7 +192,6 @@ function updateAllLabelPositions() {
     label.style.top = `${(-screenPos.y + 1) / 2 * window.innerHeight}px`;
   }
 }
-
 
 function drawLine(p1, p2, color) {
   const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
@@ -201,23 +224,6 @@ function drawRightTriangle(p1Sphere, p2Sphere) {
   return { p1: p1Sphere, p2: p2Sphere, lines: [line1, line2, line3], labels: [label1, label2, label3] };
 }
 
-function enableDragging() {
-  if (dragControls) dragControls.dispose();
-  dragControls = new DragControls(allSpheres, cameraRef, rendererRef.domElement);
-
-  dragControls.addEventListener('dragstart', () => {
-    if (controlsRef) controlsRef.enabled = false;
-  });
-
-  dragControls.addEventListener('dragend', () => {
-    if (controlsRef) controlsRef.enabled = true;
-  });
-
-  dragControls.addEventListener('drag', () => {
-    updateAllMeasurements();
-  });
-}
-
 function updateAllMeasurements() {
   for (const m of measurements) {
     const p1 = m.p1.position;
@@ -245,7 +251,6 @@ export function activateRuler() {
   rulerEnabled = true;
 }
 
-
 export function deactivateRuler() {
   rulerEnabled = false;
 
@@ -255,16 +260,12 @@ export function deactivateRuler() {
 
   document.querySelectorAll('.ruler-label').forEach(el => el.remove());
   allLabels = [];
-  
+
   originPoint = null;
   allSpheres = [];
   measurements = [];
 
-  if (dragControls) {
-    dragControls.dispose();
-    dragControls = null;
-  }
-  
+  draggingSphere = null;
 }
 
 function animateLabels() {
