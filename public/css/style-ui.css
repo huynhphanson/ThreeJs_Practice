@@ -108,6 +108,7 @@ body {
 	color: #fff;
 }
 
+/* Infotable */
 #infoContent {
 	display: flex;
 	flex-direction: column;
@@ -141,4 +142,12 @@ body {
 	color: #fff;
 	overflow-wrap: break-word;
 	max-width: 150px;
+}
+
+/* Ruler */
+.ruler-label {
+  position: absolute;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
 }

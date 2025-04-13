@@ -37,19 +37,6 @@ export function onMouseMove( event, raycaster, camera, obj3d, outlinePass ) {
   }
 };
 
-export function onMouseWheel (event, camera, obj3d, cPointDivs) {
-  let cameraPosition = camera.position.clone();
-  let distance = cameraPosition.distanceTo(new THREE.Vector3(0,0,0));
-  if(distance > 300 || distance < 70){
-    cPointDivs.forEach(cPointDiv => {
-      obj3d.remove(cPointDiv);
-    })
-  } else {
-    cPointDivs.forEach(cPointDiv => {
-      obj3d.add(cPointDiv);
-    })
-  }
-};
 // Zoome Gsap
 function zoomAt (target, newPos, camera, controls) {
 	gsap.to( camera.position, {
