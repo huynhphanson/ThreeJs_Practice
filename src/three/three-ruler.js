@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { convertToECEF, convertTo9217 } from './three-convertCoor';
 import { CSS2DObject } from 'three/examples/jsm/Addons.js';
+import { MeshLine, MeshLineMaterial } from 'three.meshline';
 
 let cameraRef, rendererRef, controlsRef;
 let rulerGroup = new THREE.Group();
@@ -151,7 +152,7 @@ function isChildOfGroup(obj, group) {
 
 function createSphere(localPosition) {
   const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.1),
+    new THREE.SphereGeometry(0.2),
     new THREE.MeshBasicMaterial({ color: 0xff0000 })
   );
   sphere.position.copy(localPosition);
@@ -185,18 +186,32 @@ function updateLabel(label, text, position) {
 
 
 
-function updateLine(line, p1, p2) {
-  line.geometry.setFromPoints([p1, p2]);
-  line.geometry.attributes.position.needsUpdate = true;
+function updateLine(lineObj, p1, p2) {
+  if (!lineObj.line || !lineObj.line.geometry) return;
+
+  const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+  lineObj.line.geometry.dispose();
+  lineObj.line.setGeometry(geometry);
 }
+
+
 
 function drawLine(p1, p2, color) {
   const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-  const material = new THREE.LineBasicMaterial({ color });
-  const line = new THREE.Line(geometry, material);
-  rulerGroup.add(line);
-  return line;
+  const line = new MeshLine();
+  line.setGeometry(geometry);
+  const material = new MeshLineMaterial({
+    color,
+    lineWidth: 0.1,
+    depthTest: false,
+    transparent: true,
+    opacity: 1.0
+  });
+  const mesh = new THREE.Mesh(line.geometry, material);
+  rulerGroup.add(mesh);
+  return { line, mesh };  // Trả về cả line và mesh
 }
+
 
 function drawRightTriangle(p1Sphere, p2Sphere) {
   const p1 = p1Sphere.position;
@@ -218,7 +233,11 @@ function drawRightTriangle(p1Sphere, p2Sphere) {
   const label2 = createLabel(`${p3.distanceTo(p2).toFixed(2)} m`, p3.clone().lerp(p2, 0.5));
   const label3 = createLabel(`${p1.distanceTo(p2).toFixed(2)} m`, p1.clone().lerp(p2, 0.5));
 
-  return { p1: p1Sphere, p2: p2Sphere, lines: [line1, line2, line3], labels: [label1, label2, label3] };
+  return { 
+    p1: p1Sphere, 
+    p2: p2Sphere, 
+    lines: [line1, line2, line3], 
+    labels: [label1, label2, label3] };
 }
 
 function updateAllMeasurements() {
