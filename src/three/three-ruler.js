@@ -11,7 +11,7 @@ let clickHandlersRegistered = false;
 let allSpheres = [];
 let measurements = [];
 let allLabels = [];
-
+let highlightedSphere = null;
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
@@ -68,7 +68,6 @@ export function initRuler(scene, camera, renderer, controls) {
         updateAllMeasurements();  // Cập nhật lại nhãn mỗi lần điểm di chuyển
       }
     });
-    
 
     rendererRef.domElement.addEventListener("mouseup", (event) => {
       isMouseDown = false;
@@ -96,7 +95,53 @@ export function initRuler(scene, camera, renderer, controls) {
       }, 180);
     });
 
+    // Register mousemove event to highlight spheres
+    rendererRef.domElement.addEventListener('mousemove', (event) => {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, cameraRef);
+      const intersects = raycaster.intersectObjects(allSpheres);
+
+      if (intersects.length > 0) {
+        const sphere = intersects[0].object;
+
+        if (highlightedSphere !== sphere) {
+          if (highlightedSphere) {
+            // Reset color of the previously highlighted sphere
+            highlightedSphere.material.color.set(0xff0000); // Red color
+          }
+
+          // Highlight the new sphere
+          highlightedSphere = sphere;
+          highlightedSphere.material.color.set(0x00ff00); // Green color
+        }
+      } else if (highlightedSphere) {
+        // If mouse is not over any sphere, reset the highlighted sphere
+        highlightedSphere.material.color.set(0xff0000); // Red color
+        highlightedSphere = null;
+      }
+    });
+
     clickHandlersRegistered = true;
+  }
+}
+
+function onMouseOverSphere(sphere) {
+  if (highlightedSphere) {
+    // Reset color of the previously highlighted sphere
+    highlightedSphere.material.color.set(0xff0000);
+  }
+  // Highlight the new sphere
+  highlightedSphere = sphere;
+  highlightedSphere.material.color.set(0x00ff00);  // Change color to green
+}
+
+function onMouseOutSphere(sphere) {
+  if (highlightedSphere === sphere) {
+    // Reset color when mouse leaves the highlighted sphere
+    highlightedSphere.material.color.set(0xff0000);
+    highlightedSphere = null;
   }
 }
 
@@ -153,7 +198,10 @@ function isChildOfGroup(obj, group) {
 function createSphere(localPosition) {
   const sphere = new THREE.Mesh(
     new THREE.SphereGeometry(0.2),
-    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    new THREE.MeshBasicMaterial({ 
+      color: 0xff0000,
+      depthTest: false
+     })
   );
   sphere.position.copy(localPosition);
   return sphere;
