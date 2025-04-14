@@ -11,6 +11,9 @@ let clickHandlersRegistered = false;
 let allSpheres = [];
 let measurements = [];
 let allLabels = [];
+let previewLine = null;
+let previewLabel = null;
+let isAnimating = false;
 let highlightedSphere = null;
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -28,6 +31,11 @@ export function initRuler(scene, camera, renderer, controls) {
   rendererRef = renderer;
   controlsRef = controls;
   scene.add(rulerGroup);
+
+  if (!isAnimating) {
+    animateLabels();
+    isAnimating = true;
+  }
 
   if (!clickHandlersRegistered) {
     rendererRef.domElement.addEventListener("mousedown", (event) => {
@@ -50,8 +58,9 @@ export function initRuler(scene, camera, renderer, controls) {
     });
 
     rendererRef.domElement.addEventListener("mousemove", (event) => {
+      updatePreviewLine(event);
       if (!draggingSphere) return;
-    
+
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     
@@ -127,24 +136,6 @@ export function initRuler(scene, camera, renderer, controls) {
   }
 }
 
-function onMouseOverSphere(sphere) {
-  if (highlightedSphere) {
-    // Reset color of the previously highlighted sphere
-    highlightedSphere.material.color.set(0xff0000);
-  }
-  // Highlight the new sphere
-  highlightedSphere = sphere;
-  highlightedSphere.material.color.set(0x00ff00);  // Change color to green
-}
-
-function onMouseOutSphere(sphere) {
-  if (highlightedSphere === sphere) {
-    // Reset color when mouse leaves the highlighted sphere
-    highlightedSphere.material.color.set(0xff0000);
-    highlightedSphere = null;
-  }
-}
-
 function onMouseClick(event, scene) {
   if (!rulerEnabled) return;
 
@@ -161,6 +152,15 @@ function onMouseClick(event, scene) {
     if (!originPoint) {
       originPoint = worldPoint.clone();
       rulerGroup.position.copy(originPoint);
+    }
+    // Clear preview line & label
+    if (previewLine) {
+      rulerGroup.remove(previewLine.mesh);
+      previewLine = null;
+    }
+    if (previewLabel) {
+      rulerGroup.remove(previewLabel);
+      previewLabel = null;
     }
 
     const localPoint = worldPoint.clone().sub(originPoint);
@@ -250,7 +250,6 @@ function drawLine(p1, p2, color) {
   line.setGeometry(geometry);
   const material = new MeshLineMaterial({
     color,
-    lineWidth: 0.1,
     depthTest: false,
     transparent: true,
     opacity: 1.0
@@ -313,6 +312,40 @@ function updateAllMeasurements() {
     updateLabel(m.labels[2], `${p1.distanceTo(p2).toFixed(2)} m`, p1.clone().lerp(p2, 0.5));    
   }
 }
+function updatePreviewLine(mouseEvent) {
+  if (!rulerEnabled || allSpheres.length % 2 !== 1) return;
+
+  mouse.x = (mouseEvent.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(mouseEvent.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, cameraRef);
+  const visibleMeshes = collectVisibleMeshes(rulerGroup.parent, rulerGroup);
+  const intersects = raycaster.intersectObjects(visibleMeshes, true);
+
+  if (intersects.length === 0) return;
+
+  const hit = intersects[0].point.clone();
+  const worldStart = allSpheres[allSpheres.length - 1].position.clone().add(originPoint);
+  const distance = worldStart.distanceTo(hit);
+
+  const localStart = allSpheres[allSpheres.length - 1].position.clone();
+  const localEnd = hit.clone().sub(originPoint);
+
+  // Preview line
+  if (!previewLine) {
+    previewLine = drawLine(localStart, localEnd, 0xfac0c0);
+  } else {
+    updateLine(previewLine, localStart, localEnd);
+  }
+
+  // Preview label
+  const mid = localStart.clone().lerp(localEnd, 0.5);
+  if (!previewLabel) {
+    previewLabel = createLabel(`${distance.toFixed(2)} m`, mid);
+  } else {
+    updateLabel(previewLabel, `${distance.toFixed(2)} m`, mid);
+  }
+}
 
 export function activateRuler() {
   rulerEnabled = true;
@@ -333,7 +366,35 @@ export function deactivateRuler() {
   draggingSphere = null;
 }
 
+function updateLineWidths() {
+  if (!cameraRef || !rulerGroup || !rulerGroup.position) return;
+
+  const cameraDistance = cameraRef.position.distanceTo(rulerGroup.position);
+
+  const baseWidth = 0.0005; // width khi gần
+  const scaleFactor = 0.0015; // điều chỉnh theo khoảng cách
+  const newWidth = baseWidth + cameraDistance * scaleFactor;
+
+  rulerGroup.traverse(obj => {
+    if (obj.material && obj.material instanceof MeshLineMaterial) {
+      obj.material.lineWidth = newWidth;
+    }
+  });
+}
+
+function updateLabelScales() {
+  const cameraDistance = cameraRef.position.distanceTo(rulerGroup.position);
+  const scale = 1 + cameraDistance * 0.002;
+
+  for (const label of allLabels) {
+    label.element.style.transform = `scale(${scale})`;
+    label.element.style.transformOrigin = 'left center';
+  }
+}
+
+
 function animateLabels() {
   requestAnimationFrame(animateLabels);
+  updateLineWidths();
+  // updateLabelScales()
 }
-animateLabels();
