@@ -12,6 +12,7 @@ import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
 import { loadGLTFModel } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
 import { setViewer } from './cesium/cesium-viewer.js';
+import { cursorCoor } from './three/three-cursor-coordinates.js';
 
 const {scene, camera, renderer, controls, labelRenderer, composer} = threeInit();
 
@@ -70,17 +71,9 @@ oriBtn.addEventListener('click', () => findProjectPosition(camera, controls))
 
 window.addEventListener('dblclick', (event) => zoomTarget(event, raycaster, scene, camera, controls)); // zoom target position
 
-window.onpointerdown = (event) => {
-	switch(event.button){
-		case 0:
-			getCoordinate(event, raycaster, scene, camera);// Left Click Function
-			break;
-		case 2:
-			/* rClick(event); // Right Click Fucntion */
-			break;
-	}
-};
-
+// Cursor Coordinates
+const sidenavRightBottom = document.querySelector('.sidenav-right-bottom');
+cursorCoor(raycaster, scene, camera, sidenavRightBottom);
 
 // add group3d to scene
 group.add(obj3d);

@@ -1,23 +1,11 @@
+@import './style-cursor-coordinate.css';
+@import './style-info-table.css';
+
 body {
 	margin: 0;
 	box-sizing: border-box;
 	background-color: #121212; /* nền tối hơn để đồng bộ */
 	color: #f0f0f0;
-}
-
-/* Progress bar */
-.progress-container {
-	position: fixed;
-	left: 50%;
-	top: 10px;
-	height: 20px;
-	width: 200px;
-}
-.progress-container .progress-bar {
-	position: absolute;
-	height: 100%;
-	background-color: #888; /* màu xám trung tính */
-	display: none;
 }
 
 /* Sidenav left */
@@ -125,37 +113,4 @@ body {
 	color: #fff;
 }
 
-#infoContent {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
 
-.info-row {
-	display: flex;
-	justify-content: space-between;
-	padding: 6px 10px;
-	border-radius: 4px;
-}
-
-.info-row:nth-child(odd) {
-	background-color: #2a2a2a; /* đen nhạt */
-	color: #f1f1f1;
-}
-
-.info-row:nth-child(even) {
-	background-color: #3a3a3a; /* xám */
-	color: #f1f1f1;
-}
-
-.info-label {
-	font-weight: 600;
-	color: #ccc;
-}
-
-.info-value {
-	text-align: right;
-	color: #fff;
-	overflow-wrap: break-word;
-	max-width: 150px;
-}
