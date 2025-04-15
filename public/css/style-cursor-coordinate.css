@@ -1,0 +1,21 @@
+.sidenav-right-bottom {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(30, 30, 30, 0.9);
+  color: #ffffff;
+  font-family: monospace;
+	border-radius: 4px;
+  font-size: 12px;
+  padding: 4px 4px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.7);
+	border: 1px solid #aaa; /* đường viền sáng hơn */
+  display: none;
+  line-height: 1.4;
+}
+
+.sidenav-right-bottom div:first-child {
+  font-weight: bold;
+  margin-bottom: 2px;
+  border-bottom: 1px solid #555;
+}
