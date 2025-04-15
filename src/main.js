@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { threeInit } from './three/three-init.js'
 import { animateLoop } from './three/three-animate.js';
 import { outlinePass, effectFXAA } from './three/three-outline.js';
-import { onMouseMove, findPosition, findProjectPosition, zoomTarget, resizeScreen, getCoordinate } from './three/three-controls.js';
+import { onMouseMove, findProjectPosition, zoomTarget, resizeScreen, getCoordinate } from './three/three-controls.js';
 import { clearInfoTable } from '../src/utils/ui-main.js';
 import { initCesium } from './cesium/cesium-init.js';
-
+import { findPosition } from './three/three-search.js';
 import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
 import { loadGLTFModel } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
