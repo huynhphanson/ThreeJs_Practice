@@ -267,7 +267,6 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
 
           // 🔹 Tìm thông tin đối tượng
           const objectInfo = clickedMesh.userData.metadata?.find(obj => obj.id === objectId);
-          console.log("🔹 Thông tin đối tượng:", objectInfo);
           const [xCoord, yCoord, zCoord] = objectInfo.userData.cartesian_point_offset.split(',').map(coord => parseFloat(coord).toFixed(3));
           infoContent.innerHTML = generateInfoHTML(objectInfo)
         }
