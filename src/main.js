@@ -60,8 +60,14 @@ window.addEventListener('resize', () => resizeScreen(camera, renderer, labelRend
 
 /* FUNCTIONS */
 // Search
-const searchBtn = document.querySelector('.btn-search'); // find position
-searchBtn.addEventListener('click', () => findPosition(scene, camera, controls));
+const searchBtn = document.querySelector('.btn-search');
+const searchInput = document.querySelector('.search-input');
+searchBtn.addEventListener('click', () => findPosition(scene, camera, controls, renderer));
+searchInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') {
+    findPosition(scene, camera, controls, renderer);
+  }
+})
 // ProjectoPosition
 const oriBtn = document.querySelector('.btn-project-location'); // find project position
 oriBtn.addEventListener('click', () => findProjectPosition(camera, controls))
