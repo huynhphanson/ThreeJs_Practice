@@ -3,8 +3,9 @@ import proj4 from 'proj4';
 
 proj4.defs('EPSG:9217',
   '+proj=tmerc +lat_0=0 +lon_0=108.25 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=-191.90441429,-39.30318279,-111.45032835,-0.00928836,0.01975479,-0.00427372,0.252906278 +units=m +no_defs +type=crs');
+
 // 2️⃣ Hàm chuyển đổi từng vertex trong GLTF từ VN-2000 → ECEF
-export function convertToECEF(x, y, z) {
+export function convertToECEF(x, y, z = 0) {
   
   const pointcloudProjection = proj4('EPSG:9217');
   const mapProjection = proj4.defs('WGS84');
@@ -36,4 +37,21 @@ export function convertTo9217(ecefX, ecefY, ecefZ) {
   const [x, y] = toVN2000.forward([lon, lat]);
 
   return new THREE.Vector3(x, y, height) ;
+}
+
+export function getECEFTransformFromEPSG(x, y, z) {
+  const [lon, lat] = proj4('EPSG:9217', 'WGS84', [x, y]);
+  const rawECEF = Cesium.Cartesian3.fromDegrees(lon, lat, z);
+  const matrix = Cesium.Transforms.eastNorthUpToFixedFrame(rawECEF);
+
+  return {
+    ecef: new THREE.Vector3(rawECEF.x, rawECEF.y, rawECEF.z),
+    rawECEF, // thêm nếu cần dùng với Cesium
+    matrix: new THREE.Matrix4().set(
+      matrix[0], matrix[4], matrix[8],  matrix[12],
+      matrix[1], matrix[5], matrix[9],  matrix[13],
+      matrix[2], matrix[6], matrix[10], matrix[14],
+      matrix[3], matrix[7], matrix[11], matrix[15]
+    )
+  };
 }
