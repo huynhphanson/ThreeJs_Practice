@@ -5,6 +5,16 @@ import { modelGroups } from '../three/three-modelGroups';
 const iconButtons = document.querySelectorAll('.menu-btn');
 const panels = document.querySelectorAll('.panel')
 
+// Nếu click vào vùng UI sẽ không kích hoạt các chức năng khác
+export function isClickOnUI(event) {
+  const uiAreas = ['.sidenav-right', '.info-panel']; // các vùng muốn bỏ qua
+  return uiAreas.some(selector => {
+    const el = document.querySelector(selector);
+    return el && el.contains(event.target);
+  });
+}
+
+
 // Lọc qua các nút, ấn nút nào sẽ hiện bảng thông tin lên
 iconButtons.forEach(button => {
   button.addEventListener('click', () => {
