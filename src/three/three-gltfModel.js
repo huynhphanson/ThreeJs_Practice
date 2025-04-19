@@ -1,3 +1,4 @@
+// === LOAD GLTF + BVH + RAYCAST + HIGHLIGHT + INFOPANEL (TỔ CHỨC GỌN) ===
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/Addons.js';
@@ -6,16 +7,16 @@ import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 import { getECEFTransformFromEPSG } from './three-convertCoor.js';
 import { generateInfoDefault, generateInfoHTML } from '../utils/generateInfoHTML.js';
 import { modelGroups } from './three-modelGroups.js';
+import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 
-import proj4 from 'proj4';
+// === SETUP ===
+THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
-proj4.defs('EPSG:9217',
-  '+proj=tmerc +lat_0=0 +lon_0=108.25 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=-191.90441429,-39.30318279,-111.45032835,-0.00928836,0.01975479,-0.00427372,0.252906278 +units=m +no_defs +type=crs');
-
-// DracoLoader
 const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath( 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/' );
-dracoLoader.setDecoderConfig( { type: 'js' } );
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+dracoLoader.setDecoderConfig({ type: 'js' });
 
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
@@ -23,18 +24,15 @@ gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 let previousObjects = [];
 let previousColors = new Map();
-
 let clickHandlersRegistered = false;
-
 export let centerECEF, cameraECEF;
 
-// Get DOM Info-Panel
 const infoContent = document.getElementById('infoContent');
 infoContent.innerHTML = generateInfoDefault();
 
+// === LOAD MODEL ===
 export function loadGLTFModel(path, scene, camera, controls, category) {
   clearPreviousModel(scene);
-
   if (!modelGroups[category]) modelGroups[category] = [];
 
   gltfLoader.load(path, (gltf) => {
@@ -42,106 +40,94 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
     model.rotateX(Math.PI / 2);
     model.updateMatrixWorld(true);
 
-    const metadata = [];
-    const materialMap = new Map();
-    let idCounter = 0;
-
     const bbox = new THREE.Box3().setFromObject(model);
-    const centerEPSG = new THREE.Vector3();
-    bbox.getCenter(centerEPSG);
+    const centerEPSG = bbox.getCenter(new THREE.Vector3());
+    const { ecef: originECEF, matrix: threeMatrix } = getECEFTransformFromEPSG(centerEPSG.x, centerEPSG.y, centerEPSG.z);
+
+    const materialMap = new Map();
+    const meshes = [];
+    let groupIndex = 0;
 
     model.traverse((child) => {
-      if (child.isMesh) {
-        child.updateMatrixWorld(true);
+      if (!child.isMesh) return;
 
-        const geom = child.geometry.clone();
-        geom.applyMatrix4(child.matrixWorld);
+      child.updateMatrixWorld(true);
+      const geom = child.geometry.clone().applyMatrix4(child.matrixWorld);
+      if (!geom.index) geom.setIndex([...Array(geom.attributes.position.count).keys()]);
 
-        const objectId = new Float32Array(geom.attributes.position.count).fill(idCounter);
-        geom.setAttribute('objectId', new THREE.BufferAttribute(objectId, 1));
-
-        const colors = new Float32Array(geom.attributes.position.count * 3);
-        const c = new THREE.Color().copy(child.material.color);
-        for (let i = 0; i < colors.length; i += 3) {
-          colors[i] = c.r;
-          colors[i + 1] = c.g;
-          colors[i + 2] = c.b;
-        }
-        geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-        metadata.push({ id: idCounter, name: child.name || 'Unnamed', userData: { ...child.userData } });
-
-        const key = child.material.uuid;
-        if (!materialMap.has(key)) {
-          materialMap.set(key, { geometries: [], material: child.material });
-        }
-        materialMap.get(key).geometries.push(geom);
-        idCounter++;
+      const colorAttr = new Float32Array(geom.attributes.position.count * 3);
+      const c = child.material.color;
+      for (let i = 0; i < colorAttr.length; i += 3) {
+        colorAttr[i] = c.r; colorAttr[i + 1] = c.g; colorAttr[i + 2] = c.b;
       }
+      geom.setAttribute('color', new THREE.BufferAttribute(colorAttr, 3));
+      geom.setAttribute('objectId', new THREE.BufferAttribute(new Float32Array(geom.attributes.position.count).fill(groupIndex), 1));
+
+      const key = child.material.uuid;
+      if (!materialMap.has(key)) materialMap.set(key, { geometries: [], material: child.material, groups: [], meta: [] });
+
+      const group = materialMap.get(key);
+      const indexStart = group.geometries.reduce((acc, g) => acc + g.index.count, 0);
+
+      group.geometries.push(geom);
+      group.groups.push({ start: indexStart, count: geom.index.count, groupIndex });
+      group.meta.push({ id: groupIndex, name: child.name || 'Unnamed', userData: { ...child.userData } });
+
+      groupIndex++;
     });
 
-    const mergedMeshes = [];
-    materialMap.forEach(({ geometries, material }) => {
+    materialMap.forEach(({ geometries, material, groups, meta }) => {
       const merged = BufferGeometryUtils.mergeGeometries(geometries, true);
-      if (merged) {
-        const mesh = new THREE.Mesh(merged, material);
-        mesh.userData.metadata = metadata;
-        mergedMeshes.push(mesh);
-      }
-    });
+      if (!merged) return;
 
-    const { ecef: originECEF, matrix: threeMatrix } = getECEFTransformFromEPSG(
-      centerEPSG.x, centerEPSG.y, centerEPSG.z
-    );
+      merged.clearGroups();
+      groups.forEach(g => merged.addGroup(g.start, g.count, g.groupIndex));
+      merged.applyMatrix4(new THREE.Matrix4().makeTranslation(-centerEPSG.x, -centerEPSG.y, -centerEPSG.z));
 
-    mergedMeshes.forEach(mesh => {
-      mesh.geometry.applyMatrix4(new THREE.Matrix4().makeTranslation(-centerEPSG.x, -centerEPSG.y, -centerEPSG.z));
+      const mesh = new THREE.Mesh(merged, material);
       mesh.applyMatrix4(threeMatrix);
+      mesh.geometry.computeBoundsTree();
+      mesh.userData.metadata = meta;
+      mesh.material.vertexColors = true;
       mesh.frustumCulled = false;
-      mesh.material.roughness = 1;
-      mesh.name = category;
-      modelGroups[category].push(mesh);
+
       scene.add(mesh);
+      modelGroups[category].push(mesh);
+      meshes.push(mesh);
     });
 
-    // Camera focus
+    centerECEF = originECEF.clone();
     const offset = centerEPSG.clone().add(new THREE.Vector3(-100, -200, 300));
-    const { ecef: cameraECEF } = getECEFTransformFromEPSG(offset.x, offset.y, offset.z);
-    
-    centerECEF = new THREE.Vector3(originECEF.x, originECEF.y, originECEF.z);
-    const upVector = centerECEF.clone().normalize();
-    scene.up.copy(upVector);
-    camera.up.copy(upVector);
+    cameraECEF = getECEFTransformFromEPSG(offset.x, offset.y, offset.z).ecef;
+
+    const up = centerECEF.clone().normalize();
+    scene.up.copy(up);
+    camera.up.copy(up);
     camera.position.copy(cameraECEF);
     controls.target.copy(centerECEF);
     controls.enableDamping = true;
     controls.dampingFactor = 0.1;
     controls.update();
 
-    // CLICK + HIGHLIGHT
+    // === RAYCAST INTERACTION ===
     if (!clickHandlersRegistered) {
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
-      let isMouseDown = false;
-      let mouseDownTime = 0;
-      let mouseDownPosition = { x: 0, y: 0 };
-      let lastClickTime = 0;
-      let clickTimeout = null;
+      let isMouseDown = false, mouseDownTime = 0, lastClickTime = 0;
+      let mouseDownPosition = { x: 0, y: 0 }, clickTimeout = null;
 
-      window.addEventListener("mousedown", (event) => {
+      window.addEventListener("mousedown", (e) => {
         isMouseDown = true;
         mouseDownTime = performance.now();
-        mouseDownPosition = { x: event.clientX, y: event.clientY };
+        mouseDownPosition = { x: e.clientX, y: e.clientY };
       });
 
-      window.addEventListener("mouseup", (event) => {
+      window.addEventListener("mouseup", (e) => {
         if (!isMouseDown) return;
         isMouseDown = false;
+
         const timeDiff = performance.now() - mouseDownTime;
-        const moveDistance = Math.sqrt(
-          (event.clientX - mouseDownPosition.x) ** 2 +
-          (event.clientY - mouseDownPosition.y) ** 2
-        );
+        const moveDistance = Math.hypot(e.clientX - mouseDownPosition.x, e.clientY - mouseDownPosition.y);
         if (timeDiff > 200 || moveDistance > 5) return;
 
         const now = performance.now();
@@ -151,102 +137,73 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
         }
 
         lastClickTime = now;
-        clickTimeout = setTimeout(() => {
-          handleClick(event);
-        }, 180);
+        clickTimeout = setTimeout(() => handleClick(e), 180);
       });
 
       function handleClick(event) {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
+
         const intersects = raycaster.intersectObjects(scene.children, true);
 
-        if (Array.isArray(previousObjects)) {
-          previousObjects.forEach(obj => {
-            const colorAttr = obj.geometry?.attributes?.color;
-            const original = previousColors.get(obj);
-            if (colorAttr && original) {
-              colorAttr.array.set(original);
-              colorAttr.needsUpdate = true;
-            }
-          });
-        }
+        previousObjects.forEach(obj => {
+          const colorAttr = obj.geometry?.attributes?.color;
+          const original = previousColors.get(obj);
+          if (colorAttr && original) {
+            colorAttr.array.set(original);
+            colorAttr.needsUpdate = true;
+          }
+        });
         previousObjects = [];
         previousColors.clear();
 
-        if (intersects.length > 0) {
-          const mesh = intersects[0].object;
-          const objIdAttr = mesh.geometry?.attributes?.objectId;
-          const colorAttr = mesh.geometry?.attributes?.color;
-          const faceIndex = intersects[0].face?.a;
-          if (!objIdAttr || !colorAttr || faceIndex === undefined) return;
+        if (!intersects.length) return;
 
-          const objId = objIdAttr.array[faceIndex];
-          const backup = new Float32Array(colorAttr.array);
-          previousObjects.push(mesh);
-          previousColors.set(mesh, backup);
+        const mesh = intersects[0].object;
+        const objIdAttr = mesh.geometry?.attributes?.objectId;
+        const colorAttr = mesh.geometry?.attributes?.color;
+        const faceIndex = intersects[0].face?.a;
 
-          for (let i = 0; i < colorAttr.count; i++) {
-            if (objIdAttr.array[i] === objId) {
-              colorAttr.setXYZ(i, 0, 1, 0);
-            }
-          }
-          colorAttr.needsUpdate = true;
-          mesh.material.vertexColors = true;
-          mesh.material.needsUpdate = true;
+        if (!objIdAttr || !colorAttr || faceIndex === undefined) return;
 
-          const meta = mesh.userData.metadata?.find(obj => obj.id === objId);
-          const infoContent = document.getElementById('infoContent');
-          if (meta && infoContent) {
-            infoContent.innerHTML = generateInfoHTML(meta);
-          }
+        const objId = objIdAttr.array[faceIndex];
+        const backup = new Float32Array(colorAttr.array);
+        previousObjects.push(mesh);
+        previousColors.set(mesh, backup);
+
+        for (let i = 0; i < colorAttr.count; i++) {
+          if (objIdAttr.array[i] === objId) colorAttr.setXYZ(i, 0, 1, 0);
+        }
+        colorAttr.needsUpdate = true;
+
+        const meta = mesh.userData.metadata?.find(obj => obj.id === objId);
+        if (meta && infoContent) {
+          infoContent.innerHTML = generateInfoHTML(meta);
         }
       }
 
       clickHandlersRegistered = true;
     }
-
-  }, undefined, (err) => {
-    console.error('❌ Error loading GLTF:', err);
-  });
+  }, undefined, (err) => console.error('❌ Error loading GLTF:', err));
 }
 
-
-
+// === CLEAR MODEL ===
 function clearPreviousModel(scene) {
   const objectsToRemove = [];
-  
-  scene.traverse((child) => {
-    if (child.isMesh) {
-      objectsToRemove.push(child);
-    }
-  });
+  scene.traverse((child) => { if (child.isMesh) objectsToRemove.push(child); });
 
   objectsToRemove.forEach((object) => {
-    // 🛑 Giải phóng bộ nhớ của geometry
-    if (object.geometry) {
-      object.geometry.dispose();
-    }
-
-    // 🛑 Giải phóng bộ nhớ của material
-    if (object.material) {
-      if (Array.isArray(object.material)) {
-        object.material.forEach((material) => disposeMaterial(material));
-      } else {
-        disposeMaterial(object.material);
-      }
-    }
-
+    object.geometry?.dispose();
+    object.geometry?.disposeBoundsTree?.();
+    if (Array.isArray(object.material)) object.material.forEach(disposeMaterial);
+    else disposeMaterial(object.material);
     scene.remove(object);
   });
 }
 
-
 function disposeMaterial(material) {
   Object.keys(material).forEach((key) => {
-    if (material[key] && material[key].dispose) {
-      material[key].dispose();
-    }
+    if (material[key] && material[key].dispose) material[key].dispose();
   });
 }
