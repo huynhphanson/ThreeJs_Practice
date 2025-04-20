@@ -39,6 +39,7 @@ loadGLTFModel(gltfPath2, scene, camera, controls, 'buildings');
 /* Loop */
 function loop () {
 	requestAnimationFrame(loop);
+  composer.render();
 	labelRenderer.render(scene, camera);
 	cesiumViewer.render();
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)

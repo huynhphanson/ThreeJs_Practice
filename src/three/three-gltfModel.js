@@ -10,6 +10,7 @@ import { modelGroups } from './three-modelGroups.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import { isClickOnUI } from '../utils/ui-main.js';
 import { resetHighlight, applyHighlight } from '../utils/highlighUtils.js';
+import { outlinePass } from './three-outline.js';
 
 // === SETUP ===
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -168,7 +169,7 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
         const colorAttr = mesh.geometry?.attributes?.color;
         const faceIndex = intersects[0].face?.a;
       
-        const objId = applyHighlight(mesh, objIdAttr, colorAttr, faceIndex);
+        const objId = applyHighlight(mesh, objIdAttr, colorAttr, faceIndex, scene);
         if (objId === null) return;
       
         const meta = mesh.userData.metadata?.find(obj => obj.id === objId);

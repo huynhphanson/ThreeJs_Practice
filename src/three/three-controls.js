@@ -133,7 +133,8 @@ export function zoomTarget(event, raycaster, scene, camera, controls) {
     const colorAttr = mesh.geometry?.attributes?.color;
     const faceIndex = intersects[0].face?.a;
 
-    const objId = applyHighlight(mesh, objIdAttr, colorAttr, faceIndex);
+    const objId = applyHighlight(mesh, objIdAttr, colorAttr, faceIndex, scene);
+
     if (objId === null) return;
 
     const meta = mesh.userData.metadata?.find(obj => obj.id === objId);

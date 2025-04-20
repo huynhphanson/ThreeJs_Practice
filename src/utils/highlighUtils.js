@@ -1,32 +1,64 @@
-let previousObjects = [];
-let previousColors = new Map();
+import * as THREE from 'three'
+import { outlinePass } from "../three/three-outline";
 
-export function resetHighlight() {
-  previousObjects.forEach(obj => {
-    const colorAttr = obj.geometry?.attributes?.color;
-    const original = previousColors.get(obj);
-    if (colorAttr && original) {
-      colorAttr.array.set(original);
-      colorAttr.needsUpdate = true;
-    }
-  });
-  previousObjects = [];
-  previousColors.clear();
-}
+let currentOutlineMesh = null;
 
-export function applyHighlight(mesh, objIdAttr, colorAttr, faceIndex) {
-  if (!objIdAttr || !colorAttr || faceIndex === undefined) return null;
+export function applyHighlight(mesh, objIdAttr, colorAttr, faceIndex, scene) {
+  if (!objIdAttr || faceIndex === undefined) return null;
 
   const objId = objIdAttr.array[faceIndex];
-  const backup = new Float32Array(colorAttr.array);
-  previousObjects.push(mesh);
-  previousColors.set(mesh, backup);
 
-  for (let i = 0; i < colorAttr.count; i++) {
-    if (objIdAttr.array[i] === objId) {
-      colorAttr.setXYZ(i, 0, 1, 0);
+  // Remove old outline mesh
+  if (currentOutlineMesh) {
+    scene.remove(currentOutlineMesh);
+    currentOutlineMesh.geometry.dispose();
+    currentOutlineMesh.material.dispose();
+    currentOutlineMesh = null;
+  }
+
+  // Create new ghost mesh for selected object only
+  const index = mesh.geometry.index.array;
+  const objectId = objIdAttr.array;
+  const indices = [];
+
+  for (let i = 0; i < index.length; i += 3) {
+    const a = index[i], b = index[i + 1], c = index[i + 2];
+    if (objectId[a] === objId && objectId[b] === objId && objectId[c] === objId) {
+      indices.push(a, b, c);
     }
   }
-  colorAttr.needsUpdate = true;
+
+  const outlineGeom = new THREE.BufferGeometry();
+  outlineGeom.setAttribute('position', mesh.geometry.attributes.position);
+  outlineGeom.setIndex(indices);
+  outlineGeom.computeBoundingSphere();
+
+  const outlineMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide });
+  currentOutlineMesh = new THREE.Mesh(outlineGeom, outlineMat);
+  currentOutlineMesh.frustumCulled = false;
+  currentOutlineMesh.matrixAutoUpdate = false;
+  currentOutlineMesh.scale.set(1.01, 1.01, 1.01);
+  currentOutlineMesh.renderOrder = 999;
+  currentOutlineMesh.matrix.copy(mesh.matrixWorld);
+  currentOutlineMesh.matrixWorld.copy(mesh.matrixWorld);
+  scene.add(currentOutlineMesh);
+
+  if (outlinePass) {
+    outlinePass.selectedObjects = [currentOutlineMesh];
+  }
+
   return objId;
+}
+
+export function resetHighlight() {
+  if (outlinePass) {
+    outlinePass.selectedObjects = [];
+  }
+
+  if (currentOutlineMesh) {
+    currentOutlineMesh.parent?.remove(currentOutlineMesh);
+    currentOutlineMesh.geometry.dispose();
+    currentOutlineMesh.material.dispose();
+    currentOutlineMesh = null;
+  }
 }
