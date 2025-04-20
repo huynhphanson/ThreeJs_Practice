@@ -32,8 +32,8 @@ let previewLine = null;
 let previewLabel = null;
 let previewLine1 = null;
 let previewLabel1 = null;
-
-
+let polygonAreaLabel = null;
+let polygonMesh = null;
 
 let lastMousePosition = new THREE.Vector2();
 
@@ -168,7 +168,7 @@ export function initRuler(scene, camera, renderer, controls) {
     rendererRef.domElement.addEventListener("contextmenu", (event) => {
       if (!rulerEnabled) return;
       event.preventDefault();
-        // 👉 Trường hợp hủy đo nếu mới chọn 1 điểm
+
       if (points.length === 1 && selectedSpheres.length === 1) {
         const sphere = selectedSpheres[0];
         rulerGroup.remove(sphere);
@@ -190,25 +190,26 @@ export function initRuler(scene, camera, renderer, controls) {
         selectedSpheres = [];
         return;
       }
+
       if (points.length === 2 && selectedSpheres.length === 2) {
         const p1 = selectedSpheres[0];
         const p2 = selectedSpheres[1];
-    
+
         const measurement = drawRightTriangle(p1, p2);
         measurements.push(measurement);
-    
+
         if (previewLine1) {
           rulerGroup.remove(previewLine1.mesh);
           previewLine1.mesh.geometry.dispose();
           if (previewLine1.mesh.material.dispose) previewLine1.mesh.material.dispose();
           previewLine1 = null;
         }
-        
+
         if (previewLabel1) {
           rulerGroup.remove(previewLabel1);
           previewLabel1 = null;
         }
-        
+
         if (previewLine) {
           if (previewLine.mesh) {
             rulerGroup.remove(previewLine.mesh);
@@ -217,39 +218,111 @@ export function initRuler(scene, camera, renderer, controls) {
           }
           previewLine = null;
         }
-        
+
         if (previewLabel) {
           rulerGroup.remove(previewLabel);
           previewLabel = null;
         }
-        
-        // Nếu bạn có lưu riêng previewLine1 / previewLabel1 → xóa tương tự ở đây
-        
-    
-        // ✅ chỉ reset đo tiếp theo, KHÔNG xóa tương tác cũ
+
         points = [];
         selectedSpheres = [];
-    
-        // ✅ đảm bảo vẫn raycast được
+
         p1.raycast = THREE.Mesh.prototype.raycast;
         p2.raycast = THREE.Mesh.prototype.raycast;
-    
-        // nếu bạn reset allSpheres = [] ở đâu đó → đừng làm nữa!
+        return;
+      }
+
+      if (points.length >= 3) {
+        if (polygonMesh) rulerGroup.remove(polygonMesh);
+        if (polygonAreaLabel) rulerGroup.remove(polygonAreaLabel);
+        createPolygonArea(points);
+        if (previewLine?.mesh) {
+          rulerGroup.remove(previewLine.mesh);
+          previewLine.mesh.geometry?.dispose?.();
+          previewLine.mesh.material?.dispose?.();
+          previewLine = null;
+        }
+        if (previewLabel) {
+          rulerGroup.remove(previewLabel);
+          previewLabel = null;
+        }
+
+        points = [];
+        selectedSpheres = [];
       }
     });
-    
-    
-    
+
     clickHandlersRegistered = true;
   }
 }
 
+function createPolygonArea(points) {
+  const worldPoints = points.map(p => p.clone());
+
+  const center = computeCentroid(worldPoints);
+
+  // Dựng hệ toạ độ phẳng từ 3 điểm đầu
+  const p0 = worldPoints[0];
+  const p1 = worldPoints[1];
+  const p2 = worldPoints[2];
+
+  const xAxis = new THREE.Vector3().subVectors(p1, p0).normalize();
+  const temp = new THREE.Vector3().subVectors(p2, p0);
+  const zAxis = new THREE.Vector3().crossVectors(xAxis, temp).normalize();
+  const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+
+  const basis = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+  const inverse = basis.clone().invert();
+
+  // Convert sang mặt phẳng 2D
+  const shape2D = worldPoints.map(p => {
+    const local = p.clone().sub(p0).applyMatrix4(inverse);
+    return new THREE.Vector2(local.x, local.y);
+  });
+
+  const shape = new THREE.Shape(shape2D);
+  const geometry = new THREE.ShapeGeometry(shape);
+  geometry.computeBoundingBox();
+
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xffa500,
+    transparent: true,
+    opacity: 0.3,
+    side: THREE.DoubleSide,
+    depthTest: false,
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+
+  // Đưa geometry về đúng vị trí trong không gian 3D
+  const finalMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+  finalMatrix.setPosition(p0);
+  mesh.applyMatrix4(finalMatrix);
+
+  rulerGroup.add(mesh);
+  polygonMesh = mesh;
+
+
+  const area = Math.abs(THREE.ShapeUtils.area(shape2D));
+  const label = createLabel(`${area.toFixed(2)} m²`, center);
+  rulerGroup.add(label);
+  polygonAreaLabel = label;
+}
+
+
+
+
+
+
+
+function computeCentroid(worldPoints) {
+  const sum = worldPoints.reduce((acc, p) => acc.add(p), new THREE.Vector3());
+  return sum.divideScalar(worldPoints.length);
+}
+
 function onMouseClick(event, scene) {
   if (!rulerEnabled || event.button !== 0) return;
-  updatePreviewLine({
-    clientX: event.clientX,
-    clientY: event.clientY
-  });
+  updatePreviewLine({ clientX: event.clientX, clientY: event.clientY });
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, cameraRef);
@@ -268,14 +341,23 @@ function onMouseClick(event, scene) {
   rulerGroup.add(sphere);
   points.push(localPoint);
   selectedSpheres.push(sphere);
-  allSpheres.push(sphere); // ⚠️ phải có dòng này
+  allSpheres.push(sphere);
 
   if (points.length >= 2 && previewLine) {
     previewLine1 = previewLine;
     previewLabel1 = previewLabel;
-  
     previewLine = null;
     previewLabel = null;
+  }
+
+  // ✅ Khi điểm thứ 3 được thêm vào → tạo polygon (nếu chưa có)
+  if (points.length === 3) {
+    createPolygonArea(points);
+  } else if (points.length > 3 && polygonMesh) {
+    // Cập nhật lại polygon
+    rulerGroup.remove(polygonMesh);
+    if (polygonAreaLabel) rulerGroup.remove(polygonAreaLabel);
+    createPolygonArea(points);
   }
 }
 
