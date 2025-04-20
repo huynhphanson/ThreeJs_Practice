@@ -12,20 +12,31 @@ let clickHandlersRegistered = false;
 let allSpheres = [];
 let measurements = [];
 let allLabels = [];
-let previewLine = null;
-let previewLabel = null;
 let isAnimating = false;
 let highlightedSphere = null;
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+
 
 let isMouseDown = false;
 let mouseDownTime = 0;
 let mouseDownPosition = { x: 0, y: 0 };
 let lastClickTime = 0;
 let clickTimeout = null;
+let currentMouseHit = null;
 
 let draggingSphere = null;
+let points = [];
+let selectedSpheres = []; // 👈 song song với points
+let previewLine = null;
+let previewLabel = null;
+let previewLine1 = null;
+let previewLabel1 = null;
+
+
+
+let lastMousePosition = new THREE.Vector2();
+
 
 export function initRuler(scene, camera, renderer, controls) {
   cameraRef = camera;
@@ -48,62 +59,85 @@ export function initRuler(scene, camera, renderer, controls) {
 
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
       raycaster.setFromCamera(mouse, cameraRef);
+    
       const intersects = raycaster.intersectObjects(allSpheres, false);
-
       if (intersects.length > 0) {
         draggingSphere = intersects[0].object;
         if (controlsRef) controlsRef.enabled = false;
       }
     });
 
-    rendererRef.domElement.addEventListener("mousemove", (event) => {
-      updatePreviewLine(event);
+    rendererRef.domElement.addEventListener('mousemove', (event) => {
+      if (!rulerEnabled) return;
     
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, cameraRef);
     
-      // === Đang kéo point ===
+      // === (1) Cập nhật kéo sphere nếu đang drag
       if (draggingSphere) {
-        const visibleMeshes = collectVisibleMeshes(cameraRef.scene || rulerGroup.parent, rulerGroup);
-        const intersects = raycaster.intersectObjects(visibleMeshes, true);
-    
+        const intersects = raycaster.intersectObjects(
+          collectVisibleMeshes(rulerGroup.parent, rulerGroup), true
+        );
         if (intersects.length > 0) {
           const hit = intersects[0].point.clone();
           const localPos = hit.sub(originPoint);
           draggingSphere.position.copy(localPos);
-          updateAllMeasurements();
+          updateAllMeasurements(); // nếu bạn có đo
         }
-        return;
+        return; // ⛔ không xử lý preview line khi đang drag
       }
     
-      // === Hover point ===
-      const intersects = raycaster.intersectObjects(allSpheres);
-    
-      if (intersects.length > 0) {
-        const sphere = intersects[0].object;
-    
+      // === (2) Hover highlight sphere
+      const intersectsSphere = raycaster.intersectObjects(allSpheres, false);
+      if (intersectsSphere.length > 0) {
+        const sphere = intersectsSphere[0].object;
         if (highlightedSphere !== sphere) {
-          // Revert sphere trước đó nếu có
           if (highlightedSphere) {
             highlightedSphere.material.color.set(0xff0000);
             highlightedSphere.scale.multiplyScalar(1 / 1.5);
           }
-    
-          // Gán sphere mới
           highlightedSphere = sphere;
           highlightedSphere.material.color.set(0x00ff00);
           highlightedSphere.scale.multiplyScalar(1.5);
         }
       } else if (highlightedSphere) {
-        // Khi rời khỏi mọi sphere
         highlightedSphere.material.color.set(0xff0000);
         highlightedSphere.scale.multiplyScalar(1 / 1.5);
         highlightedSphere = null;
       }
+    
+      // === (3) Preview line (chỉ khi đang đo)
+      if (points.length > 0 && originPoint) {
+        const intersects = raycaster.intersectObjects(
+          collectVisibleMeshes(rulerGroup.parent, rulerGroup), true
+        );
+        if (intersects.length === 0) return;
+    
+        const hit = intersects[0].point.clone();
+        const localStart = points[points.length - 1].clone();
+        const localEnd = hit.clone().sub(originPoint);
+    
+        if (!previewLine) {
+          previewLine = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup);
+        } else {
+          updateLineTransform(previewLine.mesh, localStart, localEnd);
+        }
+    
+        const mid = localStart.clone().lerp(localEnd, 0.5);
+        const distance = localStart.clone().add(originPoint).distanceTo(hit);
+    
+        if (!previewLabel) {
+          previewLabel = createLabel(`${distance.toFixed(2)} m`, mid);
+        } else {
+          updateLabel(previewLabel, `${distance.toFixed(2)} m`, mid);
+        }
+      }
     });
+    
+    
+    
 
     rendererRef.domElement.addEventListener("mouseup", (event) => {
       isMouseDown = false;
@@ -131,9 +165,120 @@ export function initRuler(scene, camera, renderer, controls) {
       }, 180);
     });
 
+    rendererRef.domElement.addEventListener("contextmenu", (event) => {
+      if (!rulerEnabled) return;
+      event.preventDefault();
+        // 👉 Trường hợp hủy đo nếu mới chọn 1 điểm
+      if (points.length === 1 && selectedSpheres.length === 1) {
+        const sphere = selectedSpheres[0];
+        rulerGroup.remove(sphere);
+        allSpheres = allSpheres.filter(s => s !== sphere);
+
+        if (previewLine?.mesh) {
+          rulerGroup.remove(previewLine.mesh);
+          previewLine.mesh.geometry?.dispose?.();
+          previewLine.mesh.material?.dispose?.();
+        }
+        previewLine = null;
+
+        if (previewLabel) {
+          rulerGroup.remove(previewLabel);
+          previewLabel = null;
+        }
+
+        points = [];
+        selectedSpheres = [];
+        return;
+      }
+      if (points.length === 2 && selectedSpheres.length === 2) {
+        const p1 = selectedSpheres[0];
+        const p2 = selectedSpheres[1];
+    
+        const measurement = drawRightTriangle(p1, p2);
+        measurements.push(measurement);
+    
+        if (previewLine1) {
+          rulerGroup.remove(previewLine1.mesh);
+          previewLine1.mesh.geometry.dispose();
+          if (previewLine1.mesh.material.dispose) previewLine1.mesh.material.dispose();
+          previewLine1 = null;
+        }
+        
+        if (previewLabel1) {
+          rulerGroup.remove(previewLabel1);
+          previewLabel1 = null;
+        }
+        
+        if (previewLine) {
+          if (previewLine.mesh) {
+            rulerGroup.remove(previewLine.mesh);
+            previewLine.mesh.geometry?.dispose?.();
+            previewLine.mesh.material?.dispose?.();
+          }
+          previewLine = null;
+        }
+        
+        if (previewLabel) {
+          rulerGroup.remove(previewLabel);
+          previewLabel = null;
+        }
+        
+        // Nếu bạn có lưu riêng previewLine1 / previewLabel1 → xóa tương tự ở đây
+        
+    
+        // ✅ chỉ reset đo tiếp theo, KHÔNG xóa tương tác cũ
+        points = [];
+        selectedSpheres = [];
+    
+        // ✅ đảm bảo vẫn raycast được
+        p1.raycast = THREE.Mesh.prototype.raycast;
+        p2.raycast = THREE.Mesh.prototype.raycast;
+    
+        // nếu bạn reset allSpheres = [] ở đâu đó → đừng làm nữa!
+      }
+    });
+    
+    
+    
     clickHandlersRegistered = true;
   }
 }
+
+function onMouseClick(event, scene) {
+  if (!rulerEnabled || event.button !== 0) return;
+  updatePreviewLine({
+    clientX: event.clientX,
+    clientY: event.clientY
+  });
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, cameraRef);
+
+  const intersects = raycaster.intersectObjects(collectVisibleMeshes(scene, rulerGroup), true);
+  if (intersects.length === 0) return;
+
+  const worldPoint = intersects[0].point.clone();
+  if (!originPoint) {
+    originPoint = worldPoint.clone();
+    rulerGroup.position.copy(originPoint);
+  }
+
+  const localPoint = worldPoint.clone().sub(originPoint);
+  const sphere = createSphere(localPoint);
+  rulerGroup.add(sphere);
+  points.push(localPoint);
+  selectedSpheres.push(sphere);
+  allSpheres.push(sphere); // ⚠️ phải có dòng này
+
+  if (points.length >= 2 && previewLine) {
+    previewLine1 = previewLine;
+    previewLabel1 = previewLabel;
+  
+    previewLine = null;
+    previewLabel = null;
+  }
+}
+
 
 function animateLabels() {
   requestAnimationFrame(animateLabels);
@@ -141,45 +286,6 @@ function animateLabels() {
   updateAllLineScales(cameraRef);
 }
 
-function onMouseClick(event, scene) {
-  if (!rulerEnabled) return;
-
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  raycaster.setFromCamera(mouse, cameraRef);
-  const visibleMeshes = collectVisibleMeshes(scene, rulerGroup);
-  const intersects = raycaster.intersectObjects(visibleMeshes, true);
-
-  if (intersects.length > 0) {
-    const worldPoint = intersects[0].point.clone();
-
-    if (!originPoint) {
-      originPoint = worldPoint.clone();
-      rulerGroup.position.copy(originPoint);
-    }
-    if (previewLine) {
-      rulerGroup.remove(previewLine.mesh);
-      previewLine = null;
-    }
-    if (previewLabel) {
-      rulerGroup.remove(previewLabel);
-      previewLabel = null;
-    }
-
-    const localPoint = worldPoint.clone().sub(originPoint);
-    const sphere = createSphere(localPoint);
-    allSpheres.push(sphere);
-    rulerGroup.add(sphere);
-
-    if (allSpheres.length % 2 === 0) {
-      const p1 = allSpheres[allSpheres.length - 2];
-      const p2 = allSpheres[allSpheres.length - 1];
-      const measurement = drawRightTriangle(p1, p2);
-      measurements.push(measurement);
-    }
-  }
-}
 
 function createLeaderLine(start, end, group) {
   const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
@@ -237,20 +343,27 @@ function updateLineTransform(cylinder, p1, p2) {
   const length = direction.length();
 
   const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+  const quat = new THREE.Quaternion().setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0), direction.clone().normalize()
+  );
+
+  // === 🔁 THAY geometry mới (rất quan trọng)
+  const radius = cylinder.geometry.parameters.radiusTop || 0.05;
+  const newGeometry = new THREE.CylinderGeometry(radius, radius, length, 32, 1, true);
+
+  cylinder.geometry.dispose();
+  cylinder.geometry = newGeometry;
+
+  // Gán lại vị trí và hướng
   cylinder.position.copy(midpoint);
-
-  const scaleY = length / (cylinder.geometry.parameters.height || 1);
-  cylinder.scale.set(1, scaleY, 1);
-
-  const quat = new THREE.Quaternion();
-  quat.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
   cylinder.quaternion.copy(quat);
 
-  // Nếu shader dùng repeat, bạn có thể cập nhật tại đây:
+  // Cập nhật lại shader repeat nếu có
   if (cylinder.material?.uniforms?.repeat) {
     cylinder.material.uniforms.repeat.value = Math.max(1, length / 10);
   }
 }
+
 
 
 
@@ -272,7 +385,7 @@ function createSphere(localPosition) {
 
   const worldPos = localPosition.clone().add(originPoint || new THREE.Vector3());
   const distance = cameraRef.position.distanceTo(worldPos);
-  const radius = THREE.MathUtils.clamp(Math.log10(distance + 1) * 0.1, 0.05, 0.5); // bán kính động
+  const radius = THREE.MathUtils.clamp(Math.log10(distance + 1) * 0.1, 0.05, 0.5);
 
   const sphere = new THREE.Mesh(
     new THREE.SphereGeometry(radius, 16, 16),
@@ -281,10 +394,17 @@ function createSphere(localPosition) {
       depthTest: false,
     })
   );
+  sphere.raycast = THREE.Mesh.prototype.raycast; // ✅ giữ raycast
 
   sphere.position.copy(localPosition);
+  sphere.userData.isRulerSphere = true;
+
+  // ✅ Quan trọng: đảm bảo được raycast
+  sphere.raycast = THREE.Mesh.prototype.raycast;
+
   return sphere;
 }
+
 
 function createLabel(text, position) {
   const div = document.createElement('div');
@@ -463,44 +583,43 @@ function updateLeaderLine(line, start, end) {
   line.geometry.setFromPoints(points);
 }
 
+function updatePreviewLine(event) {
+  if (!rulerEnabled || points.length === 0) return;
 
-function updatePreviewLine(mouseEvent) {
-  if (!rulerEnabled || allSpheres.length % 2 !== 1) return;
+  const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+  const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera({ x: mouseX, y: mouseY }, cameraRef);
 
-  mouse.x = (mouseEvent.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(mouseEvent.clientY / window.innerHeight) * 2 + 1;
-
-  raycaster.setFromCamera(mouse, cameraRef);
-  const visibleMeshes = collectVisibleMeshes(rulerGroup.parent, rulerGroup);
-  const intersects = raycaster.intersectObjects(visibleMeshes, true);
-
+  const intersects = raycaster.intersectObjects(
+    collectVisibleMeshes(rulerGroup.parent, rulerGroup), true
+  );
   if (intersects.length === 0) return;
 
   const hit = intersects[0].point.clone();
-  const worldStart = allSpheres[allSpheres.length - 1].position.clone().add(originPoint);
-  const distance = worldStart.distanceTo(hit);
-
-  const localStart = allSpheres[allSpheres.length - 1].position.clone();
+  const localStart = points[points.length - 1].clone();
   const localEnd = hit.clone().sub(originPoint);
 
-  // === CHỈ tạo 1 lần, rồi update
   if (!previewLine) {
     previewLine = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup);
-    previewLine.mesh.renderOrder = 999;
-    previewLine.mesh.material.depthTest = false;
-    previewLine.mesh.material.depthWrite = false;
   } else {
     updateLineTransform(previewLine.mesh, localStart, localEnd);
   }
 
-  // === Update label
   const mid = localStart.clone().lerp(localEnd, 0.5);
+  const distance = localStart.clone().add(originPoint).distanceTo(hit);
+
   if (!previewLabel) {
     previewLabel = createLabel(`${distance.toFixed(2)} m`, mid);
   } else {
     updateLabel(previewLabel, `${distance.toFixed(2)} m`, mid);
   }
 }
+
+
+
+
+
+
 
 
 export function activateRuler() {
