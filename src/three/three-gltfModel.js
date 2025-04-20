@@ -8,6 +8,7 @@ import { getECEFTransformFromEPSG } from './three-convertCoor.js';
 import { generateInfoDefault, generateInfoHTML } from '../utils/generateInfoHTML.js';
 import { modelGroups } from './three-modelGroups.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+import { resetHighlight, applyHighlight } from '../utils/highlighUtils.js';
 
 // === SETUP ===
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -22,8 +23,6 @@ const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
-let previousObjects = [];
-let previousColors = new Map();
 let clickHandlersRegistered = false;
 export let centerECEF, cameraECEF;
 
@@ -71,7 +70,19 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
 
       group.geometries.push(geom);
       group.groups.push({ start: indexStart, count: geom.index.count, groupIndex });
-      group.meta.push({ id: groupIndex, name: child.name || 'Unnamed', userData: { ...child.userData } });
+      const box = new THREE.Box3().setFromObject(child);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+      group.meta.push({
+        id: groupIndex,
+        name: child.name || 'Unnamed',
+        userData: { ...child.userData },
+        size,
+        center
+      });
+      
 
       groupIndex++;
     });
@@ -144,39 +155,20 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
-
+      
         const intersects = raycaster.intersectObjects(scene.children, true);
-
-        previousObjects.forEach(obj => {
-          const colorAttr = obj.geometry?.attributes?.color;
-          const original = previousColors.get(obj);
-          if (colorAttr && original) {
-            colorAttr.array.set(original);
-            colorAttr.needsUpdate = true;
-          }
-        });
-        previousObjects = [];
-        previousColors.clear();
-
+        resetHighlight(); // 🧹 xóa highlight cũ
+      
         if (!intersects.length) return;
-
+      
         const mesh = intersects[0].object;
         const objIdAttr = mesh.geometry?.attributes?.objectId;
         const colorAttr = mesh.geometry?.attributes?.color;
         const faceIndex = intersects[0].face?.a;
-
-        if (!objIdAttr || !colorAttr || faceIndex === undefined) return;
-
-        const objId = objIdAttr.array[faceIndex];
-        const backup = new Float32Array(colorAttr.array);
-        previousObjects.push(mesh);
-        previousColors.set(mesh, backup);
-
-        for (let i = 0; i < colorAttr.count; i++) {
-          if (objIdAttr.array[i] === objId) colorAttr.setXYZ(i, 0, 1, 0);
-        }
-        colorAttr.needsUpdate = true;
-
+      
+        const objId = applyHighlight(mesh, objIdAttr, colorAttr, faceIndex);
+        if (objId === null) return;
+      
         const meta = mesh.userData.metadata?.find(obj => obj.id === objId);
         if (meta && infoContent) {
           infoContent.innerHTML = generateInfoHTML(meta);

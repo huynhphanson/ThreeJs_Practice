@@ -4,7 +4,9 @@ import { createCpointMesh } from './three-func';
 import { convertTo9217, convertToECEF } from './three-convertCoor';
 import { centerCameraTiles, centerECEFTiles } from './three-3dtilesModel';
 import { centerECEF, cameraECEF } from './three-gltfModel';
-
+import { resetHighlight, applyHighlight } from '../utils/highlighUtils';
+let previousObjects = [];
+let previousColors = new Map();
 let selectedObjects = [];
 function addSelectedObject( object ) {
   selectedObjects = [object];
@@ -38,7 +40,7 @@ export function onMouseMove( event, raycaster, camera, obj3d, outlinePass ) {
 };
 
 // Zoome Gsap
-function zoomAt (target, newPos, camera, controls) {
+export function zoomAt (target, newPos, camera, controls) {
 	gsap.to( camera.position, {
 		duration: 1,
 		x: newPos.x,
@@ -99,7 +101,7 @@ export function findProjectPosition (camera, controls) {
   }
 }
 
-export function zoomTarget (event, raycaster, scene, camera, controls) {
+export function zoomTarget(event, raycaster, scene, camera, controls) {
   event.preventDefault();
 
   const coords = new THREE.Vector2();
@@ -107,20 +109,54 @@ export function zoomTarget (event, raycaster, scene, camera, controls) {
   coords.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
   raycaster.setFromCamera(coords, camera);
-  const intersects = raycaster.intersectObjects(scene.children);
+  const intersects = raycaster.intersectObjects(scene.children, true);
+  if (!intersects.length) return;
 
-  if (intersects.length > 0) {
+  const object = intersects[0].object;
+  const parentType = object.parent?.type;
+
+  resetHighlight(); // 🧹 xóa highlight cũ
+
+  if (parentType === "Group") {
+    // Tiles3D hoặc group lớn
     const target = intersects[0].point;
     const cameraPosition = camera.position.clone();
     const distance = cameraPosition.sub(target);
     const direction = distance.normalize();
     const offset = distance.clone().sub(direction.multiplyScalar(15.0));
     const newPos = target.clone().sub(offset);
-
     zoomAt(target, newPos, camera, controls);
+  } else {
+    // GLTF model
+    const mesh = object;
+    const objIdAttr = mesh.geometry?.attributes?.objectId;
+    const colorAttr = mesh.geometry?.attributes?.color;
+    const faceIndex = intersects[0].face?.a;
+
+    const objId = applyHighlight(mesh, objIdAttr, colorAttr, faceIndex);
+    if (objId === null) return;
+
+    const meta = mesh.userData.metadata?.find(obj => obj.id === objId);
+    if (meta) {
+      zoomGltf(meta, camera, controls);
+    }
   }
 }
 
+export function zoomGltf(meta, camera, controls, padding = 1.2) {
+  const center = meta.center;
+  const size = meta.size;
+
+  const centerECEF = convertToECEF(center.x, center.y, center.z);
+  const maxDim = Math.max(size.x, size.y, size.z);
+
+  const fov = camera.fov * (Math.PI / 180); // đổi sang radian
+  const distance = (maxDim / 2) / Math.tan(fov / 2) * padding;
+  const direction = camera.getWorldDirection(new THREE.Vector3()).negate(); // hướng ra sau
+  const newCameraPos = centerECEF.clone().add(direction.multiplyScalar(distance));
+
+  zoomAt(centerECEF, newCameraPos, camera, controls);
+}
 
 export function getCoordinate (event, raycaster, scene, camera) {
   const coords = new THREE.Vector3();

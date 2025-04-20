@@ -13,7 +13,6 @@ import { setViewer } from './cesium/cesium-viewer.js';
 import { cursorCoor } from './three/three-cursor-coordinates.js';
 import { initRuler, activateRuler, deactivateRuler } from './three/three-ruler.js';
 
-
 /* Cesium Init */
 export const cesiumViewer = initCesium();
 setViewer(cesiumViewer);
