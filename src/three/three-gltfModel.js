@@ -8,6 +8,7 @@ import { getECEFTransformFromEPSG } from './three-convertCoor.js';
 import { generateInfoDefault, generateInfoHTML } from '../utils/generateInfoHTML.js';
 import { modelGroups } from './three-modelGroups.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+import { isClickOnUI } from '../utils/ui-main.js';
 import { resetHighlight, applyHighlight } from '../utils/highlighUtils.js';
 
 // === SETUP ===
@@ -152,6 +153,7 @@ export function loadGLTFModel(path, scene, camera, controls, category) {
       });
 
       function handleClick(event) {
+        if (isClickOnUI(event)) return; // trước raycast
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);

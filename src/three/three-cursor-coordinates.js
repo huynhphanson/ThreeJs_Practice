@@ -27,10 +27,12 @@ export function cursorCoor (raycaster, scene, camera, container) {
       
 
       divCoor.innerHTML = `
-      <div>VN2000-108°15'-3°</div>
-      <div>X(E):${coordinate.x}</div>
-      <div>Y(N):${coordinate.y}</div>
-      <div>Z(H):${coordinate.z}</div>`;
+      <span style="color: #aaa;">VN-2000/TM-3 108°15’ - EPSG:9217</span>
+      <span>X(E): ${coordinate.x} |</span>
+      <span>Y(N): ${coordinate.y} |</span>
+      <span>Z(H): ${coordinate.z}</span>
+    `;
+    
 
       container.style.display = 'block';
     } else {

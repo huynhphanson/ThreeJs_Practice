@@ -5,13 +5,13 @@ import { outlinePass, effectFXAA } from './three/three-outline.js';
 import { onMouseMove, findPosition, findProjectPosition, zoomTarget, resizeScreen, getCoordinate } from './three/three-controls.js';
 import { clearInfoTable } from '../src/utils/ui-main.js';
 import { initCesium } from './cesium/cesium-init.js';
-
 import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
 import { loadGLTFModel } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
 import { setViewer } from './cesium/cesium-viewer.js';
 import { cursorCoor } from './three/three-cursor-coordinates.js';
 import { initRuler, activateRuler, deactivateRuler } from './three/three-ruler.js';
+import { isClickOnUI } from '../src/utils/ui-main.js';
 
 /* Cesium Init */
 export const cesiumViewer = initCesium();
@@ -65,7 +65,10 @@ searchBtn.addEventListener('click', () => findPosition(scene, camera, controls))
 const oriBtn = document.querySelector('.btn-project-location'); // find project position
 oriBtn.addEventListener('click', () => findProjectPosition(camera, controls))
 // ZoomTarget
-window.addEventListener('dblclick', (event) => zoomTarget(event, raycaster, scene, camera, controls)); // zoom target position
+window.addEventListener('dblclick', (event) => {
+  if (isClickOnUI(event)) return;
+  zoomTarget(event, raycaster, scene, camera, controls)
+}); // zoom target position
 
 // Cursor Coordinates
 const sidenavRightBottom = document.querySelector('.sidenav-right-bottom');

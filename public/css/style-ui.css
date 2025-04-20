@@ -2,18 +2,11 @@
 @import './style-info-table.css';
 
 body {
-	margin: 0;
-	box-sizing: border-box;
-	background-color: #121212; /* nền tối hơn để đồng bộ */
-	color: #f0f0f0;
-}
-
-/* Sidenav left */
-.sidenav-left {
-	position: fixed;
-	top: 10px;
-	left: 10px;
-	height: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  color: #eaeaea;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 14px;
 }
 
 /* Sidenav right */
@@ -24,20 +17,22 @@ body {
 	top: 10px;
 	right: 10px;
 }
-
 .icon-bar-right i {
-	display: flex;
-	padding-top: 5px;
-	padding-bottom: 5px;
-	width: 30px;
-	height: 20px;
-	justify-content: center;
-	align-items: center;
-	border: 1px solid #555;
-	background-color: #333;
-	cursor: pointer;
-	color: #f0f0f0;
+  width: 30px;
+  height: 30px;
+  margin: 4px;
+  font-size: 16px;
+  color: white;
+  background: #1a1a1a;
+  border: none;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
+
 .icon-bar-right i:hover {
 	background-color: hsl(120, 100%, 34%);
 	border-color: hsl(150, 100%, 40%);
@@ -83,12 +78,14 @@ body {
 }
 /* Tiêu đề của bảng */
 .title-label {
-	font-size: 1.2rem;
-	font-weight: bold;
-	padding-bottom: 6px;
-	margin-bottom: 10px;
-	color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
+
 /* Phần tìm kiếm */
 .search-input {
 	width: 100%;
