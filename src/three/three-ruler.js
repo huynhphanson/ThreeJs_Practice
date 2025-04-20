@@ -268,36 +268,22 @@ function updateSphereScales(spheres, camera) {
 
 
 function createSphere(localPosition) {
+  if (!cameraRef) return null;
+
+  const worldPos = localPosition.clone().add(originPoint || new THREE.Vector3());
+  const distance = cameraRef.position.distanceTo(worldPos);
+  const radius = THREE.MathUtils.clamp(Math.log10(distance + 1) * 0.1, 0.05, 0.5); // bán kính động
+
   const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.3),
+    new THREE.SphereGeometry(radius, 16, 16),
     new THREE.MeshBasicMaterial({
       color: 0xff0000,
       depthTest: false,
     })
   );
+
   sphere.position.copy(localPosition);
-
-  // 👇 Scale ban đầu theo khoảng cách camera
-  if (cameraRef) {
-    const worldPos = localPosition.clone().add(originPoint || new THREE.Vector3());
-    const distance = cameraRef.position.distanceTo(worldPos);
-    const scale = THREE.MathUtils.clamp(distance * 0.02, 1.0, 6.0);
-
-    sphere.scale.set(scale, scale, scale);
-  }
-
   return sphere;
-}
-
-function detectEdgeTypes(p1, p2, p3) {
-  const d1 = p1.distanceTo(p2); // cạnh huyền
-  const d2 = p1.distanceTo(p3);
-  const d3 = p2.distanceTo(p3);
-
-  const max = Math.max(d1, d2, d3);
-  if (max === d1) return ['z', 'x', 'y'];      // d1 là huyền → label3: 'z'
-  if (max === d2) return ['x', 'z', 'y'];      // d2 là huyền → label1: 'z'
-  return ['y', 'x', 'z'];                      // d3 là huyền → label2: 'z'
 }
 
 function createLabel(text, position) {
@@ -369,15 +355,63 @@ function drawRightTriangle(p1Sphere, p2Sphere) {
   const leader2 = createLeaderLine(p3.clone().lerp(p2, 0.5), label2Pos, rulerGroup);
   const leader3 = createLeaderLine(p1.clone().lerp(p2, 0.5), label3Pos, rulerGroup);
 
+  const rightAngleMesh = drawRightAngleSymbol(p1, p2, p3);
+  rulerGroup.add(rightAngleMesh);
+
   return {
     p1: p1Sphere,
     p2: p2Sphere,
     lines: [line1, line2, line3],
     labels: [label1, label2, label3],
     leaders: [leader1, leader2, leader3],
+    rightAngleMesh
   };
 }
 
+export function drawRightAngleSymbol(p1, p2, p3) {
+  const dir1 = new THREE.Vector3().subVectors(p1, p3);
+  const dir2 = new THREE.Vector3().subVectors(p2, p3);
+
+  const len1 = dir1.length();
+  const len2 = dir2.length();
+
+  // Nếu cạnh quá ngắn (dưới 1m) thì không vẽ
+  const minLength = 0.5;
+  if (len1 < minLength || len2 < minLength) return null;
+
+  const n1 = dir1.clone().normalize();
+  const n2 = dir2.clone().normalize();
+
+  const scale = Math.min(len1, len2) * 0.2;
+
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(scale, 0);
+  shape.lineTo(scale, scale);
+  shape.lineTo(0, scale);
+  shape.lineTo(0, 0);
+
+  const geometry = new THREE.ShapeGeometry(shape);
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xffa500,
+    transparent: true,
+    opacity: 0.9,
+    side: THREE.DoubleSide,
+    depthTest: false,
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+
+  const zAxis = new THREE.Vector3().crossVectors(n2, n1).normalize();
+  const xAxis = n1;
+  const yAxis = n2;
+
+  const matrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+  matrix.setPosition(p3);
+  mesh.applyMatrix4(matrix);
+
+  return mesh;
+}
 
 function updateAllMeasurements() {
   for (const m of measurements) {
@@ -407,6 +441,20 @@ function updateAllMeasurements() {
     updateLeaderLine(m.leaders[0], p1.clone().lerp(p3, 0.5), label1Pos);
     updateLeaderLine(m.leaders[1], p3.clone().lerp(p2, 0.5), label2Pos);
     updateLeaderLine(m.leaders[2], p1.clone().lerp(p2, 0.5), label3Pos);
+    if (m.rightAngleMesh) {
+      rulerGroup.remove(m.rightAngleMesh);
+      m.rightAngleMesh.geometry.dispose();
+      m.rightAngleMesh.material.dispose();
+      m.rightAngleMesh = null;
+    }
+    
+    const newRightAngle = drawRightAngleSymbol(p1, p2, p3);
+    if (newRightAngle) {
+      rulerGroup.add(newRightAngle);
+      m.rightAngleMesh = newRightAngle;
+    }
+    
+    
   }
 }
 
