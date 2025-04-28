@@ -17,7 +17,6 @@ let highlightedSphere = null;
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-
 let isMouseDown = false;
 let mouseDownTime = 0;
 let mouseDownPosition = { x: 0, y: 0 };
@@ -36,6 +35,7 @@ let polygonAreaLabel = null;
 let polygonMesh = null;
 
 let lastMousePosition = new THREE.Vector2();
+let totalLengthLabel = null;
 
 
 export function initRuler(scene, camera, renderer, controls) {
@@ -235,7 +235,7 @@ export function initRuler(scene, camera, renderer, controls) {
       if (points.length >= 3) {
         if (polygonMesh) rulerGroup.remove(polygonMesh);
         if (polygonAreaLabel) rulerGroup.remove(polygonAreaLabel);
-        createPolygonArea(points);
+        finalizePolylineMeasurement(points);
         if (previewLine?.mesh) {
           rulerGroup.remove(previewLine.mesh);
           previewLine.mesh.geometry?.dispose?.();
@@ -256,58 +256,57 @@ export function initRuler(scene, camera, renderer, controls) {
   }
 }
 
-function createPolygonArea(points) {
+function finalizePolylineMeasurement(points) {
   const worldPoints = points.map(p => p.clone());
-
   const center = computeCentroid(worldPoints);
 
-  // Dựng hệ toạ độ phẳng từ 3 điểm đầu
-  const p0 = worldPoints[0];
-  const p1 = worldPoints[1];
-  const p2 = worldPoints[2];
+  // Xoá nếu tồn tại cũ
+  if (polygonMesh) {
+    rulerGroup.remove(polygonMesh);
+    polygonMesh.geometry.dispose();
+    polygonMesh.material.dispose();
+    polygonMesh = null;
+  }
 
-  const xAxis = new THREE.Vector3().subVectors(p1, p0).normalize();
-  const temp = new THREE.Vector3().subVectors(p2, p0);
-  const zAxis = new THREE.Vector3().crossVectors(xAxis, temp).normalize();
-  const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+  if (polygonAreaLabel) {
+    rulerGroup.remove(polygonAreaLabel);
+    polygonAreaLabel = null;
+  }
 
-  const basis = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
-  const inverse = basis.clone().invert();
+  if (totalLengthLabel) {
+    rulerGroup.remove(totalLengthLabel);
+    totalLengthLabel = null;
+  }
 
-  // Convert sang mặt phẳng 2D
-  const shape2D = worldPoints.map(p => {
-    const local = p.clone().sub(p0).applyMatrix4(inverse);
-    return new THREE.Vector2(local.x, local.y);
-  });
+  // Vẽ các cạnh và nhãn độ dài từng đoạn
+  for (let i = 0; i < worldPoints.length - 1; i++) {
+    const start = worldPoints[i];
+    const end = worldPoints[i + 1];
 
-  const shape = new THREE.Shape(shape2D);
-  const geometry = new THREE.ShapeGeometry(shape);
-  geometry.computeBoundingBox();
+    const localStart = start.clone().sub(originPoint);
+    const localEnd = end.clone().sub(originPoint);
 
-  const material = new THREE.MeshBasicMaterial({
-    color: 0xffa500,
-    transparent: true,
-    opacity: 0.3,
-    side: THREE.DoubleSide,
-    depthTest: false,
-  });
+    drawMeasureLine(localStart, localEnd, 0.05, rulerGroup);
 
-  const mesh = new THREE.Mesh(geometry, material);
+    const mid = localStart.clone().lerp(localEnd, 0.5);
+    const distance = start.distanceTo(end);
+    createLabel(`${distance.toFixed(2)} m`, mid);
+  }
 
-  // Đưa geometry về đúng vị trí trong không gian 3D
-  const finalMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
-  finalMatrix.setPosition(p0);
-  mesh.applyMatrix4(finalMatrix);
+  // Tính tổng chiều dài (không nối kín nữa)
+  const totalLength = worldPoints.reduce((acc, curr, i, arr) => {
+    if (i < arr.length - 1) {
+      return acc + curr.distanceTo(arr[i + 1]);
+    }
+    return acc;
+  }, 0);
 
-  rulerGroup.add(mesh);
-  polygonMesh = mesh;
-
-
-  const area = Math.abs(THREE.ShapeUtils.area(shape2D));
-  const label = createLabel(`${area.toFixed(2)} m²`, center);
-  rulerGroup.add(label);
-  polygonAreaLabel = label;
+  // Tạo nhãn tổng
+  totalLengthLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center);
+  rulerGroup.add(totalLengthLabel);
 }
+
+
 
 
 
@@ -348,16 +347,6 @@ function onMouseClick(event, scene) {
     previewLabel1 = previewLabel;
     previewLine = null;
     previewLabel = null;
-  }
-
-  // ✅ Khi điểm thứ 3 được thêm vào → tạo polygon (nếu chưa có)
-  if (points.length === 3) {
-    createPolygonArea(points);
-  } else if (points.length > 3 && polygonMesh) {
-    // Cập nhật lại polygon
-    rulerGroup.remove(polygonMesh);
-    if (polygonAreaLabel) rulerGroup.remove(polygonAreaLabel);
-    createPolygonArea(points);
   }
 }
 
@@ -760,4 +749,3 @@ function updateAllLineScales(camera) {
     updateLineThickness(previewLine.mesh, camera);
   }
 }
-
