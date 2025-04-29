@@ -36,6 +36,85 @@ let polygonMesh = null;
 
 let lastMousePosition = new THREE.Vector2();
 let totalLengthLabel = null;
+let polylineLines = [];
+let polylineLabels = [];
+let polylineTotalLabel = null;
+let finalized = false;
+
+
+function finalizePolylineMeasurement(points) {
+  // Clear polylineLines và polylineLabels cũ nếu có
+  polylineLines.forEach(l => {
+    rulerGroup.remove(l);
+    l.geometry.dispose();
+    l.material.dispose();
+  });
+  polylineLabels.forEach(l => {
+    rulerGroup.remove(l);
+  });
+  if (polylineTotalLabel) rulerGroup.remove(polylineTotalLabel);
+
+  polylineLines = [];
+  polylineLabels = [];
+  polylineTotalLabel = null;
+
+  const worldPoints = points.map(p => p.clone());
+  let totalLength = 0;
+
+  for (let i = 0; i < worldPoints.length - 1; i++) {
+    const start = worldPoints[i];
+    const end = worldPoints[i + 1];
+
+    const localStart = start.clone().sub(originPoint);
+    const localEnd = end.clone().sub(originPoint);
+
+    const { mesh: line } = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup);
+    polylineLines.push(line);
+
+    const mid = localStart.clone().lerp(localEnd, 0.5);
+    const distance = start.distanceTo(end);
+    const label = createLabel(`${distance.toFixed(2)} m`, mid);
+    polylineLabels.push(label);
+
+    totalLength += distance;
+  }
+
+  const center = computeCentroid(worldPoints);
+  polylineTotalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center);
+  rulerGroup.add(polylineTotalLabel); // ✅ Add nhãn tổng vào rulerGroup
+
+}
+
+function updatePolylineDisplay() {
+  const worldPoints = points.map(p => p.clone().add(originPoint));
+  let totalLength = 0;
+
+  for (let i = 0; i < worldPoints.length - 1; i++) {
+    const start = worldPoints[i];
+    const end = worldPoints[i + 1];
+
+    const localStart = start.clone().sub(originPoint);
+    const localEnd = end.clone().sub(originPoint);
+
+    updateLineTransform(polylineLines[i], localStart, localEnd);
+
+    const mid = localStart.clone().lerp(localEnd, 0.5);
+    const distance = start.distanceTo(end);
+
+    updateLabel(polylineLabels[i], `${distance.toFixed(2)} m`, mid);
+    totalLength += distance;
+  }
+
+  const center = computeCentroid(worldPoints);
+
+  // 🛠 Fix: Nếu polylineTotalLabel không còn thì tạo lại
+  if (!polylineTotalLabel) {
+    polylineTotalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center);
+    rulerGroup.add(polylineTotalLabel); // ✅ phải add vào lại
+  } else {
+    updateLabel(polylineTotalLabel, `Tổng: ${totalLength.toFixed(2)} m`, center);
+  }
+}
 
 
 export function initRuler(scene, camera, renderer, controls) {
@@ -83,11 +162,22 @@ export function initRuler(scene, camera, renderer, controls) {
         if (intersects.length > 0) {
           const hit = intersects[0].point.clone();
           const localPos = hit.sub(originPoint);
+      
           draggingSphere.position.copy(localPos);
-          updateAllMeasurements(); // nếu bạn có đo
+      
+          const index = selectedSpheres.indexOf(draggingSphere);
+          if (index !== -1) {
+            points[index].copy(localPos); // 👈 đây là dòng cực kỳ quan trọng
+          }
+      
+          updateAllMeasurements(); // update tam giác
+          if (points.length >= 3 && polylineLines.length > 0) {
+            updatePolylineDisplay(); // update tổng chiều dài
+          }
         }
-        return; // ⛔ không xử lý preview line khi đang drag
+        return;
       }
+      
     
       // === (2) Hover highlight sphere
       const intersectsSphere = raycaster.intersectObjects(allSpheres, false);
@@ -109,7 +199,7 @@ export function initRuler(scene, camera, renderer, controls) {
       }
     
       // === (3) Preview line (chỉ khi đang đo)
-      if (points.length > 0 && originPoint) {
+      if (points.length > 0 && originPoint && !finalized) {
         const intersects = raycaster.intersectObjects(
           collectVisibleMeshes(rulerGroup.parent, rulerGroup), true
         );
@@ -236,6 +326,7 @@ export function initRuler(scene, camera, renderer, controls) {
         if (polygonMesh) rulerGroup.remove(polygonMesh);
         if (polygonAreaLabel) rulerGroup.remove(polygonAreaLabel);
         finalizePolylineMeasurement(points);
+        finalized = true;
         if (previewLine?.mesh) {
           rulerGroup.remove(previewLine.mesh);
           previewLine.mesh.geometry?.dispose?.();
@@ -247,8 +338,8 @@ export function initRuler(scene, camera, renderer, controls) {
           previewLabel = null;
         }
 
-        points = [];
-        selectedSpheres = [];
+        // points = [];
+        // selectedSpheres = [];
       }
     });
 
@@ -256,71 +347,14 @@ export function initRuler(scene, camera, renderer, controls) {
   }
 }
 
-function finalizePolylineMeasurement(points) {
-  const worldPoints = points.map(p => p.clone());
-  const center = computeCentroid(worldPoints);
-
-  // Xoá nếu tồn tại cũ
-  if (polygonMesh) {
-    rulerGroup.remove(polygonMesh);
-    polygonMesh.geometry.dispose();
-    polygonMesh.material.dispose();
-    polygonMesh = null;
-  }
-
-  if (polygonAreaLabel) {
-    rulerGroup.remove(polygonAreaLabel);
-    polygonAreaLabel = null;
-  }
-
-  if (totalLengthLabel) {
-    rulerGroup.remove(totalLengthLabel);
-    totalLengthLabel = null;
-  }
-
-  // Vẽ các cạnh và nhãn độ dài từng đoạn
-  for (let i = 0; i < worldPoints.length - 1; i++) {
-    const start = worldPoints[i];
-    const end = worldPoints[i + 1];
-
-    const localStart = start.clone().sub(originPoint);
-    const localEnd = end.clone().sub(originPoint);
-
-    drawMeasureLine(localStart, localEnd, 0.05, rulerGroup);
-
-    const mid = localStart.clone().lerp(localEnd, 0.5);
-    const distance = start.distanceTo(end);
-    createLabel(`${distance.toFixed(2)} m`, mid);
-  }
-
-  // Tính tổng chiều dài (không nối kín nữa)
-  const totalLength = worldPoints.reduce((acc, curr, i, arr) => {
-    if (i < arr.length - 1) {
-      return acc + curr.distanceTo(arr[i + 1]);
-    }
-    return acc;
-  }, 0);
-
-  // Tạo nhãn tổng
-  totalLengthLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center);
-  rulerGroup.add(totalLengthLabel);
-}
-
-
-
-
-
-
-
-
-
 function computeCentroid(worldPoints) {
   const sum = worldPoints.reduce((acc, p) => acc.add(p), new THREE.Vector3());
   return sum.divideScalar(worldPoints.length);
 }
 
 function onMouseClick(event, scene) {
-  if (!rulerEnabled || event.button !== 0) return;
+  if (!rulerEnabled || event.button !== 0 || finalized) return;
+
   updatePreviewLine({ clientX: event.clientX, clientY: event.clientY });
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
