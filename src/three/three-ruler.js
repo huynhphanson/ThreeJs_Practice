@@ -44,6 +44,7 @@ let finalized = false;
 
 function finalizePolylineMeasurement(points) {
   // Clear polylineLines và polylineLabels cũ nếu có
+  
   polylineLines.forEach(l => {
     rulerGroup.remove(l);
     l.geometry.dispose();
@@ -68,9 +69,9 @@ function finalizePolylineMeasurement(points) {
     const localStart = start.clone().sub(originPoint);
     const localEnd = end.clone().sub(originPoint);
 
-    const { mesh: line } = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup);
+    const line = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup).mesh;
     polylineLines.push(line);
-
+    
     const mid = localStart.clone().lerp(localEnd, 0.5);
     const distance = start.distanceTo(end);
     const label = createLabel(`${distance.toFixed(2)} m`, mid);
@@ -84,11 +85,30 @@ function finalizePolylineMeasurement(points) {
   
   polylineTotalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, centerLocal);
   rulerGroup.add(polylineTotalLabel);
-  
-
 }
 
 function updatePolylineDisplay() {
+  // 🧹 Remove all old polyline lines from rulerGroup
+  rulerGroup.children
+    .filter(obj => obj.userData?.isPolyline)
+    .forEach(line => {
+      line.geometry.dispose();
+      line.material.dispose();
+      line.removeFromParent();
+    });
+  // 🧹 Remove all old polyline labels from rulerGroup
+  rulerGroup.children
+    .filter(obj => obj.isCSS2DObject && obj.userData?.isPolylineLabel)
+    .forEach(label => label.removeFromParent());
+
+  polylineLines = [];
+  polylineLabels.forEach(l => rulerGroup.remove(l));
+  polylineLabels = [];
+  if (polylineTotalLabel) {
+    rulerGroup.remove(polylineTotalLabel);
+    polylineTotalLabel = null;
+  }
+    
   const worldPoints = points.map(p => p.clone().add(originPoint));
   let totalLength = 0;
 
@@ -99,21 +119,24 @@ function updatePolylineDisplay() {
     const localStart = start.clone().sub(originPoint);
     const localEnd = end.clone().sub(originPoint);
 
-    updateLineTransform(polylineLines[i], localStart, localEnd);
+    const line = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup).mesh;
+    polylineLines.push(line);    
 
     const mid = localStart.clone().lerp(localEnd, 0.5);
     const distance = start.distanceTo(end);
+    const label = createLabel(`${distance.toFixed(2)} m`, mid);
+    label.userData.isPolylineLabel = true;
+    polylineLabels.push(label);
 
-    updateLabel(polylineLabels[i], `${distance.toFixed(2)} m`, mid);
     totalLength += distance;
   }
 
   const centerWorld = computeCentroid(worldPoints);
   const centerLocal = centerWorld.clone().sub(originPoint);
-  
-  updateLabel(polylineTotalLabel, `Tổng: ${totalLength.toFixed(2)} m`, centerLocal);
-  
+  polylineTotalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, centerLocal);
+  rulerGroup.add(polylineTotalLabel);
 }
+
 
 
 export function initRuler(scene, camera, renderer, controls) {
@@ -438,6 +461,7 @@ function drawMeasureLine(p1, p2, radius = 0.1, group = null) {
   const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
   cylinder.position.copy(midpoint);
   cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  cylinder.userData.isPolyline = true; // đánh dấu line là polyline
 
   if (group) group.add(cylinder);
   return { mesh: cylinder };
@@ -522,8 +546,10 @@ function createLabel(text, position) {
   div.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
   div.style.padding = '2px 6px';
   div.style.borderRadius = '4px';
-
+  
   const label = new CSS2DObject(div);
+  label.userData.isPolylineLabel = true; // 👈 flag để sau này tìm xoá
+
   label.position.copy(position);
   rulerGroup.add(label);
   return label;
