@@ -377,7 +377,20 @@ function computeCentroid(worldPoints) {
 }
 
 function onMouseClick(event, scene) {
-  if (!rulerEnabled || event.button !== 0 || finalized) return;
+  if (!rulerEnabled || event.button !== 0) return;
+
+  if (finalized) {
+    points = [];
+    selectedSpheres = [];
+    finalized = false;
+
+    previewLine = null;
+    previewLabel = null;
+    previewLine1 = null;
+    previewLabel1 = null;
+    polygonAreaLabel = null;
+    polygonMesh = null;
+  }
 
   updatePreviewLine({ clientX: event.clientX, clientY: event.clientY });
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
