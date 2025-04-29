@@ -79,9 +79,12 @@ function finalizePolylineMeasurement(points) {
     totalLength += distance;
   }
 
-  const center = computeCentroid(worldPoints);
-  polylineTotalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center);
-  rulerGroup.add(polylineTotalLabel); // ✅ Add nhãn tổng vào rulerGroup
+  const centerWorld = computeCentroid(worldPoints);
+  const centerLocal = centerWorld.clone().sub(originPoint);
+  
+  polylineTotalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, centerLocal);
+  rulerGroup.add(polylineTotalLabel);
+  
 
 }
 
@@ -105,15 +108,11 @@ function updatePolylineDisplay() {
     totalLength += distance;
   }
 
-  const center = computeCentroid(worldPoints);
-
-  // 🛠 Fix: Nếu polylineTotalLabel không còn thì tạo lại
-  if (!polylineTotalLabel) {
-    polylineTotalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center);
-    rulerGroup.add(polylineTotalLabel); // ✅ phải add vào lại
-  } else {
-    updateLabel(polylineTotalLabel, `Tổng: ${totalLength.toFixed(2)} m`, center);
-  }
+  const centerWorld = computeCentroid(worldPoints);
+  const centerLocal = centerWorld.clone().sub(originPoint);
+  
+  updateLabel(polylineTotalLabel, `Tổng: ${totalLength.toFixed(2)} m`, centerLocal);
+  
 }
 
 
