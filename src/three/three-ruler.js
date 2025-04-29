@@ -324,8 +324,12 @@ export function initRuler(scene, camera, renderer, controls) {
       if (points.length >= 3) {
         if (polygonMesh) rulerGroup.remove(polygonMesh);
         if (polygonAreaLabel) rulerGroup.remove(polygonAreaLabel);
+      
         finalizePolylineMeasurement(points);
         finalized = true;
+      
+        updatePolylineDisplay(); // ✅ thêm dòng này vào đây
+      
         if (previewLine?.mesh) {
           rulerGroup.remove(previewLine.mesh);
           previewLine.mesh.geometry?.dispose?.();
@@ -336,10 +340,8 @@ export function initRuler(scene, camera, renderer, controls) {
           rulerGroup.remove(previewLabel);
           previewLabel = null;
         }
-
-        // points = [];
-        // selectedSpheres = [];
       }
+      
     });
 
     clickHandlersRegistered = true;
