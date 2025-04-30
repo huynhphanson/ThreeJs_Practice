@@ -35,9 +35,7 @@ let previewLabel = null;
 let isAnimating = false;
 let hasDragged = false;
 let originalDragPosition = null;
-let pendingCancelDrag = false;
-let suppressNextRightClick = false;
-let canceledDragByRightClick = false;
+
 
 let pointGroups = [];
 let sphereGroups = [];
@@ -100,21 +98,6 @@ function handleMouseMove(event) {
 
   // === (1) Drag sphere
   if (draggingSphere) {
-    if (pendingCancelDrag) {
-      draggingSphere.position.copy(originalDragPosition);
-      const groupIndex = sphereGroups.findIndex(g => g.includes(draggingSphere));
-      if (groupIndex !== -1) {
-        const index = sphereGroups[groupIndex].indexOf(draggingSphere);
-        pointGroups[groupIndex][index].copy(originalDragPosition);
-        regeneratePolygon(groupIndex);
-      }
-      pendingCancelDrag = false;
-      suppressNextRightClick = true;
-      draggingSphere = null;
-      originalDragPosition = null;
-      if (controlsRef) controlsRef.enabled = true;
-      return;
-    }
     
     // ✅ Thực hiện drag bình thường
     const intersects = raycaster.intersectObjects(collectVisibleMeshes(areaGroup.parent, areaGroup), true);
@@ -187,34 +170,49 @@ function handleMouseMove(event) {
 function handleMouseUp(event) {
   isMouseDown = false;
   const timeDiff = performance.now() - mouseDownTime;
-  const moveDistance = Math.hypot(event.clientX - mouseDownPosition.x, event.clientY - mouseDownPosition.y);
-  if (timeDiff > 200 || moveDistance > 5) return;
+  const moveDistance = Math.hypot(
+    event.clientX - mouseDownPosition.x,
+    event.clientY - mouseDownPosition.y
+  );
 
-  const now = performance.now();
-  if (now - lastClickTime < 180) {
-    clearTimeout(clickTimeout);
-    return;
-  };
-  draggingSphere = null;
   if (controlsRef) controlsRef.enabled = true;
 
   if (hasDragged) {
     hasDragged = false;
-    draggingSphere = null;
-    if (controlsRef) controlsRef.enabled = true;
+    // ⛔ KHÔNG reset draggingSphere ở đây – chờ click phải xử lý
     return;
   }
-  
+
+  draggingSphere = null; // ✅ Chỉ reset nếu không drag
+
+  const now = performance.now();
+  if (timeDiff > 200 || moveDistance > 5 || now - lastClickTime < 180) {
+    clearTimeout(clickTimeout);
+    return;
+  }
+
   lastClickTime = now;
   clickTimeout = setTimeout(() => {
     onMouseClick(event, areaGroup.parent);
   }, 180);
 }
 
+
 function handleRightClick(event) {
   if (!areaEnabled) return;
+
+  const timeDiff = performance.now() - rightMouseDownTime;
+  const moveDistance = Math.hypot(
+    event.clientX - rightMouseDownPosition.x,
+    event.clientY - rightMouseDownPosition.y
+  );
+  isRightMouseDown = false;
+
+  if (timeDiff > 200 || moveDistance > 5) return;
+  event.preventDefault();
+
+  // ✅ Nếu đang drag thì hủy drag, không thực hiện đo
   if (draggingSphere) {
-    // 🛑 Hủy drag và khôi phục vị trí
     draggingSphere.position.copy(originalDragPosition);
 
     const groupIndex = sphereGroups.findIndex(g => g.includes(draggingSphere));
@@ -226,30 +224,19 @@ function handleRightClick(event) {
 
     draggingSphere = null;
     originalDragPosition = null;
-    canceledDragByRightClick = true; // 👈 Ghi nhận rằng click phải dùng để huỷ drag
+    hasDragged = false; // tránh hiểu lầm click sau đó
     if (controlsRef) controlsRef.enabled = true;
-    event.preventDefault();
-    return; // ❌ Không thực hiện đo diện tích
-  }
 
-  if (canceledDragByRightClick) {
-    canceledDragByRightClick = false; // 👈 Bỏ qua 1 lần click phải sau khi hủy drag
-    event.preventDefault();
-    return;
+    return; // ⛔ Không đo diện tích nữa
   }
-  
-  
-  const timeDiff = performance.now() - rightMouseDownTime;
-  const moveDistance = Math.hypot(event.clientX - rightMouseDownPosition.x, event.clientY - rightMouseDownPosition.y);
-  isRightMouseDown = false;
-  if (timeDiff > 200 || moveDistance > 5) return;
-  event.preventDefault();
 
   const currentPoints = pointGroups.at(-1);
   if (!currentPoints || currentPoints.length < 3) return;
 
+  // ✅ Thực hiện finalizePolygon bình thường
   finalizePolygon(pointGroups.length - 1);
-  // Xoá hết các line và label của preview (chắc chắn)
+
+  // Xoá preview line & label
   if (previewLine?.mesh) {
     areaGroup.remove(previewLine.mesh);
     previewLine.mesh.geometry.dispose();
@@ -262,18 +249,6 @@ function handleRightClick(event) {
   }
 
   const groupIndex = pointGroups.length - 1;
-  if (previewLine) {
-    areaGroup.remove(previewLine.mesh);
-    previewLine.mesh.geometry.dispose();
-    previewLine.mesh.material.dispose();
-    previewLine = null;
-  }
-  if (previewLabel) {
-    areaGroup.remove(previewLabel);
-    previewLabel = null;
-  }
-
-  // Clear preview and finalize polygon by closing loop
   const first = pointGroups[groupIndex][0];
   const last = pointGroups[groupIndex].at(-1);
   if (first && last && !first.equals(last)) {
@@ -288,25 +263,11 @@ function handleRightClick(event) {
     areaGroup.add(label);
   }
 
-  finalized = true;
-
-  if (previewLine?.mesh) {
-    areaGroup.remove(previewLine.mesh);
-    previewLine.mesh.geometry.dispose();
-    previewLine.mesh.material.dispose();
-    previewLine = null;
-  }
-  if (previewLabel) {
-    areaGroup.remove(previewLabel);
-    previewLabel = null;
-  };
-
-  // ✅ Reset preview sau khi xác nhận
   previewLine = null;
   previewLabel = null;
   finalized = true;
-
 }
+
 
 function onMouseClick(event, scene) {
   if (!areaEnabled || event.button !== 0) return;
