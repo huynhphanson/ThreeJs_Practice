@@ -83,18 +83,27 @@ let rulerActive = false;
 
 rulerBtn.addEventListener('click', () => {
   rulerActive = !rulerActive;
+
+  // Tắt area nếu đang bật
+  if (areaActive) {
+    areaActive = false;
+    deactivateRulerArea();
+    areaBtn.classList.remove('i-active');
+  }
+
   if (rulerActive) {
     if (!rulerInitialized) {
       initRuler(scene, camera, renderer, controls);
       rulerInitialized = true;
     }
-    activateRuler(); // << Bật ruler
+    activateRuler();
     rulerBtn.classList.add('i-active');
   } else {
-    deactivateRuler(); // << Tắt ruler
+    deactivateRuler();
     rulerBtn.classList.remove('i-active');
   }
 });
+
 
 // Ruler Area
 const areaBtn = document.querySelector('.fa-draw-polygon');
@@ -103,6 +112,14 @@ let areaActive = false;
 
 areaBtn.addEventListener('click', () => {
   areaActive = !areaActive;
+
+  // Tắt ruler nếu đang bật
+  if (rulerActive) {
+    rulerActive = false;
+    deactivateRuler();
+    rulerBtn.classList.remove('i-active');
+  }
+
   if (areaActive) {
     if (!areaInitialized) {
       initRulerArea(scene, camera, renderer, controls);
@@ -115,3 +132,4 @@ areaBtn.addEventListener('click', () => {
     areaBtn.classList.remove('i-active');
   }
 });
+
