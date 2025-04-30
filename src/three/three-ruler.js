@@ -15,23 +15,17 @@ import {
   createMeasureLineMaterial
 } from './three-ruler-utils.js';
 
+// === Biến toàn cục ===
 let cameraRef, rendererRef, controlsRef;
 let rulerGroup = new THREE.Group();
 let originPoint = null;
 let rulerEnabled = false;
 let clickHandlersRegistered = false;
+let isAnimating = false;
+
 let allSpheres = [];
 let measurements = [];
-let isAnimating = false;
 let highlightedSphere = null;
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
-let isMouseDown = false;
-let mouseDownTime = 0;
-let mouseDownPosition = { x: 0, y: 0 };
-let lastClickTime = 0;
-let clickTimeout = null;
 
 let draggingSphere = null;
 
@@ -42,21 +36,30 @@ let previewLabel1 = null;
 let polygonAreaLabel = null;
 let polygonMesh = null;
 
-let lastMousePosition = new THREE.Vector2();
-let totalLengthLabel = null;
-
 let finalized = false;
+
 let pointGroups = [];
 let sphereGroups = [];
 let lineGroups = [];
 let labelGroups = [];
 let totalLabels = [];
 
+let isMouseDown = false;
+let mouseDownTime = 0;
+let mouseDownPosition = { x: 0, y: 0 };
+let lastClickTime = 0;
+let clickTimeout = null;
+
 let isRightMouseDown = false;
 let rightMouseDownTime = 0;
 let rightMouseDownPosition = { x: 0, y: 0 };
 
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+const lastMousePosition = new THREE.Vector2();
+let totalLengthLabel = null;
 
+// === Khởi tạo ===
 export function initRuler(scene, camera, renderer, controls) {
   cameraRef = camera;
   rendererRef = renderer;
@@ -77,6 +80,7 @@ export function initRuler(scene, camera, renderer, controls) {
     clickHandlersRegistered = true;
   }
 }
+
 function handleMouseDown(event) {
   isMouseDown = true;
   mouseDownTime = performance.now();
@@ -100,7 +104,6 @@ function handleMouseDown(event) {
     if (controlsRef) controlsRef.enabled = false;
   }
 }
-
 
 function handleMouseMove(event) {
   if (!rulerEnabled) return;
@@ -351,6 +354,13 @@ function onMouseClick(event, scene) {
   }
 }
 
+// === Core Logic ===
+function animateLabels() {
+  requestAnimationFrame(animateLabels);
+  updateSphereScales(allSpheres, cameraRef);
+  updateAllLineScales(cameraRef);
+}
+
 function finalizePolylineMeasurement(groupIndex) {
   if (!pointGroups[groupIndex] || pointGroups[groupIndex].length < 2) return;
 
@@ -404,7 +414,6 @@ function regenerateLinesAndLabels(groupIndex) {
     totalLength += dist;
   }
   
-
   const center = computeCentroid(worldPoints).sub(originPoint);
   const totalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center, groupIndex, rulerGroup);
   totalLabels[groupIndex] = totalLabel;
@@ -441,12 +450,7 @@ function regenerateLinesAndLabels(groupIndex) {
   });
 }
 
-function animateLabels() {
-  requestAnimationFrame(animateLabels);
-  updateSphereScales(allSpheres, cameraRef);
-  updateAllLineScales(cameraRef);
-}
-
+// === Vẽ các thành phần ===
 function drawMeasureLine(p1, p2, radius = 0.1, group = null, type = 'polyline', groupIndex = null) {
   const direction = new THREE.Vector3().subVectors(p2, p1);
   const length = direction.length();
@@ -472,44 +476,6 @@ function drawMeasureLine(p1, p2, radius = 0.1, group = null, type = 'polyline', 
 
   if (group) group.add(cylinder);
   return { mesh: cylinder };
-}
-
-function updateSphereScales(spheres, camera) {
-  const cameraPos = camera.position;
-  spheres.forEach(sphere => {
-    // ⚠️ Bỏ qua point đang được hover
-    if (sphere === highlightedSphere) return;
-
-    const distance = sphere.getWorldPosition(new THREE.Vector3()).distanceTo(cameraPos);
-    const scale = THREE.MathUtils.clamp(distance * 0.02, 1.0, 6.0);
-    sphere.scale.set(scale, scale, scale);
-  });
-}
-
-
-function createSphere(localPosition) {
-  if (!cameraRef) return null;
-
-  const worldPos = localPosition.clone().add(originPoint || new THREE.Vector3());
-  const distance = cameraRef.position.distanceTo(worldPos);
-  const radius = THREE.MathUtils.clamp(Math.log10(distance + 1) * 0.1, 0.05, 0.5);
-
-  const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 16, 16),
-    new THREE.MeshBasicMaterial({
-      color: 0xff0000,
-      depthTest: false,
-    })
-  );
-  sphere.raycast = THREE.Mesh.prototype.raycast; // ✅ giữ raycast
-
-  sphere.position.copy(localPosition);
-  sphere.userData.isRulerSphere = true;
-
-  // ✅ Quan trọng: đảm bảo được raycast
-  sphere.raycast = THREE.Mesh.prototype.raycast;
-
-  return sphere;
 }
 
 function drawRightTriangle(p1Sphere, p2Sphere) {
@@ -600,6 +566,32 @@ export function drawRightAngleSymbol(p1, p2, p3) {
   return mesh;
 }
 
+function createSphere(localPosition) {
+  if (!cameraRef) return null;
+
+  const worldPos = localPosition.clone().add(originPoint || new THREE.Vector3());
+  const distance = cameraRef.position.distanceTo(worldPos);
+  const radius = THREE.MathUtils.clamp(Math.log10(distance + 1) * 0.1, 0.05, 0.5);
+
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 16, 16),
+    new THREE.MeshBasicMaterial({
+      color: 0xff0000,
+      depthTest: false,
+    })
+  );
+  sphere.raycast = THREE.Mesh.prototype.raycast; // ✅ giữ raycast
+
+  sphere.position.copy(localPosition);
+  sphere.userData.isRulerSphere = true;
+
+  // ✅ Quan trọng: đảm bảo được raycast
+  sphere.raycast = THREE.Mesh.prototype.raycast;
+
+  return sphere;
+}
+
+// === Cập nhật theo camera ===
 function updateAllMeasurements() {
   for (const m of measurements) {
     const p1 = m.p1.position;
@@ -645,6 +637,18 @@ function updateAllMeasurements() {
   }
 }
 
+function updateSphereScales(spheres, camera) {
+  const cameraPos = camera.position;
+  spheres.forEach(sphere => {
+    // ⚠️ Bỏ qua point đang được hover
+    if (sphere === highlightedSphere) return;
+
+    const distance = sphere.getWorldPosition(new THREE.Vector3()).distanceTo(cameraPos);
+    const scale = THREE.MathUtils.clamp(distance * 0.02, 1.0, 6.0);
+    sphere.scale.set(scale, scale, scale);
+  });
+}
+
 function updatePreviewLine(event) {
   if (!rulerEnabled || pointGroups.length === 0) return;
 
@@ -684,6 +688,33 @@ function updatePreviewLine(event) {
   }
 }
 
+function updateLineThickness(mesh, camera, min = 0.02, max = 1.0, factor = 0.002) {
+  const distance = mesh.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position);
+  const newRadius = THREE.MathUtils.clamp(distance * factor, min, max);
+  const height = mesh.geometry.parameters.height;
+
+  // Nếu đã đúng kích thước thì bỏ qua
+  if (Math.abs(mesh.geometry.parameters.radiusTop - newRadius) < 0.001) return;
+
+  mesh.geometry.dispose();
+  mesh.geometry = new THREE.CylinderGeometry(newRadius, newRadius, height, 16, 1, true);
+}
+
+function updateAllLineScales(camera) {
+  measurements.forEach(m => {
+    m.lines.forEach(line => {
+      if (line?.mesh?.geometry?.parameters?.height) {
+        updateLineThickness(line.mesh, camera);
+      }
+    });
+  });
+
+  if (previewLine?.mesh?.geometry?.parameters?.height) {
+    updateLineThickness(previewLine.mesh, camera);
+  }
+}
+
+// === Bật/Tắt ===
 export function activateRuler() {
   rulerEnabled = true;
 }
@@ -719,30 +750,4 @@ export function deactivateRuler() {
   polygonAreaLabel = null;
   polygonMesh = null;
 
-}
-
-function updateLineThickness(mesh, camera, min = 0.02, max = 1.0, factor = 0.002) {
-  const distance = mesh.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position);
-  const newRadius = THREE.MathUtils.clamp(distance * factor, min, max);
-  const height = mesh.geometry.parameters.height;
-
-  // Nếu đã đúng kích thước thì bỏ qua
-  if (Math.abs(mesh.geometry.parameters.radiusTop - newRadius) < 0.001) return;
-
-  mesh.geometry.dispose();
-  mesh.geometry = new THREE.CylinderGeometry(newRadius, newRadius, height, 16, 1, true);
-}
-
-function updateAllLineScales(camera) {
-  measurements.forEach(m => {
-    m.lines.forEach(line => {
-      if (line?.mesh?.geometry?.parameters?.height) {
-        updateLineThickness(line.mesh, camera);
-      }
-    });
-  });
-
-  if (previewLine?.mesh?.geometry?.parameters?.height) {
-    updateLineThickness(previewLine.mesh, camera);
-  }
 }
