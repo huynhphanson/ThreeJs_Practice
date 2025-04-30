@@ -234,7 +234,10 @@ function handleRightClick(event) {
   }
 
   const currentPoints = pointGroups.at(-1);
-  if (!currentPoints || currentPoints.length < 3) return;
+  if (!currentPoints || currentPoints.length < 3) {
+    cancelCurrentMeasurement();
+    return;
+  }
 
   finalizePolygon(pointGroups.length - 1);
 
@@ -478,6 +481,50 @@ function compute3DArea(points3D) {
 
   // 4. Tính diện tích 2D
   return Math.abs(THREE.ShapeUtils.area(projected));
+}
+
+function cancelCurrentMeasurement() {
+  const groupIndex = pointGroups.length - 1;
+  const points = pointGroups[groupIndex];
+  if (!points || points.length >= 3) return;
+
+  // Xoá các đối tượng vừa thêm
+  sphereGroups[groupIndex]?.forEach(s => {
+    areaGroup.remove(s);
+    s.geometry?.dispose?.();
+    s.material?.dispose?.();
+    allSpheres = allSpheres.filter(item => item !== s);
+  });
+
+  lineGroups[groupIndex]?.forEach(l => {
+    areaGroup.remove(l);
+    l.geometry?.dispose?.();
+    l.material?.dispose?.();
+  });
+
+  labelGroups[groupIndex]?.forEach(lbl => areaGroup.remove(lbl));
+
+  // Preview
+  if (previewLine?.mesh) {
+    areaGroup.remove(previewLine.mesh);
+    previewLine.mesh.geometry.dispose();
+    previewLine.mesh.material.dispose();
+    previewLine = null;
+  }
+  if (previewLabel) {
+    areaGroup.remove(previewLabel);
+    previewLabel = null;
+  }
+
+  // Xóa group khỏi danh sách
+  pointGroups.pop();
+  sphereGroups.pop();
+  lineGroups.pop();
+  labelGroups.pop();
+  areaLabels.pop();
+  finalized = true;
+
+  // ⚠️ Không reset originPoint để giữ lại vùng đo cũ
 }
 
 function animateLabels() {
