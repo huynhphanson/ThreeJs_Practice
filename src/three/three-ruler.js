@@ -25,8 +25,7 @@ let clickTimeout = null;
 let currentMouseHit = null;
 
 let draggingSphere = null;
-let points = [];
-let selectedSpheres = []; // 👈 song song với points
+
 let previewLine = null;
 let previewLabel = null;
 let previewLine1 = null;
@@ -36,108 +35,65 @@ let polygonMesh = null;
 
 let lastMousePosition = new THREE.Vector2();
 let totalLengthLabel = null;
-let polylineLines = [];
-let polylineLabels = [];
-let polylineTotalLabel = null;
+
 let finalized = false;
+let pointGroups = [];
+let sphereGroups = [];
+let lineGroups = [];
+let labelGroups = [];
+let totalLabels = [];
 
+function finalizePolylineMeasurement(groupIndex) {
+  if (!pointGroups[groupIndex] || pointGroups[groupIndex].length < 2) return;
 
-function finalizePolylineMeasurement(points) {
-  // Clear polylineLines và polylineLabels cũ nếu có
-  
-  polylineLines.forEach(l => {
+  updatePolylineDisplay(groupIndex);
+}
+
+function updatePolylineDisplay(groupIndex) {
+  const pts = pointGroups[groupIndex];
+  const lines = lineGroups[groupIndex];
+  const labels = labelGroups[groupIndex];
+
+  // Xoá cũ
+  lines.forEach(l => {
     rulerGroup.remove(l);
     l.geometry.dispose();
     l.material.dispose();
   });
-  polylineLabels.forEach(l => {
-    rulerGroup.remove(l);
-  });
-  if (polylineTotalLabel) rulerGroup.remove(polylineTotalLabel);
+  labels.forEach(l => rulerGroup.remove(l));
+  if (totalLabels[groupIndex]) rulerGroup.remove(totalLabels[groupIndex]);
 
-  polylineLines = [];
-  polylineLabels = [];
-  polylineTotalLabel = null;
+  lineGroups[groupIndex] = [];
+  labelGroups[groupIndex] = [];
+  totalLabels[groupIndex] = null;
 
-  const worldPoints = points.map(p => p.clone());
+  const worldPoints = pts.map(p => p.clone().add(originPoint));
   let totalLength = 0;
 
   for (let i = 0; i < worldPoints.length - 1; i++) {
     const start = worldPoints[i];
     const end = worldPoints[i + 1];
-
     const localStart = start.clone().sub(originPoint);
     const localEnd = end.clone().sub(originPoint);
 
     const line = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup).mesh;
-    polylineLines.push(line);
-    
-    const mid = localStart.clone().lerp(localEnd, 0.5);
-    const distance = start.distanceTo(end);
-    const label = createLabel(`${distance.toFixed(2)} m`, mid);
-    polylineLabels.push(label);
-
-    totalLength += distance;
-  }
-
-  const centerWorld = computeCentroid(worldPoints);
-  const centerLocal = centerWorld.clone().sub(originPoint);
-  
-  polylineTotalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, centerLocal);
-  rulerGroup.add(polylineTotalLabel);
-}
-
-function updatePolylineDisplay() {
-  // 🧹 Remove all old polyline lines from rulerGroup
-  rulerGroup.children
-    .filter(obj => obj.userData?.isPolyline)
-    .forEach(line => {
-      line.geometry.dispose();
-      line.material.dispose();
-      line.removeFromParent();
-    });
-  // 🧹 Remove all old polyline labels from rulerGroup
-  rulerGroup.children
-    .filter(obj => obj.isCSS2DObject && obj.userData?.isPolylineLabel)
-    .forEach(label => label.removeFromParent());
-
-  polylineLines = [];
-  polylineLabels.forEach(l => rulerGroup.remove(l));
-  polylineLabels = [];
-  if (polylineTotalLabel) {
-    rulerGroup.remove(polylineTotalLabel);
-    polylineTotalLabel = null;
-  }
-    
-  const worldPoints = points.map(p => p.clone().add(originPoint));
-  let totalLength = 0;
-
-  for (let i = 0; i < worldPoints.length - 1; i++) {
-    const start = worldPoints[i];
-    const end = worldPoints[i + 1];
-
-    const localStart = start.clone().sub(originPoint);
-    const localEnd = end.clone().sub(originPoint);
-
-    const line = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup).mesh;
-    polylineLines.push(line);    
+    lineGroups[groupIndex].push(line);
 
     const mid = localStart.clone().lerp(localEnd, 0.5);
     const distance = start.distanceTo(end);
     const label = createLabel(`${distance.toFixed(2)} m`, mid);
     label.userData.isPolylineLabel = true;
-    polylineLabels.push(label);
+    labelGroups[groupIndex].push(label);
 
     totalLength += distance;
   }
 
   const centerWorld = computeCentroid(worldPoints);
   const centerLocal = centerWorld.clone().sub(originPoint);
-  polylineTotalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, centerLocal);
-  rulerGroup.add(polylineTotalLabel);
+  const totalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, centerLocal);
+  totalLabels[groupIndex] = totalLabel;
+  rulerGroup.add(totalLabel);
 }
-
-
 
 export function initRuler(scene, camera, renderer, controls) {
   cameraRef = camera;
@@ -172,30 +128,31 @@ export function initRuler(scene, camera, renderer, controls) {
     rendererRef.domElement.addEventListener('mousemove', (event) => {
       if (!rulerEnabled) return;
     
+      const currentPoints = pointGroups.at(-1);
+      const currentSpheres = sphereGroups.at(-1);
+      const currentLines = lineGroups.at(-1);
+      if (!currentPoints || !currentSpheres || !currentLines) return;
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, cameraRef);
     
       // === (1) Cập nhật kéo sphere nếu đang drag
       if (draggingSphere) {
-        const intersects = raycaster.intersectObjects(
-          collectVisibleMeshes(rulerGroup.parent, rulerGroup), true
-        );
+        const intersects = raycaster.intersectObjects(collectVisibleMeshes(rulerGroup.parent, rulerGroup), true);
         if (intersects.length > 0) {
           const hit = intersects[0].point.clone();
           const localPos = hit.sub(originPoint);
-      
           draggingSphere.position.copy(localPos);
       
-          const index = selectedSpheres.indexOf(draggingSphere);
-          if (index !== -1) {
-            points[index].copy(localPos); // 👈 đây là dòng cực kỳ quan trọng
+          // ✅ Tìm group chứa sphere đang drag
+          const groupIndex = sphereGroups.findIndex(group => group.includes(draggingSphere));
+          if (groupIndex !== -1) {
+            const idx = sphereGroups[groupIndex].indexOf(draggingSphere);
+            pointGroups[groupIndex][idx].copy(localPos);
+            regenerateLinesAndLabels(groupIndex);
           }
       
-          updateAllMeasurements(); // update tam giác
-          if (points.length >= 3 && polylineLines.length > 0) {
-            updatePolylineDisplay(); // update tổng chiều dài
-          }
+          updateAllMeasurements();
         }
         return;
       }
@@ -220,15 +177,15 @@ export function initRuler(scene, camera, renderer, controls) {
         highlightedSphere = null;
       }
     
-      // === (3) Preview line (chỉ khi đang đo)
-      if (points.length > 0 && originPoint && !finalized) {
+      // === (3) Preview line
+      if (currentPoints.length > 0 && originPoint && !finalized) {
         const intersects = raycaster.intersectObjects(
           collectVisibleMeshes(rulerGroup.parent, rulerGroup), true
         );
         if (intersects.length === 0) return;
     
         const hit = intersects[0].point.clone();
-        const localStart = points[points.length - 1].clone();
+        const localStart = currentPoints[currentPoints.length - 1].clone();
         const localEnd = hit.clone().sub(originPoint);
     
         if (!previewLine) {
@@ -247,9 +204,6 @@ export function initRuler(scene, camera, renderer, controls) {
         }
       }
     });
-    
-    
-    
 
     rendererRef.domElement.addEventListener("mouseup", (event) => {
       isMouseDown = false;
@@ -280,48 +234,50 @@ export function initRuler(scene, camera, renderer, controls) {
     rendererRef.domElement.addEventListener("contextmenu", (event) => {
       if (!rulerEnabled) return;
       event.preventDefault();
-
-      if (points.length === 1 && selectedSpheres.length === 1) {
-        const sphere = selectedSpheres[0];
+    
+      const currentPoints = pointGroups.at(-1);
+      const currentSpheres = sphereGroups.at(-1);
+    
+      if (currentPoints.length === 1 && currentSpheres.length === 1) {
+        const sphere = currentSpheres[0];
         rulerGroup.remove(sphere);
         allSpheres = allSpheres.filter(s => s !== sphere);
-
+        currentPoints.length = 0;
+        currentSpheres.length = 0;
+    
         if (previewLine?.mesh) {
           rulerGroup.remove(previewLine.mesh);
           previewLine.mesh.geometry?.dispose?.();
           previewLine.mesh.material?.dispose?.();
         }
         previewLine = null;
-
+    
         if (previewLabel) {
           rulerGroup.remove(previewLabel);
           previewLabel = null;
         }
-
-        points = [];
-        selectedSpheres = [];
         return;
       }
-
-      if (points.length === 2 && selectedSpheres.length === 2) {
-        const p1 = selectedSpheres[0];
-        const p2 = selectedSpheres[1];
-
+    
+      if (currentPoints.length === 2 && currentSpheres.length === 2) {
+        const p1 = currentSpheres[0];
+        const p2 = currentSpheres[1];
+    
         const measurement = drawRightTriangle(p1, p2);
         measurements.push(measurement);
-
+    
         if (previewLine1) {
           rulerGroup.remove(previewLine1.mesh);
           previewLine1.mesh.geometry.dispose();
           if (previewLine1.mesh.material.dispose) previewLine1.mesh.material.dispose();
           previewLine1 = null;
         }
-
+    
         if (previewLabel1) {
           rulerGroup.remove(previewLabel1);
           previewLabel1 = null;
         }
-
+    
         if (previewLine) {
           if (previewLine.mesh) {
             rulerGroup.remove(previewLine.mesh);
@@ -330,29 +286,24 @@ export function initRuler(scene, camera, renderer, controls) {
           }
           previewLine = null;
         }
-
+    
         if (previewLabel) {
           rulerGroup.remove(previewLabel);
           previewLabel = null;
         }
-
-        points = [];
-        selectedSpheres = [];
-
+    
+        currentPoints.length = 0;
+        currentSpheres.length = 0;
+    
         p1.raycast = THREE.Mesh.prototype.raycast;
         p2.raycast = THREE.Mesh.prototype.raycast;
         return;
       }
-
-      if (points.length >= 3) {
-        if (polygonMesh) rulerGroup.remove(polygonMesh);
-        if (polygonAreaLabel) rulerGroup.remove(polygonAreaLabel);
-      
-        finalizePolylineMeasurement(points);
+    
+      if (currentPoints.length >= 3) {
+        finalizePolylineMeasurement(pointGroups.length - 1);
         finalized = true;
-      
-        updatePolylineDisplay(); // ✅ thêm dòng này vào đây
-      
+    
         if (previewLine?.mesh) {
           rulerGroup.remove(previewLine.mesh);
           previewLine.mesh.geometry?.dispose?.();
@@ -364,24 +315,29 @@ export function initRuler(scene, camera, renderer, controls) {
           previewLabel = null;
         }
       }
-      
     });
-
+    
     clickHandlersRegistered = true;
   }
 }
+
+
 
 function computeCentroid(worldPoints) {
   const sum = worldPoints.reduce((acc, p) => acc.add(p), new THREE.Vector3());
   return sum.divideScalar(worldPoints.length);
 }
 
+
 function onMouseClick(event, scene) {
   if (!rulerEnabled || event.button !== 0) return;
 
-  if (finalized) {
-    points = [];
-    selectedSpheres = [];
+  if (finalized || pointGroups.length === 0) {
+    pointGroups.push([]);
+    sphereGroups.push([]);
+    lineGroups.push([]);
+    labelGroups.push([]);
+    totalLabels.push(null);
     finalized = false;
 
     previewLine = null;
@@ -391,6 +347,9 @@ function onMouseClick(event, scene) {
     polygonAreaLabel = null;
     polygonMesh = null;
   }
+
+  const currentPoints = pointGroups.at(-1);
+  const currentSpheres = sphereGroups.at(-1);
 
   updatePreviewLine({ clientX: event.clientX, clientY: event.clientY });
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -409,17 +368,71 @@ function onMouseClick(event, scene) {
   const localPoint = worldPoint.clone().sub(originPoint);
   const sphere = createSphere(localPoint);
   rulerGroup.add(sphere);
-  points.push(localPoint);
-  selectedSpheres.push(sphere);
+  currentPoints.push(localPoint);
+  currentSpheres.push(sphere);
   allSpheres.push(sphere);
 
-  if (points.length >= 2 && previewLine) {
+  if (currentPoints.length >= 2 && previewLine) {
     previewLine1 = previewLine;
     previewLabel1 = previewLabel;
     previewLine = null;
     previewLabel = null;
   }
 }
+
+function regenerateLinesAndLabels(groupIndex) {
+  const pts = pointGroups[groupIndex];
+  const oldLines = lineGroups[groupIndex];
+  const oldLabels = labelGroups[groupIndex];
+  const oldTotal = totalLabels[groupIndex];
+
+  // 🧹 Xoá line cũ
+  oldLines?.forEach(line => {
+    rulerGroup.remove(line);
+    line.geometry?.dispose?.();
+    line.material?.dispose?.();
+  });
+
+  // 🧹 Xoá label cũ
+  oldLabels?.forEach(lbl => {
+    rulerGroup.remove(lbl);
+  });
+
+  // 🧹 Xoá tổng label
+  if (oldTotal) {
+    rulerGroup.remove(oldTotal);
+    totalLabels[groupIndex] = null;
+  }
+
+  // ✅ Clear mảng
+  lineGroups[groupIndex] = [];
+  labelGroups[groupIndex] = [];
+
+  // ✅ Vẽ lại line và label
+  const worldPoints = pts.map(p => p.clone().add(originPoint));
+  let totalLength = 0;
+
+  for (let i = 0; i < pts.length - 1; i++) {
+    const start = pts[i];
+    const end = pts[i + 1];
+
+    const { mesh } = drawMeasureLine(start, end, 0.05, rulerGroup);
+    lineGroups[groupIndex].push(mesh);
+
+    const mid = start.clone().lerp(end, 0.5);
+    const dist = worldPoints[i].distanceTo(worldPoints[i + 1]);
+    const label = createLabel(`${dist.toFixed(2)} m`, mid);
+    labelGroups[groupIndex].push(label);
+    totalLength += dist;
+  }
+
+  const center = computeCentroid(worldPoints).sub(originPoint);
+  const totalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center);
+  totalLabels[groupIndex] = totalLabel;
+  rulerGroup.add(totalLabel);
+}
+
+
 
 
 function animateLabels() {
@@ -729,7 +742,10 @@ function updateLeaderLine(line, start, end) {
 }
 
 function updatePreviewLine(event) {
-  if (!rulerEnabled || points.length === 0) return;
+  if (!rulerEnabled || pointGroups.length === 0) return;
+
+  const currentPoints = pointGroups.at(-1);
+  if (currentPoints.length === 0) return;
 
   const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
   const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -741,7 +757,7 @@ function updatePreviewLine(event) {
   if (intersects.length === 0) return;
 
   const hit = intersects[0].point.clone();
-  const localStart = points[points.length - 1].clone();
+  const localStart = currentPoints[currentPoints.length - 1].clone();
   const localEnd = hit.clone().sub(originPoint);
 
   if (!previewLine) {
@@ -767,20 +783,45 @@ function updatePreviewLine(event) {
 
 
 
+
 export function activateRuler() {
   rulerEnabled = true;
 }
 
 export function deactivateRuler() {
   rulerEnabled = false;
-  while (rulerGroup.children.length > 0) rulerGroup.remove(rulerGroup.children[0]);
-  document.querySelectorAll('.ruler-label').forEach(el => el.remove());
-  allLabels = [];
+
+  // Xoá toàn bộ rulerGroup
+  while (rulerGroup.children.length > 0) {
+    const child = rulerGroup.children[0];
+    if (child.geometry) child.geometry.dispose?.();
+    if (child.material) child.material.dispose?.();
+    rulerGroup.remove(child);
+  }
+
+  // Reset tất cả
   originPoint = null;
   allSpheres = [];
   measurements = [];
   draggingSphere = null;
+  highlightedSphere = null;
+
+  pointGroups = [];
+  sphereGroups = [];
+  lineGroups = [];
+  labelGroups = [];
+  totalLabels = [];
+
+  previewLine = null;
+  previewLabel = null;
+  previewLine1 = null;
+  previewLabel1 = null;
+  polygonAreaLabel = null;
+  polygonMesh = null;
+
+  allLabels = [];
 }
+
 
 function collectVisibleMeshes(scene, excludeGroup) {
   const result = [];
@@ -815,6 +856,15 @@ function updateAllLineScales(camera) {
     m.lines.forEach(line => {
       if (line?.mesh?.geometry?.parameters?.height) {
         updateLineThickness(line.mesh, camera);
+      }
+    });
+  });
+
+  // Tất cả nhóm đo đa điểm
+  lineGroups.forEach(lines => {
+    lines.forEach(line => {
+      if (line?.geometry?.parameters?.height) {
+        updateLineThickness(line, camera);
       }
     });
   });
