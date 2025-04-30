@@ -35,7 +35,9 @@ let previewLabel = null;
 let isAnimating = false;
 let hasDragged = false;
 let originalDragPosition = null;
-
+let dragCanceled = false;
+let skipNextClick = false;
+let skipClickAfterDrag = false;
 
 let pointGroups = [];
 let sphereGroups = [];
@@ -73,21 +75,22 @@ function handleMouseDown(event) {
 
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
   raycaster.setFromCamera(mouse, cameraRef);
+
   const intersects = raycaster.intersectObjects(allSpheres, false);
   if (intersects.length > 0) {
     draggingSphere = intersects[0].object;
     originalDragPosition = draggingSphere.position.clone();
     if (controlsRef) controlsRef.enabled = false;
   }
-  
+
   if (event.button === 2) {
     isRightMouseDown = true;
     rightMouseDownTime = performance.now();
     rightMouseDownPosition = { x: event.clientX, y: event.clientY };
   }
 }
+
 
 function handleMouseMove(event) {
   if (!areaEnabled) return;
@@ -96,17 +99,14 @@ function handleMouseMove(event) {
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, cameraRef);
 
-  // === (1) Drag sphere
   if (draggingSphere) {
-    
-    // ✅ Thực hiện drag bình thường
     const intersects = raycaster.intersectObjects(collectVisibleMeshes(areaGroup.parent, areaGroup), true);
     if (intersects.length > 0) {
       const hit = intersects[0].point.clone();
       const localPos = hit.sub(originPoint);
       draggingSphere.position.copy(localPos);
       hasDragged = true;
-  
+
       const groupIndex = sphereGroups.findIndex(g => g.includes(draggingSphere));
       if (groupIndex !== -1) {
         const index = sphereGroups[groupIndex].indexOf(draggingSphere);
@@ -116,9 +116,7 @@ function handleMouseMove(event) {
     }
     return;
   }
-  
 
-  // === (2) Hover highlight
   const intersectsSphere = raycaster.intersectObjects(allSpheres, false);
   if (intersectsSphere.length > 0) {
     const sphere = intersectsSphere[0].object;
@@ -137,7 +135,6 @@ function handleMouseMove(event) {
     highlightedSphere = null;
   }
 
-  // === (3) Preview line & label
   if (!finalized) {
     const currentPoints = pointGroups.at(-1);
     if (!currentPoints || currentPoints.length === 0) return;
@@ -165,10 +162,9 @@ function handleMouseMove(event) {
   }
 }
 
-
-
 function handleMouseUp(event) {
   isMouseDown = false;
+
   const timeDiff = performance.now() - mouseDownTime;
   const moveDistance = Math.hypot(
     event.clientX - mouseDownPosition.x,
@@ -179,39 +175,30 @@ function handleMouseUp(event) {
 
   if (hasDragged) {
     hasDragged = false;
-    // ⛔ KHÔNG reset draggingSphere ở đây – chờ click phải xử lý
-    return;
+    draggingSphere = null;
+    return; // ✅ Nếu drag thì không phải click
   }
 
-  draggingSphere = null; // ✅ Chỉ reset nếu không drag
-
-  const now = performance.now();
-  if (timeDiff > 200 || moveDistance > 5 || now - lastClickTime < 180) {
-    clearTimeout(clickTimeout);
-    return;
-  }
-
-  lastClickTime = now;
-  clickTimeout = setTimeout(() => {
+  // ✅ Chỉ click nếu không di chuyển và không drag
+  if (timeDiff < 200 && moveDistance < 5 && event.button === 0) {
     onMouseClick(event, areaGroup.parent);
-  }, 180);
+  }
+
+  draggingSphere = null;
 }
+
 
 
 function handleRightClick(event) {
   if (!areaEnabled) return;
 
   const timeDiff = performance.now() - rightMouseDownTime;
-  const moveDistance = Math.hypot(
-    event.clientX - rightMouseDownPosition.x,
-    event.clientY - rightMouseDownPosition.y
-  );
+  const moveDistance = Math.hypot(event.clientX - rightMouseDownPosition.x, event.clientY - rightMouseDownPosition.y);
   isRightMouseDown = false;
 
   if (timeDiff > 200 || moveDistance > 5) return;
   event.preventDefault();
 
-  // ✅ Nếu đang drag thì hủy drag, không thực hiện đo
   if (draggingSphere) {
     draggingSphere.position.copy(originalDragPosition);
 
@@ -224,19 +211,17 @@ function handleRightClick(event) {
 
     draggingSphere = null;
     originalDragPosition = null;
-    hasDragged = false; // tránh hiểu lầm click sau đó
+    hasDragged = false;
+    dragCanceled = true;
     if (controlsRef) controlsRef.enabled = true;
-
-    return; // ⛔ Không đo diện tích nữa
+    return;
   }
 
   const currentPoints = pointGroups.at(-1);
   if (!currentPoints || currentPoints.length < 3) return;
 
-  // ✅ Thực hiện finalizePolygon bình thường
   finalizePolygon(pointGroups.length - 1);
 
-  // Xoá preview line & label
   if (previewLine?.mesh) {
     areaGroup.remove(previewLine.mesh);
     previewLine.mesh.geometry.dispose();
@@ -271,7 +256,13 @@ function handleRightClick(event) {
 
 function onMouseClick(event, scene) {
   if (!areaEnabled || event.button !== 0) return;
+  if (draggingSphere) return; // ⛔ đang drag thì không được tính click
 
+
+  if (skipClickAfterDrag) {
+    skipClickAfterDrag = false; // ⬅️ reset sau 1 lần
+    return;
+  }
   if (finalized || pointGroups.length === 0) {
     pointGroups.push([]);
     sphereGroups.push([]);
