@@ -100,7 +100,6 @@ function handleMouseMove(event) {
 
   // === 1. Nếu đang drag một point ===
   if (draggingSphere) {
-    console.log('xinchao')
     const intersects = raycaster.intersectObjects(collectVisibleMeshes(areaGroup.parent, areaGroup), true);
       // === Dragging logic ===
   if (draggingSphere) {
@@ -405,10 +404,8 @@ function regeneratePolygon(groupIndex) {
   const closingLabel = createLabel(`Diện tích: ${area.toFixed(2)} m²`, center, groupIndex, areaGroup);
   areaLabels[groupIndex] = closingLabel;
   areaGroup.add(closingLabel);
+  
 }
-
-
-
 
 function finalizePolygon(groupIndex) {
   const points = pointGroups[groupIndex];
@@ -524,13 +521,33 @@ function cancelCurrentMeasurement() {
   areaLabels.pop();
   finalized = true;
 
-  // ⚠️ Không reset originPoint để giữ lại vùng đo cũ
 }
 
 function animateLabels() {
   requestAnimationFrame(animateLabels);
-  allSpheres.forEach(sphere => {
-    const distance = cameraRef.position.distanceTo(sphere.getWorldPosition(new THREE.Vector3()));
+  updateSphereScales(allSpheres, cameraRef);
+  updateAllLineScales(cameraRef);
+}
+
+function updateAllLineScales(camera) {
+  for (const group of lineGroups) {
+    for (const line of group) {
+      if (line?.geometry?.parameters?.height) {
+        updateLineThickness(line, camera);
+      }
+    }
+  }
+
+  if (previewLine?.mesh?.geometry?.parameters?.height) {
+    updateLineThickness(previewLine.mesh, camera);
+  }
+}
+function updateSphereScales(spheres, camera) {
+  const cameraPos = camera.position;
+  spheres.forEach(sphere => {
+    if (sphere === highlightedSphere) return;
+
+    const distance = sphere.getWorldPosition(new THREE.Vector3()).distanceTo(cameraPos);
     const scale = THREE.MathUtils.clamp(distance * 0.02, 1.0, 6.0);
     sphere.scale.set(scale, scale, scale);
   });
