@@ -861,15 +861,6 @@ function updateAllLineScales(camera) {
     });
   });
 
-  // Tất cả nhóm đo đa điểm
-  lineGroups.forEach(lines => {
-    lines.forEach(line => {
-      if (line?.geometry?.parameters?.height) {
-        updateLineThickness(line, camera);
-      }
-    });
-  });
-
   if (previewLine?.mesh?.geometry?.parameters?.height) {
     updateLineThickness(previewLine.mesh, camera);
   }
