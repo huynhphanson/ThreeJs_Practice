@@ -11,6 +11,7 @@ import { load3dTilesModel } from './three/three-3dtilesModel.js';
 import { setViewer } from './cesium/cesium-viewer.js';
 import { cursorCoor } from './three/three-cursor-coordinates.js';
 import { initRuler, activateRuler, deactivateRuler } from './three/three-ruler.js';
+import { initRulerArea, activateRulerArea, deactivateRulerArea } from './three/three-ruler-area.js';
 import { isClickOnUI } from '../src/utils/ui-main.js';
 
 /* Cesium Init */
@@ -92,5 +93,25 @@ rulerBtn.addEventListener('click', () => {
   } else {
     deactivateRuler(); // << Tắt ruler
     rulerBtn.classList.remove('i-active');
+  }
+});
+
+// Ruler Area
+const areaBtn = document.querySelector('.fa-draw-polygon');
+let areaInitialized = false;
+let areaActive = false;
+
+areaBtn.addEventListener('click', () => {
+  areaActive = !areaActive;
+  if (areaActive) {
+    if (!areaInitialized) {
+      initRulerArea(scene, camera, renderer, controls);
+      areaInitialized = true;
+    }
+    activateRulerArea();
+    areaBtn.classList.add('i-active');
+  } else {
+    deactivateRulerArea();
+    areaBtn.classList.remove('i-active');
   }
 });
