@@ -91,7 +91,6 @@ function handleMouseDown(event) {
   }
 }
 
-
 function handleMouseMove(event) {
   if (!areaEnabled) return;
 
@@ -99,6 +98,11 @@ function handleMouseMove(event) {
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, cameraRef);
 
+  // === 1. Nếu đang drag một point ===
+  if (draggingSphere) {
+    console.log('xinchao')
+    const intersects = raycaster.intersectObjects(collectVisibleMeshes(areaGroup.parent, areaGroup), true);
+      // === Dragging logic ===
   if (draggingSphere) {
     const intersects = raycaster.intersectObjects(collectVisibleMeshes(areaGroup.parent, areaGroup), true);
     if (intersects.length > 0) {
@@ -111,12 +115,22 @@ function handleMouseMove(event) {
       if (groupIndex !== -1) {
         const index = sphereGroups[groupIndex].indexOf(draggingSphere);
         pointGroups[groupIndex][index].copy(localPos);
-        regeneratePolygon(groupIndex);
+
+        // ✅ Nếu có đủ 3 điểm thì regenerate (không cần kiểm tra đóng polygon)
+        const pts = pointGroups[groupIndex];
+        if (pts.length >= 3) {
+          regeneratePolygon(groupIndex);
+        }
       }
     }
     return;
   }
 
+    // ✅ Không làm gì nữa nếu đang drag
+    return;
+  }
+
+  // === 2. Highlight point khi hover ===
   const intersectsSphere = raycaster.intersectObjects(allSpheres, false);
   if (intersectsSphere.length > 0) {
     const sphere = intersectsSphere[0].object;
@@ -135,6 +149,7 @@ function handleMouseMove(event) {
     highlightedSphere = null;
   }
 
+  // === 3. Hiển thị preview line khi đang đo (chưa finalized, chưa drag) ===
   if (!finalized) {
     const currentPoints = pointGroups.at(-1);
     if (!currentPoints || currentPoints.length === 0) return;
@@ -161,6 +176,7 @@ function handleMouseMove(event) {
     }
   }
 }
+
 
 function handleMouseUp(event) {
   isMouseDown = false;
@@ -237,7 +253,7 @@ function handleRightClick(event) {
   const first = pointGroups[groupIndex][0];
   const last = pointGroups[groupIndex].at(-1);
   if (first && last && !first.equals(last)) {
-    pointGroups[groupIndex].push(first.clone());
+    
     const { mesh } = drawMeasureLine(last, first);
     lineGroups[groupIndex].push(mesh);
 
@@ -332,11 +348,12 @@ function onMouseClick(event, scene) {
   }
 }
 
+
 function regeneratePolygon(groupIndex) {
   const points = pointGroups[groupIndex];
-  const spheres = sphereGroups[groupIndex];
+  if (points.length < 3) return;
 
-  // Xoá line cũ
+  // Xoá line + label cũ
   lineGroups[groupIndex]?.forEach(l => {
     areaGroup.remove(l);
     l.geometry?.dispose?.();
@@ -351,11 +368,12 @@ function regeneratePolygon(groupIndex) {
   const worldPoints = points.map(p => p.clone().add(originPoint));
   let totalLength = 0;
 
-  for (let i = 0; i < points.length; i++) {
+  // 🔁 Vẽ các đoạn liên tiếp
+  for (let i = 0; i < points.length - 1; i++) {
     const a = points[i];
-    const b = points[(i + 1) % points.length];
+    const b = points[i + 1];
     const group = drawMeasureLine(a, b);
-    updateLineThickness(group.mesh, cameraRef); // scale theo camera
+    updateLineThickness(group.mesh, cameraRef);
     lineGroups[groupIndex].push(group.mesh);
 
     const mid = a.clone().lerp(b, 0.5);
@@ -365,13 +383,29 @@ function regeneratePolygon(groupIndex) {
     totalLength += dist;
   }
 
-  // Tính lại diện tích
+  // ✅ Vẽ đoạn khép: point cuối → point đầu
+  const a = points[points.length - 1];
+  const b = points[0];
+  const group = drawMeasureLine(a, b);
+  updateLineThickness(group.mesh, cameraRef);
+  lineGroups[groupIndex].push(group.mesh);
+
+  const mid = a.clone().lerp(b, 0.5);
+  const dist = a.clone().add(originPoint).distanceTo(b.clone().add(originPoint));
+  const label = createLabel(`${dist.toFixed(2)} m`, mid, groupIndex, areaGroup);
+  labelGroups[groupIndex].push(label);
+  totalLength += dist;
+
+  // 📐 Nhãn diện tích
   const area = compute3DArea(worldPoints);
   const center = computeCentroid(worldPoints).sub(originPoint);
-  const label = createLabel(`Diện tích: ${area.toFixed(2)} m²`, center, groupIndex, areaGroup);
-  areaLabels[groupIndex] = label;
-  areaGroup.add(label);
+  const closingLabel = createLabel(`Diện tích: ${area.toFixed(2)} m²`, center, groupIndex, areaGroup);
+  areaLabels[groupIndex] = closingLabel;
+  areaGroup.add(closingLabel);
 }
+
+
+
 
 function finalizePolygon(groupIndex) {
   const points = pointGroups[groupIndex];
