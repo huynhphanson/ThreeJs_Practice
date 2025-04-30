@@ -46,53 +46,7 @@ let totalLabels = [];
 function finalizePolylineMeasurement(groupIndex) {
   if (!pointGroups[groupIndex] || pointGroups[groupIndex].length < 2) return;
 
-  updatePolylineDisplay(groupIndex);
-}
-
-function updatePolylineDisplay(groupIndex) {
-  const pts = pointGroups[groupIndex];
-  const lines = lineGroups[groupIndex];
-  const labels = labelGroups[groupIndex];
-
-  // Xoá cũ
-  lines.forEach(l => {
-    rulerGroup.remove(l);
-    l.geometry.dispose();
-    l.material.dispose();
-  });
-  labels.forEach(l => rulerGroup.remove(l));
-  if (totalLabels[groupIndex]) rulerGroup.remove(totalLabels[groupIndex]);
-
-  lineGroups[groupIndex] = [];
-  labelGroups[groupIndex] = [];
-  totalLabels[groupIndex] = null;
-
-  const worldPoints = pts.map(p => p.clone().add(originPoint));
-  let totalLength = 0;
-
-  for (let i = 0; i < worldPoints.length - 1; i++) {
-    const start = worldPoints[i];
-    const end = worldPoints[i + 1];
-    const localStart = start.clone().sub(originPoint);
-    const localEnd = end.clone().sub(originPoint);
-
-    const line = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup).mesh;
-    lineGroups[groupIndex].push(line);
-
-    const mid = localStart.clone().lerp(localEnd, 0.5);
-    const distance = start.distanceTo(end);
-    const label = createLabel(`${distance.toFixed(2)} m`, mid);
-    label.userData.isPolylineLabel = true;
-    labelGroups[groupIndex].push(label);
-
-    totalLength += distance;
-  }
-
-  const centerWorld = computeCentroid(worldPoints);
-  const centerLocal = centerWorld.clone().sub(originPoint);
-  const totalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, centerLocal);
-  totalLabels[groupIndex] = totalLabel;
-  rulerGroup.add(totalLabel);
+  regenerateLinesAndLabels(groupIndex);
 }
 
 export function initRuler(scene, camera, renderer, controls) {
@@ -189,7 +143,9 @@ export function initRuler(scene, camera, renderer, controls) {
         const localEnd = hit.clone().sub(originPoint);
     
         if (!previewLine) {
-          previewLine = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup);
+          const groupIndex = pointGroups.length - 1;
+          previewLine = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup, 'polyline', groupIndex);
+
         } else {
           updateLineTransform(previewLine.mesh, localStart, localEnd);
         }
@@ -198,7 +154,8 @@ export function initRuler(scene, camera, renderer, controls) {
         const distance = localStart.clone().add(originPoint).distanceTo(hit);
     
         if (!previewLabel) {
-          previewLabel = createLabel(`${distance.toFixed(2)} m`, mid);
+          const groupIndex = pointGroups.length - 1;
+          previewLabel = createLabel(`${distance.toFixed(2)} m`, mid, groupIndex); // ⚠️ thêm groupIndex ở đây
         } else {
           updateLabel(previewLabel, `${distance.toFixed(2)} m`, mid);
         }
@@ -416,21 +373,54 @@ function regenerateLinesAndLabels(groupIndex) {
     const start = pts[i];
     const end = pts[i + 1];
 
-    const { mesh } = drawMeasureLine(start, end, 0.05, rulerGroup);
+    const { mesh } = drawMeasureLine(start, end, 0.05, rulerGroup, 'polyline', groupIndex);
     lineGroups[groupIndex].push(mesh);
 
     const mid = start.clone().lerp(end, 0.5);
     const dist = worldPoints[i].distanceTo(worldPoints[i + 1]);
-    const label = createLabel(`${dist.toFixed(2)} m`, mid);
+    const label = createLabel(`${dist.toFixed(2)} m`, mid, groupIndex);
     labelGroups[groupIndex].push(label);
     totalLength += dist;
   }
 
   const center = computeCentroid(worldPoints).sub(originPoint);
-  const totalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center);
+  const totalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center, groupIndex);
   totalLabels[groupIndex] = totalLabel;
   rulerGroup.add(totalLabel);
+
+  // 🧹 Cleanup orphan lines
+  const validLineSet = new Set(lineGroups[groupIndex]);
+  rulerGroup.children.forEach(child => {
+    if (
+      child.userData.isPolyline &&
+      child.userData.type === 'polyline' &&
+      child.userData.groupIndex === groupIndex &&
+      !validLineSet.has(child)
+    ) {
+      console.warn("🧹 Removing orphan polyline", child);
+      rulerGroup.remove(child);
+      child.geometry?.dispose?.();
+      child.material?.dispose?.();
+    }
+  });
+
+  // 🧹 Cleanup orphan labels
+  const validLabelSet = new Set(labelGroups[groupIndex]);
+  if (totalLabels[groupIndex]) validLabelSet.add(totalLabels[groupIndex]);
+
+  rulerGroup.children.forEach(child => {
+    if (
+      child instanceof CSS2DObject &&
+      child.userData.isPolylineLabel &&
+      child.userData.groupIndex === groupIndex &&
+      !validLabelSet.has(child)
+    ) {
+      console.warn("🧹 Removing orphan label", child);
+      rulerGroup.remove(child);
+    }
+  });
 }
+
 
 
 
@@ -469,29 +459,33 @@ function createMeasureLineMaterial(length) {
   });
 }
 
-function drawMeasureLine(p1, p2, radius = 0.1, group = null) {
+function drawMeasureLine(p1, p2, radius = 0.1, group = null, type = 'polyline', groupIndex = null) {
   const direction = new THREE.Vector3().subVectors(p2, p1);
   const length = direction.length();
   const geometry = new THREE.CylinderGeometry(radius, radius, length, 32, 1, true);
   const material = createMeasureLineMaterial(length);
 
-  // ✅ Luôn hiển thị rõ ràng, không bị che
   material.depthTest = false;
   material.depthWrite = false;
 
   const cylinder = new THREE.Mesh(geometry, material);
-
-  // ✅ Ưu tiên render sau cùng
   cylinder.renderOrder = 999;
 
   const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
   cylinder.position.copy(midpoint);
   cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
-  cylinder.userData.isPolyline = true; // đánh dấu line là polyline
+
+  // 🆕 Phân biệt loại line
+  cylinder.userData = {
+    isPolyline: true,
+    type,              // 'polyline' | 'triangle'
+    groupIndex,        // chỉ dùng cho polyline
+  };
 
   if (group) group.add(cylinder);
   return { mesh: cylinder };
 }
+
 
 
 function updateLineTransform(cylinder, p1, p2) {
@@ -562,7 +556,7 @@ function createSphere(localPosition) {
 }
 
 
-function createLabel(text, position) {
+function createLabel(text, position, groupIndex = null) {
   const div = document.createElement('div');
   div.className = 'label';
   div.textContent = text;
@@ -572,14 +566,17 @@ function createLabel(text, position) {
   div.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
   div.style.padding = '2px 6px';
   div.style.borderRadius = '4px';
-  
-  const label = new CSS2DObject(div);
-  label.userData.isPolylineLabel = true; // 👈 flag để sau này tìm xoá
 
+  const label = new CSS2DObject(div);
+  label.userData = {
+    isPolylineLabel: true,
+    groupIndex,
+  };
   label.position.copy(position);
   rulerGroup.add(label);
   return label;
 }
+
 
 function offsetLabelAwayFromThirdPoint(p1, p2, p3, offset = 1.0) {
   const mid = p1.clone().lerp(p2, 0.5);
@@ -617,9 +614,10 @@ function drawRightTriangle(p1Sphere, p2Sphere) {
   const p3World = convertToECEF(p3VN.x, p3VN.y, p3VN.z);
   const p3 = p3World.clone().sub(originPoint);
 
-  const line1 = drawMeasureLine(p1, p3, 0.05, rulerGroup);
-  const line2 = drawMeasureLine(p3, p2, 0.05, rulerGroup);
-  const line3 = drawMeasureLine(p1, p2, 0.05, rulerGroup);
+  const line1 = drawMeasureLine(p1, p3, 0.05, rulerGroup, 'triangle');
+  const line2 = drawMeasureLine(p3, p2, 0.05, rulerGroup, 'triangle');
+  const line3 = drawMeasureLine(p1, p2, 0.05, rulerGroup, 'triangle');
+  
 
   const label1Pos = offsetLabelAwayFromThirdPoint(p1, p3, p2, 1.0);
   const label2Pos = offsetLabelAwayFromThirdPoint(p3, p2, p1, 1.0);
@@ -761,7 +759,9 @@ function updatePreviewLine(event) {
   const localEnd = hit.clone().sub(originPoint);
 
   if (!previewLine) {
-    previewLine = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup);
+    const groupIndex = pointGroups.length - 1;
+    previewLine = drawMeasureLine(localStart, localEnd, 0.05, rulerGroup, 'polyline', groupIndex);
+
   } else {
     updateLineTransform(previewLine.mesh, localStart, localEnd);
   }
@@ -770,7 +770,8 @@ function updatePreviewLine(event) {
   const distance = localStart.clone().add(originPoint).distanceTo(hit);
 
   if (!previewLabel) {
-    previewLabel = createLabel(`${distance.toFixed(2)} m`, mid);
+    const groupIndex = pointGroups.length - 1;
+previewLabel = createLabel(`${distance.toFixed(2)} m`, mid, groupIndex);
   } else {
     updateLabel(previewLabel, `${distance.toFixed(2)} m`, mid);
   }
