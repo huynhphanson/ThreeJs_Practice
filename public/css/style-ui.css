@@ -4,7 +4,6 @@
 body {
   margin: 0;
   box-sizing: border-box;
-  color: #eaeaea;
   font-family: 'Segoe UI', sans-serif;
   font-size: 14px;
 }
@@ -20,12 +19,12 @@ body {
 .icon-bar-right i {
   width: 30px;
   height: 30px;
-  margin: 4px;
+  /* margin: 1px; */
   font-size: 16px;
-  color: white;
-  background: #1a1a1a;
+  color: hsl(0, 0%, 90%);
+  background: hsl(0, 0%, 10%);
   border: none;
-  border-radius: 4px;
+  /* border-radius: 16px; */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -34,16 +33,13 @@ body {
 }
 
 .icon-bar-right i:hover {
-	background-color: hsl(120, 100%, 34%);
-	border-color: hsl(150, 100%, 40%);
+	color: hsl(120, 100%, 65%);
 }
 .icon-bar-right i:active {
-	background-color: hsl(120, 100%, 30%);
-	border-color: hsl(150, 100%, 50%);
+	color: hsl(120, 100%, 45%);
 }
 .icon-bar-right i.i-active {
-	background-color: hsl(120, 100%, 30%);
-	border-color: hsl(150, 100%, 50%);
+	color: hsl(120, 100%, 75%);
 }
 
 .panel-container {
