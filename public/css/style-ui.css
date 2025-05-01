@@ -7,6 +7,49 @@ body {
   font-family: 'Segoe UI', sans-serif;
   font-size: 14px;
 }
+/* Sidenav left */
+.sidenav-left {
+	position: fixed;
+	display: flex;
+	flex-direction: row-reverse;
+	top: 10px;
+	left: 10px;
+}
+.icon-bar-left i {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  color: white;
+  background: hsla(0, 0%, 0%, 0.7);     /* nền trắng mờ */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(6px);               /* 💡 hiệu ứng mờ nền phía sau */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);  /* đổ bóng nhẹ */
+  cursor: pointer;
+}
+
+/* Hover */
+.icon-bar-left i:hover {
+  /* background: rgba(255, 255, 255, 0.2); */
+  color: hsl(120, 100%, 55%);
+}
+
+/* Active */
+.icon-bar-left i:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Kích hoạt */
+.icon-bar-left i.i-active {
+  background: rgba(100, 255, 100, 0.25);
+  border-color: rgba(100, 255, 100, 0.5);
+  color: white;
+}
+
 
 /* Sidenav right */
 .sidenav-right {
@@ -111,5 +154,3 @@ body {
 .btn-search:hover {
 	color: #fff;
 }
-
-
