@@ -34,9 +34,9 @@ const { tilesRenderer, dispose } = load3dTilesModel(tilesPath, camera, renderer,
 
 // Load GLTF Model
 const gltfPath1 = '../../resources/models/glb/bridge2dra.glb';
-loadGLTFModel(gltfPath1, scene, camera, controls, 'surface');
+loadGLTFModel(gltfPath1, scene, camera, controls, 'Bridge');
 const gltfPath2 = '../../resources/models/glb/songChoBlueDra.glb';
-loadGLTFModel(gltfPath2, scene, camera, controls, 'buildings');
+loadGLTFModel(gltfPath2, scene, camera, controls, 'Buildings');
 
 /* Loop */
 function loop () {

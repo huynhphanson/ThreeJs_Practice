@@ -24,19 +24,14 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
   tilesRenderer.setResolutionFromRenderer(camera, renderer);
 
   tilesRenderer.addEventListener('load-tile-set', () => {
-    // Tạo chấm đỏ (dùng SphereGeometry)
-    const dotGeometry = new THREE.SphereGeometry(10, 16, 16); // Bán kính 10
-    const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Màu đỏ
-    const dotMesh = new THREE.Mesh(dotGeometry, dotMaterial);
+
     const bbox = new THREE.Box3();
     tilesRenderer.getBoundingBox(bbox);
-    dotMesh.position.copy(bbox.getCenter(new THREE.Vector3()));
-    // scene.add(dotMesh)
-    const boxHelper = new THREE.Box3Helper(bbox, 0xffff00);
-    // scene.add(boxHelper);
-    tilesRenderer.group.name = 'Tiles3d';
 
-    addToModelGroup('Tiles3d', tilesRenderer.group);
+    const model = tilesRenderer.group;
+    model.name = 'Tiles3d';
+
+    addToModelGroup('Tiles3d', model);
     
     tilesRenderer.getBoundingSphere( sphere );
     centerECEFTiles = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
@@ -52,21 +47,25 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
     centerCameraTiles = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
     camera.position.set(centerCameraTiles.x, centerCameraTiles.y, centerCameraTiles.z);
     controls.target = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
+
+    const up = centerCameraTiles.clone().normalize()
+    camera.up.copy(up);
+    // add to scene
+    scene.add(model);
   });
-  scene.add(tilesRenderer.group);
 
   // Giải phóng bộ nhớ khi không sử dụng
   const disposeTilesRenderer = () => {
     tilesRenderer.removeEventListener('load-tile-set', onTileSetLoaded);
     tilesRenderer.dispose();  // Giải phóng tài nguyên của TilesRenderer
-    tilesRenderer.group.traverse((object) => {
+    model.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         object.geometry.dispose();
         object.material.dispose();
       }
     });
     // Nếu bạn có các đối tượng khác trong scene, bạn cũng nên giải phóng chúng
-    scene.remove(tilesRenderer.group);
+    scene.remove(model);
   };
 
   // Trả về hàm giải phóng bộ nhớ khi không cần sử dụng nữa
