@@ -187,24 +187,18 @@ function handleMouseUp(event) {
   draggingSphere = null;
 
   const timeDiff = performance.now() - mouseDownTime;
-  const moveDistance = Math.sqrt(
-    Math.pow(event.clientX - mouseDownPosition.x, 2) +
-    Math.pow(event.clientY - mouseDownPosition.y, 2)
+  const moveDistance = Math.hypot(
+    event.clientX - mouseDownPosition.x,
+    event.clientY - mouseDownPosition.y
   );
 
   if (timeDiff > 200 || moveDistance > 5) return;
 
-  const now = performance.now();
-  if (now - lastClickTime < 180) {
-    clearTimeout(clickTimeout);
-    return;
+  // ✅ Chỉ click nếu không di chuyển và không drag
+  if (timeDiff < 200 && moveDistance < 5 && event.button === 0) {
+    onMouseClick(event, rulerGroup.parent);
   }
 
-  lastClickTime = now;
-
-  clickTimeout = setTimeout(() => {
-    onMouseClick(event, rulerGroup.parent);
-  }, 180);
 }
 
 function handleRightClick(event) {
