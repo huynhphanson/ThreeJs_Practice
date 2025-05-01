@@ -13,6 +13,7 @@ import { cursorCoor } from './three/three-cursor-coordinates.js';
 import { initRuler, activateRuler, deactivateRuler } from './three/three-ruler.js';
 import { initRulerArea, activateRulerArea, deactivateRulerArea } from './three/three-ruler-area.js';
 import { isClickOnUI } from '../src/utils/ui-main.js';
+import { initProjectInfo } from './utils/projectInfo.js';
 
 /* Cesium Init */
 export const cesiumViewer = initCesium();
@@ -133,3 +134,16 @@ areaBtn.addEventListener('click', () => {
   }
 });
 
+// Project Infomation
+const infoBtn = document.querySelector('.info-project-btn');
+let infoPanelActive = false;
+infoBtn.addEventListener('click', () => {
+  infoPanelActive = !infoPanelActive;
+  initProjectInfo(); // 👉 tự xử lý hiển thị hoặc ẩn
+
+  if (infoPanelActive) {
+    infoBtn.classList.add('i-active');
+  } else {
+    infoBtn.classList.remove('i-active');
+  }
+});
