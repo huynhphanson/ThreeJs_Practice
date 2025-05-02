@@ -29,14 +29,21 @@ threeContainer.appendChild(labelRenderer.domElement);
 
 /* Load Model */
 // Load 3d Tiles Model
-const tilesPath = '../../resources/models/3d-tiles/songcho/tileset.json'
-const { tilesRenderer, dispose } = load3dTilesModel(tilesPath, camera, renderer, controls, scene);
+const tilesModels = new Map();
+
+const tilesPathIn = '../../resources/models/3d-tiles/scIn/tileset.json'
+const inModel = load3dTilesModel(tilesPathIn, camera, renderer, controls, scene);
+tilesModels.set('in', inModel);
+
+const tilesPathOut = '../../resources/models/3d-tiles/scOut/tileset.json'
+const outModel = load3dTilesModel(tilesPathOut, camera, renderer, controls, scene);
+tilesModels.set('out', outModel);
 
 // Load GLTF Model
 const gltfPath1 = '../../resources/models/glb/bridge2dra.glb';
-loadGLTFModel(gltfPath1, scene, camera, controls, 'Bridge');
+// loadGLTFModel(gltfPath1, scene, camera, controls, 'Bridge');
 const gltfPath2 = '../../resources/models/glb/songChoBlueDra.glb';
-loadGLTFModel(gltfPath2, scene, camera, controls, 'Buildings');
+// loadGLTFModel(gltfPath2, scene, camera, controls, 'Buildings');
 
 /* Loop */
 function loop () {
@@ -45,7 +52,10 @@ function loop () {
 	labelRenderer.render(scene, camera);
 	cesiumViewer.render();
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
-	tilesRenderer.update();
+	tilesModels.forEach(model => {
+    model.tilesRenderer.update();
+  });
+  
 	try {
 		syncThreeToCesium(camera, controls, cesiumViewer); //
 	} catch (error) {
@@ -55,7 +65,12 @@ function loop () {
 loop();
 
 /* window events */
-window.addEventListener('beforeunload', () => dispose());
+window.addEventListener('beforeunload', () => {
+  tilesModels.forEach(model => {
+    model.dispose();
+  });
+});
+
 window.addEventListener('click', (event) => clearInfoTable(event, raycaster, scene, camera));
 window.addEventListener('resize', () => resizeScreen(camera, renderer, labelRenderer, effectFXAA, composer));
 
