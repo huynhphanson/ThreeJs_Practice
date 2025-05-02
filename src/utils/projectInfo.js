@@ -35,6 +35,14 @@ export function initProjectInfo() {
     transition: 'opacity 0.4s ease'
   });
 
+  // === Bảng thông tin ===
+  const panel = document.createElement('div');
+  panel.id = 'project-panel';
+  panel.innerHTML = `
+    <h3>Thông tin</h3>
+    <p>Dữ liệu đo, mô hình, hoặc hướng dẫn...</p>
+  `;
+  
   Object.assign(panel.style, {
     position: 'absolute',
     top: '20%',
@@ -62,11 +70,4 @@ export function initProjectInfo() {
     panel.style.opacity = 1;       // ✅ panel hiện dần
   });
   
-  // === Bảng thông tin ===
-  const panel = document.createElement('div');
-  panel.id = 'project-panel';
-  panel.innerHTML = `
-    <h3>Thông tin</h3>
-    <p>Dữ liệu đo, mô hình, hoặc hướng dẫn...</p>
-  `;
 }
