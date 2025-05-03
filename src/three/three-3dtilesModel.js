@@ -8,7 +8,7 @@ import { addToModelGroup, modelGroups } from './three-modelGroups';
 export let centerECEFTiles, centerCameraTiles
 
 // Loader3DTiles
-export async function load3dTilesModel (path, camera, renderer, controls, scene) {
+export async function load3dTilesModel (path, camera, renderer, controls, scene, category = 'MÔ HÌNH 3D') {
   const sphere = new THREE.Sphere();
   const tilesRenderer = new TilesRenderer(path);
   const dracoLoader = new DRACOLoader();
@@ -23,13 +23,8 @@ export async function load3dTilesModel (path, camera, renderer, controls, scene)
   tilesRenderer.setCamera(camera);
   tilesRenderer.setResolutionFromRenderer(camera, renderer);
   const model = tilesRenderer.group;
-  const name = path.includes('In')
-  ? 'MÔ HÌNH 3D/In'
-  : path.includes('Out')
-  ? 'MÔ HÌNH 3D/Out'
-  : 'MÔ HÌNH 3D';
 
-  addToModelGroup(name, model);
+  addToModelGroup(category, model);
 
   tilesRenderer.addEventListener('load-tile-set', () => {
 

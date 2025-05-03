@@ -56,19 +56,79 @@ export function clearInfoTable (event, raycaster, scene, camera) {
 // Layer: Lọc qua các lớp đối tượng trong three-gltfModel, sau đó tạo danh sách trong layer và tính năng bật tắt
 export function renderLayerContent(modelGroups) {
   const layerContent = document.getElementById('layerContent');
-  layerContent.innerHTML = ''; // Xóa cũ
+  layerContent.innerHTML = '';
 
   const parentGroups = {};
 
-  // Tách nhóm cha/con từ groupName kiểu 'Tiles3d/In'
+  // Gom nhóm có và không phân cấp
   Object.keys(modelGroups).forEach(fullName => {
-    const [parent, child] = fullName.split('/');
-    if (!parentGroups[parent]) parentGroups[parent] = {};
-    parentGroups[parent][child] = modelGroups[fullName];
+    if (fullName.includes('/')) {
+      const [parent, child] = fullName.split('/');
+      if (!parentGroups[parent]) parentGroups[parent] = {};
+      parentGroups[parent][child] = modelGroups[fullName];
+    } else {
+      parentGroups[fullName] = null;
+    }
   });
 
   Object.entries(parentGroups).forEach(([parent, children]) => {
-    // Tạo nhóm cha
+    // 🔹 Nhóm đơn (không phân cấp)
+    if (children === null) {
+      const row = document.createElement('div');
+      row.className = 'layer-row';
+    
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = true;
+    
+      const label = document.createElement('label');
+      label.textContent = parent;
+    
+      checkbox.addEventListener('change', () => {
+        modelGroups[parent].forEach(obj => obj.visible = checkbox.checked);
+      });
+    
+      const span = document.createElement('span');
+      span.className = 'toggle-icon placeholder';
+      row.appendChild(span);
+      row.appendChild(checkbox);
+      row.appendChild(label);
+      layerContent.appendChild(row);
+      return;
+    }    
+
+    const childKeys = Object.keys(children);
+
+    // 🔹 Nhóm có 1 con → không tạo phân cấp
+    if (childKeys.length === 1) {
+      const onlyChild = childKeys[0];
+      const groupObjs = children[onlyChild];
+
+      const row = document.createElement('div');
+      row.className = 'layer-row';
+
+      const placeholder = document.createElement('span');
+      placeholder.className = 'toggle-icon placeholder';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = true;
+
+      const label = document.createElement('label');
+      label.textContent = onlyChild;
+
+      checkbox.addEventListener('change', () => {
+        groupObjs.forEach(obj => obj.visible = checkbox.checked);
+      });
+
+      row.appendChild(placeholder);
+      row.appendChild(checkbox);
+      row.appendChild(label);
+      layerContent.appendChild(row);
+      return;
+    }
+
+    // 🔹 Nhóm có nhiều con → tạo phân cấp
     const groupDiv = document.createElement('div');
     groupDiv.className = 'layer-group';
 
@@ -91,13 +151,15 @@ export function renderLayerContent(modelGroups) {
     row.appendChild(parentLabel);
     groupDiv.appendChild(row);
 
-    // Nhóm con
     const childContainer = document.createElement('div');
-    childContainer.className = 'child-group'; // Mặc định ẩn
+    childContainer.className = 'child-group';
 
     Object.entries(children).forEach(([childName, groupObjs]) => {
       const childRow = document.createElement('div');
-      childRow.className = 'layer-row';
+      childRow.className = 'layer-row child-indent';
+
+      const placeholder = document.createElement('span');
+      placeholder.className = 'toggle-icon placeholder';
 
       const childCheckbox = document.createElement('input');
       childCheckbox.type = 'checkbox';
@@ -108,10 +170,10 @@ export function renderLayerContent(modelGroups) {
 
       childCheckbox.addEventListener('change', () => {
         groupObjs.forEach(obj => obj.visible = childCheckbox.checked);
-        syncParentCheckbox(); // cập nhật lại cha
+        syncParentCheckbox();
       });
 
-      childRow.appendChild(document.createElement('span')); // icon trống
+      childRow.appendChild(placeholder);
       childRow.appendChild(childCheckbox);
       childRow.appendChild(childLabel);
       childContainer.appendChild(childRow);
@@ -120,13 +182,19 @@ export function renderLayerContent(modelGroups) {
     groupDiv.appendChild(childContainer);
     layerContent.appendChild(groupDiv);
 
-    // Sự kiện xổ/mở
     toggle.addEventListener('click', () => {
-      const isOpen = childContainer.classList.toggle('open');
-      toggle.textContent = isOpen ? '▼' : '▶';
+      const isOpen = childContainer.classList.contains('open');
+      if (isOpen) {
+        childContainer.style.maxHeight = '0px';
+        childContainer.classList.remove('open');
+        toggle.textContent = '▶';
+      } else {
+        childContainer.style.maxHeight = childContainer.scrollHeight + 'px';
+        childContainer.classList.add('open');
+        toggle.textContent = '▼';
+      }
     });
 
-    // Bật/tắt tất cả con
     parentCheckbox.addEventListener('change', () => {
       const checked = parentCheckbox.checked;
       childContainer.querySelectorAll('input[type=checkbox]').forEach(cb => {
@@ -135,7 +203,6 @@ export function renderLayerContent(modelGroups) {
       });
     });
 
-    // Cập nhật trạng thái checkbox cha khi con thay đổi
     function syncParentCheckbox() {
       const all = [...childContainer.querySelectorAll('input[type=checkbox]')];
       const allChecked = all.every(cb => cb.checked);

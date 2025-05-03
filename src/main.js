@@ -33,20 +33,22 @@ threeContainer.appendChild(labelRenderer.domElement);
 const tilesModels = new Map();
 
 const tilesPathIn = '../../resources/models/3d-tiles/scIn/tileset.json'
-const inModel = await load3dTilesModel(tilesPathIn, camera, renderer, controls, scene)
+const inModel = await load3dTilesModel(tilesPathIn, camera, renderer, controls, scene, 'MÔ HÌNH 3D/IN')
 tilesModels.set('in', inModel);
 
 
 const tilesPathOut = '../../resources/models/3d-tiles/scOut/tileset.json'
-const outModel = await load3dTilesModel(tilesPathOut, camera, renderer, controls, scene)
+const outModel = await load3dTilesModel(tilesPathOut, camera, renderer, controls, scene, 'MÔ HÌNH 3D/OUT')
 tilesModels.set('out', outModel);
-renderLayerContent(modelGroups);
+
 
 // Load GLTF Model
 const gltfPath1 = '../../resources/models/glb/bridge2dra.glb';
-// loadGLTFModel(gltfPath1, scene, camera, controls, 'Bridge');
+await loadGLTFModel(gltfPath1, scene, camera, controls, 'MÔ HÌNH CẦU');
 const gltfPath2 = '../../resources/models/glb/songChoBlueDra.glb';
-// loadGLTFModel(gltfPath2, scene, camera, controls, 'Buildings');
+await loadGLTFModel(gltfPath2, scene, camera, controls, 'MÔ HÌNH NHÀ');
+
+renderLayerContent(modelGroups);
 
 /* Loop */
 function loop () {
