@@ -1,9 +1,5 @@
 // modelGroups.js
-export const modelGroups = {
-  Tiles3d: [],
-  Bridge: [],
-  Buildings: [],
-};
+export const modelGroups = {};
 
 export function addToModelGroup(category, mesh) {
   if (!modelGroups[category]) {

@@ -8,7 +8,7 @@ import { addToModelGroup, modelGroups } from './three-modelGroups';
 export let centerECEFTiles, centerCameraTiles
 
 // Loader3DTiles
-export function load3dTilesModel (path, camera, renderer, controls, scene) {
+export async function load3dTilesModel (path, camera, renderer, controls, scene) {
   const sphere = new THREE.Sphere();
   const tilesRenderer = new TilesRenderer(path);
   const dracoLoader = new DRACOLoader();
@@ -22,16 +22,19 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
   
   tilesRenderer.setCamera(camera);
   tilesRenderer.setResolutionFromRenderer(camera, renderer);
+  const model = tilesRenderer.group;
+  const name = path.includes('In')
+  ? 'Tiles3d/In'
+  : path.includes('Out')
+  ? 'Tiles3d/Out'
+  : 'Tiles3d';
+
+  addToModelGroup(name, model);
 
   tilesRenderer.addEventListener('load-tile-set', () => {
 
     const bbox = new THREE.Box3();
     tilesRenderer.getBoundingBox(bbox);
-
-    const model = tilesRenderer.group;
-    model.name = 'Tiles3d';
-
-    addToModelGroup('Tiles3d', model);
     
     tilesRenderer.getBoundingSphere( sphere );
     centerECEFTiles = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
@@ -69,6 +72,9 @@ export function load3dTilesModel (path, camera, renderer, controls, scene) {
   };
 
   // Trả về hàm giải phóng bộ nhớ khi không cần sử dụng nữa
-  return { tilesRenderer, dispose: disposeTilesRenderer };
-
+  return { 
+    tilesRenderer, 
+    dispose: disposeTilesRenderer,
+    model
+   };
 }

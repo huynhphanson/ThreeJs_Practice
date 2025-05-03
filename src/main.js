@@ -12,8 +12,9 @@ import { setViewer } from './cesium/cesium-viewer.js';
 import { cursorCoor } from './three/three-cursor-coordinates.js';
 import { initRuler, activateRuler, deactivateRuler } from './three/three-ruler.js';
 import { initRulerArea, activateRulerArea, deactivateRulerArea } from './three/three-ruler-area.js';
-import { isClickOnUI } from '../src/utils/ui-main.js';
+import { isClickOnUI, renderLayerContent } from '../src/utils/ui-main.js';
 import { initProjectInfo } from './utils/projectInfo.js';
+import { modelGroups } from './three/three-modelGroups.js';
 
 /* Cesium Init */
 export const cesiumViewer = initCesium();
@@ -32,12 +33,14 @@ threeContainer.appendChild(labelRenderer.domElement);
 const tilesModels = new Map();
 
 const tilesPathIn = '../../resources/models/3d-tiles/scIn/tileset.json'
-const inModel = load3dTilesModel(tilesPathIn, camera, renderer, controls, scene);
+const inModel = await load3dTilesModel(tilesPathIn, camera, renderer, controls, scene)
 tilesModels.set('in', inModel);
 
+
 const tilesPathOut = '../../resources/models/3d-tiles/scOut/tileset.json'
-const outModel = load3dTilesModel(tilesPathOut, camera, renderer, controls, scene);
+const outModel = await load3dTilesModel(tilesPathOut, camera, renderer, controls, scene)
 tilesModels.set('out', outModel);
+renderLayerContent(modelGroups);
 
 // Load GLTF Model
 const gltfPath1 = '../../resources/models/glb/bridge2dra.glb';

@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { modelGroups } from '../three/three-modelGroups';
 
 
 const iconButtons = document.querySelectorAll('.menu-btn');
@@ -52,49 +51,46 @@ export function clearInfoTable (event, raycaster, scene, camera) {
     panels.forEach(p => p.classList.remove("active"));
     iconButtons.forEach(btn => btn.classList.remove('i-active'));
   }
-}
+};
 
 // Layer: Lọc qua các lớp đối tượng trong three-gltfModel, sau đó tạo danh sách trong layer và tính năng bật tắt
-const layerContent = document.getElementById('layerContent');
-let layerHTML = ''; // Khởi tạo chuỗi HTML
-
-Object.keys(modelGroups).forEach(groupName => {
-  const id = `toggle-${groupName}`;
-  // Thêm vào chuỗi HTML thay vì ghi đè
-  layerHTML += `
-  <div class="info-row">
-    <input type="checkbox" id="${id}" checked />
-    <label class="info-value" for="${id}">${groupName.charAt(0).toUpperCase() + groupName.slice(1)}</label>
-  </div>`;
-
-});
-
-// Cập nhật toàn bộ nội dung của layerContent chỉ một lần
-layerContent.innerHTML = layerHTML;
-
-// Sử dụng setTimeout để trì hoãn việc thêm sự kiện cho các checkbox
-setTimeout(() => {
+export function renderLayerContent (modelGroups) {
+  const layerContent = document.getElementById('layerContent');
+  let layerHTML = ''; // Khởi tạo chuỗi HTML
   Object.keys(modelGroups).forEach(groupName => {
     const id = `toggle-${groupName}`;
-    
-    const checkbox = document.getElementById(id);
-    if (checkbox) {
-      // Sự kiện bật/tắt lớp
-      checkbox.addEventListener('change', (e) => {
-        const visible = e.target.checked;
-        toggleLayerVisibility(groupName, visible);
+    // Thêm vào chuỗi HTML thay vì ghi đè
+    layerHTML += `
+    <div class="info-row">
+      <input type="checkbox" id="${id}" checked />
+      <label class="info-value" for="${id}">${groupName.charAt(0).toUpperCase() + groupName.slice(1)}</label>
+    </div>`;
+  });
+  // Cập nhật toàn bộ nội dung của layerContent chỉ một lần
+  layerContent.innerHTML = layerHTML;
+
+  // Sử dụng setTimeout để trì hoãn việc thêm sự kiện cho các checkbox
+  setTimeout(() => {
+    Object.keys(modelGroups).forEach(groupName => {
+      const id = `toggle-${groupName}`;
+      
+      const checkbox = document.getElementById(id);
+      if (checkbox) {
+        // Sự kiện bật/tắt lớp
+        checkbox.addEventListener('change', (e) => {
+          const visible = e.target.checked;
+          toggleLayerVisibility(groupName, visible);
+        });
+      }
       });
-    }
-  });
-}, 0); // Trì hoãn đến vòng lặp tiếp theo để đảm bảo các phần tử đã có trong DOM
+  }, 0); // Trì hoãn đến vòng lặp tiếp theo để đảm bảo các phần tử đã có trong DOM
 
-function toggleLayerVisibility(groupName, visible) {
-  const group = modelGroups[groupName];
-  group.forEach(obj => {
-    if (obj && obj.visible !== undefined) {
-      obj.visible = visible;
-    }
-  });
+  function toggleLayerVisibility(groupName, visible) {
+    const group = modelGroups[groupName];
+    group.forEach(obj => {
+      if (obj && obj.visible !== undefined) {
+        obj.visible = visible;
+      }
+    });
+  }
 }
-
-
