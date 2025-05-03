@@ -54,43 +54,94 @@ export function clearInfoTable (event, raycaster, scene, camera) {
 };
 
 // Layer: Lọc qua các lớp đối tượng trong three-gltfModel, sau đó tạo danh sách trong layer và tính năng bật tắt
-export function renderLayerContent (modelGroups) {
+export function renderLayerContent(modelGroups) {
   const layerContent = document.getElementById('layerContent');
-  let layerHTML = ''; // Khởi tạo chuỗi HTML
-  Object.keys(modelGroups).forEach(groupName => {
-    const id = `toggle-${groupName}`;
-    // Thêm vào chuỗi HTML thay vì ghi đè
-    layerHTML += `
-    <div class="info-row">
-      <input type="checkbox" id="${id}" checked />
-      <label class="info-value" for="${id}">${groupName.charAt(0).toUpperCase() + groupName.slice(1)}</label>
-    </div>`;
+  layerContent.innerHTML = ''; // Xóa cũ
+
+  const parentGroups = {};
+
+  // Tách nhóm cha/con từ groupName kiểu 'Tiles3d/In'
+  Object.keys(modelGroups).forEach(fullName => {
+    const [parent, child] = fullName.split('/');
+    if (!parentGroups[parent]) parentGroups[parent] = {};
+    parentGroups[parent][child] = modelGroups[fullName];
   });
-  // Cập nhật toàn bộ nội dung của layerContent chỉ một lần
-  layerContent.innerHTML = layerHTML;
 
-  // Sử dụng setTimeout để trì hoãn việc thêm sự kiện cho các checkbox
-  setTimeout(() => {
-    Object.keys(modelGroups).forEach(groupName => {
-      const id = `toggle-${groupName}`;
-      
-      const checkbox = document.getElementById(id);
-      if (checkbox) {
-        // Sự kiện bật/tắt lớp
-        checkbox.addEventListener('change', (e) => {
-          const visible = e.target.checked;
-          toggleLayerVisibility(groupName, visible);
-        });
-      }
+  Object.entries(parentGroups).forEach(([parent, children]) => {
+    // Tạo nhóm cha
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'layer-group';
+
+    const row = document.createElement('div');
+    row.className = 'layer-row';
+
+    const toggle = document.createElement('span');
+    toggle.className = 'toggle-icon';
+    toggle.textContent = '▶';
+
+    const parentCheckbox = document.createElement('input');
+    parentCheckbox.type = 'checkbox';
+    parentCheckbox.checked = true;
+
+    const parentLabel = document.createElement('label');
+    parentLabel.textContent = parent;
+
+    row.appendChild(toggle);
+    row.appendChild(parentCheckbox);
+    row.appendChild(parentLabel);
+    groupDiv.appendChild(row);
+
+    // Nhóm con
+    const childContainer = document.createElement('div');
+    childContainer.className = 'child-group'; // Mặc định ẩn
+
+    Object.entries(children).forEach(([childName, groupObjs]) => {
+      const childRow = document.createElement('div');
+      childRow.className = 'layer-row';
+
+      const childCheckbox = document.createElement('input');
+      childCheckbox.type = 'checkbox';
+      childCheckbox.checked = true;
+
+      const childLabel = document.createElement('label');
+      childLabel.textContent = childName;
+
+      childCheckbox.addEventListener('change', () => {
+        groupObjs.forEach(obj => obj.visible = childCheckbox.checked);
+        syncParentCheckbox(); // cập nhật lại cha
       });
-  }, 0); // Trì hoãn đến vòng lặp tiếp theo để đảm bảo các phần tử đã có trong DOM
 
-  function toggleLayerVisibility(groupName, visible) {
-    const group = modelGroups[groupName];
-    group.forEach(obj => {
-      if (obj && obj.visible !== undefined) {
-        obj.visible = visible;
-      }
+      childRow.appendChild(document.createElement('span')); // icon trống
+      childRow.appendChild(childCheckbox);
+      childRow.appendChild(childLabel);
+      childContainer.appendChild(childRow);
     });
-  }
+
+    groupDiv.appendChild(childContainer);
+    layerContent.appendChild(groupDiv);
+
+    // Sự kiện xổ/mở
+    toggle.addEventListener('click', () => {
+      const isOpen = childContainer.classList.toggle('open');
+      toggle.textContent = isOpen ? '▼' : '▶';
+    });
+
+    // Bật/tắt tất cả con
+    parentCheckbox.addEventListener('change', () => {
+      const checked = parentCheckbox.checked;
+      childContainer.querySelectorAll('input[type=checkbox]').forEach(cb => {
+        cb.checked = checked;
+        cb.dispatchEvent(new Event('change'));
+      });
+    });
+
+    // Cập nhật trạng thái checkbox cha khi con thay đổi
+    function syncParentCheckbox() {
+      const all = [...childContainer.querySelectorAll('input[type=checkbox]')];
+      const allChecked = all.every(cb => cb.checked);
+      const someChecked = all.some(cb => cb.checked);
+      parentCheckbox.checked = allChecked;
+      parentCheckbox.indeterminate = !allChecked && someChecked;
+    }
+  });
 }

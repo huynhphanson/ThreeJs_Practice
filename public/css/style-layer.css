@@ -1,0 +1,37 @@
+.layer-group {
+  margin-bottom: 8px;
+  font-family: sans-serif;
+}
+
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+}
+
+.layer-row label {
+  cursor: pointer;
+  user-select: none;
+}
+
+.child-group {
+  transform-origin: top;
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+  display: block;
+  padding-left: 20px;
+}
+
+.child-group.open {
+  transform: scaleY(1);
+}
+
+.toggle-icon {
+  cursor: pointer;
+  font-size: 10px;
+  width: 12px;
+  display: inline-block;
+  user-select: none;
+  transform: translateY(1px);
+}

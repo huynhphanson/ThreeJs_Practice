@@ -24,10 +24,10 @@ export async function load3dTilesModel (path, camera, renderer, controls, scene)
   tilesRenderer.setResolutionFromRenderer(camera, renderer);
   const model = tilesRenderer.group;
   const name = path.includes('In')
-  ? 'Tiles3d/In'
+  ? 'MÔ HÌNH 3D/In'
   : path.includes('Out')
-  ? 'Tiles3d/Out'
-  : 'Tiles3d';
+  ? 'MÔ HÌNH 3D/Out'
+  : 'MÔ HÌNH 3D';
 
   addToModelGroup(name, model);
 
