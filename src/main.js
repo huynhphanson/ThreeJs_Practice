@@ -29,26 +29,41 @@ threeContainer.appendChild(renderer.domElement);
 threeContainer.appendChild(labelRenderer.domElement);
 
 /* Load Model */
-// Load 3d Tiles Model
-const tilesModels = new Map();
 
+const tilesModels = new Map();
+// Path
 const tilesPathIn = '../../resources/models/3d-tiles/scIn/tileset.json'
+const tilesPathOut = '../../resources/models/3d-tiles/scOut/tileset.json'
+const gltfPath1 = '../../resources/models/glb/bridge2dra.glb';
+const gltfPath2 = '../../resources/models/glb/songChoBlueDra.glb';
+
+/* // Load 3d Tiles Model
 const inModel = await load3dTilesModel(tilesPathIn, camera, renderer, controls, scene, 'MÔ HÌNH 3D/IN')
 tilesModels.set('in', inModel);
-
-
-const tilesPathOut = '../../resources/models/3d-tiles/scOut/tileset.json'
 const outModel = await load3dTilesModel(tilesPathOut, camera, renderer, controls, scene, 'MÔ HÌNH 3D/OUT')
 tilesModels.set('out', outModel);
 
-
 // Load GLTF Model
-const gltfPath1 = '../../resources/models/glb/bridge2dra.glb';
 await loadGLTFModel(gltfPath1, scene, camera, controls, 'MÔ HÌNH CẦU');
-const gltfPath2 = '../../resources/models/glb/songChoBlueDra.glb';
 await loadGLTFModel(gltfPath2, scene, camera, controls, 'MÔ HÌNH NHÀ');
 
-renderLayerContent(modelGroups);
+// render Layer
+renderLayerContent(modelGroups); */
+document.getElementById('loading-overlay').style.display = 'flex';
+
+Promise.all([
+  load3dTilesModel(tilesPathIn, camera, renderer, controls, scene, 'MÔ HÌNH 3D/IN'),
+  load3dTilesModel(tilesPathOut, camera, renderer, controls, scene, 'MÔ HÌNH 3D/OUT'),
+  loadGLTFModel(gltfPath1, scene, camera, controls, 'MÔ HÌNH CẦU'),
+  loadGLTFModel(gltfPath2, scene, camera, controls, 'MÔ HÌNH NHÀ'),
+]).then(([inModel, outModel]) => {
+  tilesModels.set('in', inModel);
+  tilesModels.set('out', outModel);
+  renderLayerContent(modelGroups);
+
+  document.getElementById('loading-overlay').style.display = 'none';
+  loop();
+});
 
 /* Loop */
 function loop () {
