@@ -33,39 +33,55 @@ threeContainer.appendChild(labelRenderer.domElement);
 /* Load Model */
 
 const tilesModels = new Map();
-// Path
-const tilesPathIn = '../resources/models/3d-tiles/scIn/tileset.json'
-const tilesPathOut = '../resources/models/3d-tiles/scOut/tileset.json'
-const gltfPathBridge = '../resources/models/glb/bridge2dra.glb';
-const gltfPathHouse = '../resources/models/glb/songChoBlueDra.glb';
-const gltfPathBoundary = '../resources/models/glb/ranhGPMBdra.glb'
+// Path Sông Chò
+const tilesSCPathIn = '../resources/models/3d-tiles/scIn/tileset.json'
+const tilesSCPathOut = '../resources/models/3d-tiles/scOut/tileset.json'
+const gltfPathSCBridge = '../resources/models/glb/sChoBridge.glb';
+const gltfPathSCHouse = '../resources/models/glb/sChoHouse.glb';
+const gltfPathSCBoundary = '../resources/models/glb/sChoGPBM.glb'
+const centerSCLinePath = '../resources/csv/SongCho_CenterLine.csv'
 
-const centerLinePath = '../resources/csv/SongCho_CenterLine.csv'
+// Path Sông Giang
+const tilesSGPathIn = '../resources/models/3d-tiles/sgIn/tileset.json'
+const tilesSGPathOut = '../resources/models/3d-tiles/sgOut/tileset.json'
+const gltfPathSGBoundary = '../resources/models/glb/sGiangGPMB.glb'
+const centerSGLinePath = '../resources/csv/SongGiang_CenterLine.csv'
 
 labelRenderer.domElement.style.display = 'none';
 renderer.domElement.style.visibility = 'hidden';
 document.getElementById('loading-overlay').style.display = 'flex';
 
 Promise.all([
-  // Mô hình hiện trạng
-  load3dTilesModel(tilesPathIn, camera, renderer, controls, scene, 'MÔ HÌNH HIỆN TRẠNG/PHẠM VI TRONG RANH'),
-  load3dTilesModel(tilesPathOut, camera, renderer, controls, scene, 'MÔ HÌNH HIỆN TRẠNG/PHẠM VI NGOÀI RANH'),
+  // HIỆN TRẠNG SÔNG CHÒ 3D TILES
+  load3dTilesModel(tilesSCPathIn, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG CHÒ/PHẠM VI TRONG RANH'),
+  load3dTilesModel(tilesSCPathOut, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG CHÒ/PHẠM VI NGOÀI RANH'),
+  // HIỆN TRẠNG SÔNG GIANG 3D TILES
+  load3dTilesModel(tilesSGPathIn, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG GIANG/PHẠM VI TRONG RANH'),
+  load3dTilesModel(tilesSGPathOut, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG GIANG/PHẠM VI NGOÀI RANH'),
 
-  loadGLTFModel(gltfPathHouse, scene, camera, controls, 'MÔ HÌNH HIỆN TRẠNG/MÔ HÌNH NHÀ'),
-  loadGLTFModel(gltfPathBoundary, scene, camera, controls, 'MÔ HÌNH HIỆN TRẠNG/RANH GPMB'),
+  // HIỆN TRẠNG SÔNG CHÒ GLTF
+  loadGLTFModel(gltfPathSCHouse, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/MÔ HÌNH NHÀ'),
+  loadGLTFModel(gltfPathSCBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/RANH GPMB'),
+  drawPolylineFromCSV(centerSCLinePath, scene, camera, 'HIỆN TRẠNG SÔNG CHÒ/TIM KHẢO SÁT', 40, 100),
 
-  drawPolylineFromCSV(centerLinePath, scene, camera, 'MÔ HÌNH HIỆN TRẠNG/TIM KHẢO SÁT', 10, 100),
-  // Mô hình thiết kế
-  loadGLTFModel(gltfPathBridge, scene, camera, controls, 'MÔ HÌNH CẦU'),
-]).then(([inModel, outModel]) => {
-  tilesModels.set('in', inModel);
-  tilesModels.set('out', outModel);
+
+  // HIỆN TRẠNG SÔNG GIANG GLTF
+  loadGLTFModel(gltfPathSGBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG GIANG/RANH GPMB'),
+  drawPolylineFromCSV(centerSGLinePath, scene, camera, 'HIỆN TRẠNG SÔNG GIANG/TIM KHẢO SÁT', 10, 100),
+
+  // Mô hình thiết kế SÔNG CHÒ
+  loadGLTFModel(gltfPathSCBridge, scene, camera, controls, 'MÔ HÌNH CẦU SÔNG CHÒ'),
+]).then(([inSCModel, outSCModel, inSGModel, outSGModel]) => {
+  tilesModels.set('inSG', inSGModel);
+  tilesModels.set('outSG', outSGModel);
+  tilesModels.set('inSC', inSCModel);
+  tilesModels.set('outSC', outSCModel);
 
   renderLayerContent(modelGroups, camera, controls);
   document.getElementById('loading-overlay').style.display = 'none';
   renderer.domElement.style.visibility = 'visible';
   labelRenderer.domElement.style.display = 'block';
-  
+
   loop();
 });
 

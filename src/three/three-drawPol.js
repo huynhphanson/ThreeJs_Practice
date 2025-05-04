@@ -73,24 +73,25 @@ export async function drawPolylineFromCSV(
     group.position.copy(origin);
     scene.add(group);
 
-    // Vẽ cylinder line
-    for (let i = 0; i < pointsLocal.length - 1; i++) {
-      const start = pointsLocal[i];
-      const end = pointsLocal[i + 1];
-      const dir = new THREE.Vector3().subVectors(end, start);
-      const length = dir.length();
+    // === Vẽ Tube mượt theo spline ===
+    const curve = new THREE.CatmullRomCurve3(pointsLocal);
+    const tubeGeom = new THREE.TubeGeometry(curve, 1000, 0.2, 8, false);
 
-      const geom = new THREE.CylinderGeometry(0.1, 0.1, length, 8);
-      const mat = new THREE.MeshBasicMaterial({ color: 0xa83248 });
-      const mesh = new THREE.Mesh(geom, mat);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xff0000,
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+      depthTest: false
+    });
 
-      const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-      mesh.position.copy(mid);
-      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    const tube = new THREE.Mesh(tubeGeom, mat);
+    tube.userData.highlightId = 'tube_' + name;
 
-      addToModelGroup(name, mesh)
-      group.add(mesh);
-    }
+    addToModelGroup(name, tube);
+    group.add(tube);
+
 
     // Gắn nhãn mô tả
     for (let i = 0; i < pointsLocal.length; i++) {
@@ -111,7 +112,17 @@ export async function drawPolylineFromCSV(
       label.userData.originalParent = group;
       addToModelGroup(name, label);
       group.add(label);
-      
+
+      // === Vẽ sphere tại các điểm ===
+      const sphereGeom = new THREE.SphereGeometry(0.5, 16, 16);
+      const sphereMat = new THREE.MeshBasicMaterial({ color: 0x4287f5 });
+
+      const sphere = new THREE.Mesh(sphereGeom, sphereMat);
+      sphere.position.copy(point);
+      sphere.userData.highlightId = `sphere_${name}_${i}`;
+
+      addToModelGroup(name, sphere);
+      group.add(sphere);
     }
 
     // Hàm cập nhật ẩn/hiện nhãn theo camera

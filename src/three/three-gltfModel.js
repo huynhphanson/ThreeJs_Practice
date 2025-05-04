@@ -136,6 +136,7 @@ export async function loadGLTFModel(path, scene, camera, controls, category, cle
         });
   
         window.addEventListener("mouseup", (e) => {
+          
           if (!isMouseDown) return;
           isMouseDown = false;
   
@@ -152,7 +153,12 @@ export async function loadGLTFModel(path, scene, camera, controls, category, cle
           lastClickTime = now;
           clickTimeout = setTimeout(() => handleClick(e), 180);
         });
-  
+        
+        window.addEventListener("dblclick", (e) => {
+          if (isClickOnUI(e)) return;
+          handleClick(e);
+        });
+        
         function handleClick(event) {
           if (isClickOnUI(event)) return; // trước raycast
           mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
