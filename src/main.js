@@ -32,30 +32,23 @@ threeContainer.appendChild(labelRenderer.domElement);
 
 const tilesModels = new Map();
 // Path
-const tilesPathIn = '../../resources/models/3d-tiles/scIn/tileset.json'
-const tilesPathOut = '../../resources/models/3d-tiles/scOut/tileset.json'
-const gltfPath1 = '../../resources/models/glb/bridge2dra.glb';
-const gltfPath2 = '../../resources/models/glb/songChoBlueDra.glb';
+const tilesPathIn = '../resources/models/3d-tiles/scIn/tileset.json'
+const tilesPathOut = '../resources/models/3d-tiles/scOut/tileset.json'
+const gltfPathBridge = '../resources/models/glb/bridge2dra.glb';
+const gltfPathHouse = '../resources/models/glb/songChoBlueDra.glb';
+const gltfPathBoundary = '../resources/models/glb/ranhGPMBdra.glb'
 
-/* // Load 3d Tiles Model
-const inModel = await load3dTilesModel(tilesPathIn, camera, renderer, controls, scene, 'MÔ HÌNH 3D/IN')
-tilesModels.set('in', inModel);
-const outModel = await load3dTilesModel(tilesPathOut, camera, renderer, controls, scene, 'MÔ HÌNH 3D/OUT')
-tilesModels.set('out', outModel);
-
-// Load GLTF Model
-await loadGLTFModel(gltfPath1, scene, camera, controls, 'MÔ HÌNH CẦU');
-await loadGLTFModel(gltfPath2, scene, camera, controls, 'MÔ HÌNH NHÀ');
-
-// render Layer
-renderLayerContent(modelGroups); */
 document.getElementById('loading-overlay').style.display = 'flex';
 
 Promise.all([
-  load3dTilesModel(tilesPathIn, camera, renderer, controls, scene, 'MÔ HÌNH 3D/IN'),
-  load3dTilesModel(tilesPathOut, camera, renderer, controls, scene, 'MÔ HÌNH 3D/OUT'),
-  loadGLTFModel(gltfPath1, scene, camera, controls, 'MÔ HÌNH CẦU'),
-  loadGLTFModel(gltfPath2, scene, camera, controls, 'MÔ HÌNH NHÀ'),
+  // Mô hình hiện trạng
+  load3dTilesModel(tilesPathIn, camera, renderer, controls, scene, 'MÔ HÌNH HIỆN TRẠNG/IN'),
+  load3dTilesModel(tilesPathOut, camera, renderer, controls, scene, 'MÔ HÌNH HIỆN TRẠNG/OUT'),
+
+  loadGLTFModel(gltfPathHouse, scene, camera, controls, 'MÔ HÌNH HIỆN TRẠNG/MÔ HÌNH NHÀ'),
+  loadGLTFModel(gltfPathBoundary, scene, camera, controls, 'MÔ HÌNH HIỆN TRẠNG/RANH GPMB'),
+  // Mô hình thiết kế
+  loadGLTFModel(gltfPathBridge, scene, camera, controls, 'MÔ HÌNH CẦU'),
 ]).then(([inModel, outModel]) => {
   tilesModels.set('in', inModel);
   tilesModels.set('out', outModel);

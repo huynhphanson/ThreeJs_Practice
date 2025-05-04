@@ -1,5 +1,4 @@
 .layer-group {
-  margin-bottom: 8px;
   font-family: sans-serif;
 }
 
@@ -34,7 +33,6 @@
 .layer-group .child-group.open {
   transform: scaleY(1);
   max-height: 500px;
-  margin-top: 4px;
 }
 
 .toggle-icon {
