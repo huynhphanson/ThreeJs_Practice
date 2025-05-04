@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { DRACOLoader, GLTFLoader } from 'three/examples/jsm/Addons.js';
 import { TilesRenderer } from '3d-tiles-renderer';
 import { convertTo9217, convertToECEF } from './three-convertCoor';
-import { addToModelGroup, modelGroups } from './three-modelGroups';
+import { addToModelGroup } from './three-modelGroups';
 
 
 export let centerECEFTiles, centerCameraTiles
@@ -19,6 +19,8 @@ export async function load3dTilesModel (path, camera, renderer, controls, scene,
   loader.setDRACOLoader( dracoLoader );
   
   tilesRenderer.manager.addHandler( /\.(gltf|glb)$/g, loader );
+  tilesRenderer.maxDepth = 100; // tăng số tầng tile được tải nếu cần
+  
   
   tilesRenderer.setCamera(camera);
   tilesRenderer.setResolutionFromRenderer(camera, renderer);

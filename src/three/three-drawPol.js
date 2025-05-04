@@ -115,7 +115,7 @@ export async function drawPolylineFromCSV(
 
       // === Vẽ sphere tại các điểm ===
       const sphereGeom = new THREE.SphereGeometry(0.5, 16, 16);
-      const sphereMat = new THREE.MeshBasicMaterial({ color: 0x4287f5 });
+      const sphereMat = new THREE.MeshBasicMaterial({ color: 0xf5b042 });
 
       const sphere = new THREE.Mesh(sphereGeom, sphereMat);
       sphere.position.copy(point);
