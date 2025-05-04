@@ -42,7 +42,8 @@ const gltfPathBoundary = '../resources/models/glb/ranhGPMBdra.glb'
 
 const centerLinePath = '../resources/csv/SongCho_CenterLine.csv'
 
-
+labelRenderer.domElement.style.display = 'none';
+renderer.domElement.style.visibility = 'hidden';
 document.getElementById('loading-overlay').style.display = 'flex';
 
 Promise.all([
@@ -59,8 +60,12 @@ Promise.all([
 ]).then(([inModel, outModel]) => {
   tilesModels.set('in', inModel);
   tilesModels.set('out', outModel);
+
   renderLayerContent(modelGroups, camera, controls);
   document.getElementById('loading-overlay').style.display = 'none';
+  renderer.domElement.style.visibility = 'visible';
+  labelRenderer.domElement.style.display = 'block';
+  
   loop();
 });
 
