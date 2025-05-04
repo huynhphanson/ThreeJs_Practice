@@ -11,7 +11,7 @@ export async function drawPolylineFromCSV(
   camera,
   name = 'Polyline',
   zOffset = 0,
-  maxDistance = 500
+  maxDistance = 700
 ) {
   // Thêm CSS label nếu chưa có
   if (!document.getElementById('three-label-style')) {
@@ -21,12 +21,17 @@ export async function drawPolylineFromCSV(
       .label {
         white-space: nowrap;
         pointer-events: none;
-        padding: 2px 4px;
-        background-color: white;
-        border: 1px solid #888;
-        font-size: 10px;
+        padding: 2px 6px;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        font-weight: bold;
+        font-size: 11px;
+        border: 1px solid #0f0;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.3);
       }
     `;
+  
     document.head.appendChild(style);
   }
 
@@ -69,14 +74,15 @@ export async function drawPolylineFromCSV(
       const dir = new THREE.Vector3().subVectors(end, start);
       const length = dir.length();
 
-      const geom = new THREE.CylinderGeometry(0.3, 0.3, length, 8);
-      const mat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+      const geom = new THREE.CylinderGeometry(0.1, 0.1, length, 8);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xa83248 });
       const mesh = new THREE.Mesh(geom, mat);
 
       const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
       mesh.position.copy(mid);
       mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
 
+      addToModelGroup(name, mesh)
       group.add(mesh);
     }
 
