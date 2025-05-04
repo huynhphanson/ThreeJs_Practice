@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { threeInit } from './three/three-init.js'
 import { animateLoop } from './three/three-animate.js';
-import { outlinePass, effectFXAA } from './three/three-outline.js';
-import { onMouseMove, findPosition, findProjectPosition, zoomTarget, resizeScreen, getCoordinate } from './three/three-controls.js';
+import { effectFXAA } from './three/three-outline.js';
+import { findPosition, findProjectPosition, zoomTarget, resizeScreen } from './three/three-controls.js';
 import { clearInfoTable } from '../src/utils/ui-main.js';
 import { initCesium } from './cesium/cesium-init.js';
 import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
@@ -15,6 +15,7 @@ import { initRulerArea, activateRulerArea, deactivateRulerArea } from './three/t
 import { isClickOnUI, renderLayerContent } from '../src/utils/ui-main.js';
 import { initProjectInfo } from './utils/projectInfo.js';
 import { modelGroups } from './three/three-modelGroups.js';
+import { drawPolylineFromCSV } from './three/three-drawPol.js';
 
 /* Cesium Init */
 export const cesiumViewer = initCesium();
@@ -38,6 +39,9 @@ const gltfPathBridge = '../resources/models/glb/bridge2dra.glb';
 const gltfPathHouse = '../resources/models/glb/songChoBlueDra.glb';
 const gltfPathBoundary = '../resources/models/glb/ranhGPMBdra.glb'
 
+const centerLinePath = '../resources/csv/SongCho_CenterLine.csv'
+
+
 document.getElementById('loading-overlay').style.display = 'flex';
 
 Promise.all([
@@ -47,6 +51,8 @@ Promise.all([
 
   loadGLTFModel(gltfPathHouse, scene, camera, controls, 'MÔ HÌNH HIỆN TRẠNG/MÔ HÌNH NHÀ'),
   loadGLTFModel(gltfPathBoundary, scene, camera, controls, 'MÔ HÌNH HIỆN TRẠNG/RANH GPMB'),
+
+  drawPolylineFromCSV(centerLinePath, scene, camera, 'MÔ HÌNH HIỆN TRẠNG/TIM KHẢO SÁT', 10, 100),
   // Mô hình thiết kế
   loadGLTFModel(gltfPathBridge, scene, camera, controls, 'MÔ HÌNH CẦU'),
 ]).then(([inModel, outModel]) => {
@@ -67,6 +73,11 @@ function loop () {
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
 	tilesModels.forEach(model => {
     model.tilesRenderer.update();
+  });
+  scene.traverse(obj => {
+    if (obj.userData.updateLabelVisibility) {
+      obj.userData.updateLabelVisibility();
+    }
   });
   
 	try {
