@@ -72,22 +72,41 @@ export function renderLayerContent(modelGroups) {
   });
 
   Object.entries(parentGroups).forEach(([parent, children]) => {
+    // 🔹 Hàm bật/tắt đồng thời mesh và label
+    const toggleObjects = (groupObjs, visible) => {
+      groupObjs.forEach(obj => {
+        if (obj.constructor?.name === 'CSS2DObject') {
+          obj.visible = visible;
+          if (!visible) {
+            obj.parent?.remove(obj);
+          } else {
+            obj.userData.originalParent?.add(obj); // ← quan trọng!
+          }
+        } else {
+          obj.visible = visible;
+        }
+      });
+    };
+    
+    
+    
+
     // 🔹 Nhóm đơn (không phân cấp)
     if (children === null) {
       const row = document.createElement('div');
       row.className = 'layer-row';
-    
+
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.checked = true;
-    
+
       const label = document.createElement('label');
       label.textContent = parent;
-    
+
       checkbox.addEventListener('change', () => {
-        modelGroups[parent].forEach(obj => obj.visible = checkbox.checked);
+        toggleObjects(modelGroups[parent], checkbox.checked);
       });
-    
+
       const span = document.createElement('span');
       span.className = 'toggle-icon placeholder';
       row.appendChild(span);
@@ -95,7 +114,7 @@ export function renderLayerContent(modelGroups) {
       row.appendChild(label);
       layerContent.appendChild(row);
       return;
-    }    
+    }
 
     const childKeys = Object.keys(children);
 
@@ -118,7 +137,7 @@ export function renderLayerContent(modelGroups) {
       label.textContent = onlyChild;
 
       checkbox.addEventListener('change', () => {
-        groupObjs.forEach(obj => obj.visible = checkbox.checked);
+        toggleObjects(groupObjs, checkbox.checked);
       });
 
       row.appendChild(placeholder);
@@ -169,7 +188,7 @@ export function renderLayerContent(modelGroups) {
       childLabel.textContent = childName;
 
       childCheckbox.addEventListener('change', () => {
-        groupObjs.forEach(obj => obj.visible = childCheckbox.checked);
+        toggleObjects(groupObjs, childCheckbox.checked);
         syncParentCheckbox();
       });
 

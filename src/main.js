@@ -46,8 +46,8 @@ document.getElementById('loading-overlay').style.display = 'flex';
 
 Promise.all([
   // Mô hình hiện trạng
-  load3dTilesModel(tilesPathIn, camera, renderer, controls, scene, 'MÔ HÌNH HIỆN TRẠNG/IN'),
-  load3dTilesModel(tilesPathOut, camera, renderer, controls, scene, 'MÔ HÌNH HIỆN TRẠNG/OUT'),
+  load3dTilesModel(tilesPathIn, camera, renderer, controls, scene, 'MÔ HÌNH HIỆN TRẠNG/PHẠM VI TRONG RANH'),
+  load3dTilesModel(tilesPathOut, camera, renderer, controls, scene, 'MÔ HÌNH HIỆN TRẠNG/PHẠM VI NGOÀI RANH'),
 
   loadGLTFModel(gltfPathHouse, scene, camera, controls, 'MÔ HÌNH HIỆN TRẠNG/MÔ HÌNH NHÀ'),
   loadGLTFModel(gltfPathBoundary, scene, camera, controls, 'MÔ HÌNH HIỆN TRẠNG/RANH GPMB'),
@@ -59,7 +59,6 @@ Promise.all([
   tilesModels.set('in', inModel);
   tilesModels.set('out', outModel);
   renderLayerContent(modelGroups);
-
   document.getElementById('loading-overlay').style.display = 'none';
   loop();
 });

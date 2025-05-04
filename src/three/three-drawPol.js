@@ -22,13 +22,19 @@ export async function drawPolylineFromCSV(
         white-space: nowrap;
         pointer-events: none;
         padding: 2px 6px;
-        background: rgba(0,0,0,0.8);
+        background: rgba(0, 0, 0, 0.3);
         color: white;
         font-weight: bold;
         font-size: 11px;
-        border: 1px solid #0f0;
         border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      /* Màu nền xanh lá cho điểm đầu/cuối */
+      .label-start,
+      .label-end {
+        background: rgba(0, 128, 0, 0.85); /* xanh lá đậm trong suốt */
+        border: 1px solid #0f0;
       }
     `;
   
@@ -95,10 +101,17 @@ export async function drawPolylineFromCSV(
       div.className = 'label';
       div.textContent = desc;
 
+      // 👉 GÁN CLASS ĐẶC BIỆT CHO ĐIỂM ĐẦU/CUỐI
+      if (i === 0) div.classList.add('label-start');
+      if (i === pointsLocal.length - 1) div.classList.add('label-end');
+      
       const label = new CSS2DObject(div);
       label.position.copy(point);
       label.userData.isLabel = true; // dùng để lọc nhanh
+      label.userData.originalParent = group;
+      addToModelGroup(name, label);
       group.add(label);
+      
     }
 
     // Hàm cập nhật ẩn/hiện nhãn theo camera
