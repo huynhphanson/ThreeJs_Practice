@@ -12,7 +12,8 @@ import { setViewer } from './cesium/cesium-viewer.js';
 import { cursorCoor } from './three/three-cursor-coordinates.js';
 import { initRuler, activateRuler, deactivateRuler } from './three/three-ruler.js';
 import { initRulerArea, activateRulerArea, deactivateRulerArea } from './three/three-ruler-area.js';
-import { isClickOnUI, renderLayerContent } from '../src/utils/ui-main.js';
+import { isClickOnUI } from '../src/utils/ui-main.js';
+import { renderLayerContent } from './utils/ui-renderLayer.js';
 import { initProjectInfo } from './utils/projectInfo.js';
 import { modelGroups } from './three/three-modelGroups.js';
 import { drawPolylineFromCSV } from './three/three-drawPol.js';
@@ -58,7 +59,7 @@ Promise.all([
 ]).then(([inModel, outModel]) => {
   tilesModels.set('in', inModel);
   tilesModels.set('out', outModel);
-  renderLayerContent(modelGroups);
+  renderLayerContent(modelGroups, camera, controls);
   document.getElementById('loading-overlay').style.display = 'none';
   loop();
 });
