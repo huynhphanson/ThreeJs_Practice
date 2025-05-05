@@ -1,6 +1,5 @@
 import * as THREE from 'three'
 import gsap from 'gsap';
-import { createCpointMesh } from './three-func';
 import { convertTo9217, convertToECEF } from './three-convertCoor';
 import { centerCameraTiles, centerECEFTiles } from './three-3dtilesModel';
 import { centerECEF, cameraECEF } from './three-gltfModel';
@@ -81,6 +80,14 @@ export function findPosition(scene, camera, controls) {
   }
 
   const target = convertToECEF(coords[0], coords[1], coords[2] || 10);
+  function createCpointMesh (name, x, y, z) {
+    const geo = new THREE.SphereGeometry(.2); // radius of point
+    const mat = new THREE.MeshBasicMaterial({color: 0xFF0000});
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+    mesh.name = name || 'point';
+    return mesh;
+  }
   scene.add(createCpointMesh('checkPoint1', target.x, target.y, target.z));
 
   let cameraPosition = camera.position.clone();

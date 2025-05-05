@@ -38,7 +38,7 @@ const tilesSCPathIn = '../resources/models/3d-tiles/scIn/tileset.json'
 const tilesSCPathOut = '../resources/models/3d-tiles/scOut/tileset.json'
 const gltfPathSCBridge = '../resources/models/glb/sChoBridge.glb';
 const gltfPathSCHouse = '../resources/models/glb/sChoHouse.glb';
-const gltfPathSCBoundary = '../resources/models/glb/sChoGPBM.glb'
+const gltfPathSCBoundary = '../resources/models/glb/untitleddra2.glb'
 const centerSCLinePath = '../resources/csv/SongCho_CenterLine.csv'
 
 // Path Sông Giang
@@ -60,22 +60,22 @@ Promise.all([
   load3dTilesModel(tilesSGPathOut, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG GIANG/PHẠM VI NGOÀI RANH'),
 
   // HIỆN TRẠNG SÔNG CHÒ GLTF
-  loadGLTFModel(gltfPathSCHouse, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/MÔ HÌNH NHÀ'),
+  // loadGLTFModel(gltfPathSCHouse, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/MÔ HÌNH NHÀ'),
   loadGLTFModel(gltfPathSCBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/RANH GPMB'),
-  drawPolylineFromCSV(centerSCLinePath, scene, camera, 'HIỆN TRẠNG SÔNG CHÒ/TIM KHẢO SÁT', 40, 100),
+  // drawPolylineFromCSV(centerSCLinePath, scene, camera, 'HIỆN TRẠNG SÔNG CHÒ/TIM KHẢO SÁT', 40, 100),
 
 
   // HIỆN TRẠNG SÔNG GIANG GLTF
-  loadGLTFModel(gltfPathSGBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG GIANG/RANH GPMB'),
-  drawPolylineFromCSV(centerSGLinePath, scene, camera, 'HIỆN TRẠNG SÔNG GIANG/TIM KHẢO SÁT', 10, 100),
+  // loadGLTFModel(gltfPathSGBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG GIANG/RANH GPMB'),
+  // drawPolylineFromCSV(centerSGLinePath, scene, camera, 'HIỆN TRẠNG SÔNG GIANG/TIM KHẢO SÁT', 10, 100),
 
   // Mô hình thiết kế SÔNG CHÒ
-  loadGLTFModel(gltfPathSCBridge, scene, camera, controls, 'MÔ HÌNH CẦU SÔNG CHÒ'),
+  // loadGLTFModel(gltfPathSCBridge, scene, camera, controls, 'MÔ HÌNH CẦU SÔNG CHÒ'),
 ]).then(([inSCModel, outSCModel, inSGModel, outSGModel]) => {
-  tilesModels.set('inSG', inSGModel);
+  /* tilesModels.set('inSG', inSGModel);
   tilesModels.set('outSG', outSGModel);
   tilesModels.set('inSC', inSCModel);
-  tilesModels.set('outSC', outSCModel);
+  tilesModels.set('outSC', outSCModel); */
 
   renderLayerContent(modelGroups, camera, controls);
   document.getElementById('loading-overlay').style.display = 'none';
@@ -90,7 +90,7 @@ function loop () {
 	requestAnimationFrame(loop);
   composer.render();
 	labelRenderer.render(scene, camera);
-	cesiumViewer.render();
+	// cesiumViewer.render();
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
 	tilesModels.forEach(model => {
     model.tilesRenderer.update();

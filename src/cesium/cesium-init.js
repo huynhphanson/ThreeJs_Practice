@@ -18,10 +18,10 @@ export function initCesium() {
       terrainShadows: Cesium.ShadowMode.DISABLED,
       targetFrameRate: 60,
       terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-      imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+/*       imageryProvider: new Cesium.OpenStreetMapImageryProvider({
         url: 'https://a.tile.openstreetmap.org/',
         maximumLevel: 18  // giới hạn để tránh zoom quá sâu gây lỗi
-      }),
+      }), */
       contextOptions: {
         webgl: {
             alpha: false,
