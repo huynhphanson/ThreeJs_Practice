@@ -6,7 +6,7 @@
 body {
   margin: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
 }
 /* Sidenav left */
@@ -35,7 +35,6 @@ body {
 }
 
 .icon-bar-left i.i-active {
-  /* background: rgba(255, 255, 255, 0.2); */
   color: hsl(120, 100%, 55%);
 }
 

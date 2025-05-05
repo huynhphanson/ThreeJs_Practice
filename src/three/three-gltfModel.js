@@ -4,7 +4,7 @@ import { DRACOLoader } from 'three/examples/jsm/Addons.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { getECEFTransformFromEPSG } from './three-convertCoor.js';
-import { generateInfoDefault, generateInfoHTML } from '../utils/generateInfoHTML.js';
+import { generateInfoHTML } from '../utils/generateInfoHTML.js';
 import { addToModelGroup } from './three-modelGroups.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import { isClickOnUI } from '../utils/ui-main.js';
@@ -24,9 +24,6 @@ loader.setMeshoptDecoder(MeshoptDecoder);
 
 let clickReady = false;
 export let centerECEF, cameraECEF;
-
-const infoContent = document.getElementById('infoContent');
-infoContent.innerHTML = generateInfoDefault();
 
 export async function loadGLTFModel(path, scene, camera, controls, category, clear = false) {
   if (clear) clearScene(scene);
@@ -211,9 +208,7 @@ function registerClick(scene, camera) {
     if (objId === null) return;
 
     const meta = mesh.userData.metadata?.find(obj => obj.id === objId);
-    console.log('🟢 FULL INFO:', {
-      meta: meta.userData,
-    });
+
     if (meta && infoContent) infoContent.innerHTML = generateInfoHTML(meta);
   }
 }

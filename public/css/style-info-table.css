@@ -1,34 +1,51 @@
-#infoContent {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
+/* Áp dụng cho toàn bộ panel */
+.info-panel {
+  background: rgba(0, 0, 0, 0.7); /* nền đen mờ */
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  font-size: 13px;
+  max-width: 280px;
 }
 
-.info-row {
-	display: flex;
-	justify-content: space-between;
-	padding: 6px 10px;
-	border-radius: 4px;
+/* Tiêu đề section */
+.info-panel h3 {
+  margin: 10px 0 6px;
+  font-size: 14px;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 
-.info-row:nth-child(odd) {
-	background-color: #2a2a2a; /* đen nhạt */
-	color: #f1f1f1;
+/* Bảng nội dung */
+.info-panel table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.info-row:nth-child(even) {
-	background-color: #3a3a3a; /* xám */
-	color: #f1f1f1;
+/* Dòng xen kẽ nền xám/đen */
+.info-panel tr:nth-child(even) {
+  background: rgba(176, 202, 58, 0.06);
+}
+.info-panel tr:nth-child(odd) {
+  background: rgba(181, 226, 77, 0.12);
 }
 
-.info-label {
-	font-weight: 600;
-	color: #ccc;
+/* Cột trái (key) */
+.info-panel td:first-child {
+  font-weight: bold;
+  color: #ddd;
+  width: 40%;
 }
 
-.info-value {
-	text-align: right;
-	color: #fff;
-	overflow-wrap: break-word;
-	max-width: 150px;
+/* Cột phải (value) */
+.info-panel td:last-child {
+  color: #fff;
+  word-break: break-word;
+}
+
+/* Link có thể nhấn */
+.info-panel a {
+  color: #66ccff;
+  text-decoration: underline;
 }

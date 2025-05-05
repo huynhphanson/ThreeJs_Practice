@@ -1,24 +1,3 @@
-// generateInfoHTML.js
-export function generateInfoDefault() {
-  return `
-    <div class="info-row">
-      <span class="info-label">Name:</span>
-      <span class="info-value">${"Unknown"}</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">X-Coor:</span>
-      <span class="info-value">${"Unknown"}</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Y-Coor:</span>
-      <span class="info-value">${"Unknown"}</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Z-Coor:</span>
-      <span class="info-value">${"Unknown"}</span>
-    </div>
-  `;
-}
 
 export function generateInfoHTML(meta) {
   if (!meta) return '<div>No data</div>';
@@ -60,11 +39,11 @@ export function generateInfoHTML(meta) {
     ? Object.entries(meta.geometryInfo).map(([k, v]) => toRow(k, v)).join('')
     : '<tr><td colspan="2" style="padding: 4px 8px;">(None)</td></tr>';
 
-  return `
-    <div style="font-family: sans-serif;">
-      ${section('Thông tin cơ bản', basicRows.join(''))}
+    return `
+    <div class="info-panel">
+      ${section('General', basicRows.join(''))}
       ${section('Survey Data', surveyRows)}
       ${section('Geometry Info', geomRows)}
     </div>
-  `;
+  `;  
 }
