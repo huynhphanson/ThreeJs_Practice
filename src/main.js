@@ -38,7 +38,7 @@ const tilesSCPathIn = '../resources/models/3d-tiles/scIn/tileset.json'
 const tilesSCPathOut = '../resources/models/3d-tiles/scOut/tileset.json'
 const gltfPathSCBridge = '../resources/models/glb/sChoBridge.glb';
 const gltfPathSCHouse = '../resources/models/glb/sChoHouse.glb';
-const gltfPathSCBoundary = '../resources/models/glb/untitleddra2.glb'
+const gltfPathSCBoundary = '../resources/models/glb/ranhSCdra1.glb'
 const centerSCLinePath = '../resources/csv/SongCho_CenterLine.csv'
 
 // Path Sông Giang

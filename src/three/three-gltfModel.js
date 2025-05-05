@@ -64,16 +64,6 @@ function mergeMeshes(model, center, matrix, scene, category) {
 
   model.traverse((obj) => {
     if (!obj.isMesh) return;
-    console.log(`🟡 Mesh #${idx}`, {
-      obj,
-      name: obj.name,
-      uuid: obj.uuid,
-      userData: JSON.parse(JSON.stringify(obj.userData)),
-      materialName: obj.material?.name,
-      vertexCount: obj.geometry?.attributes?.position?.count,
-      geometryAttributes: Object.keys(obj.geometry?.attributes || {}),
-      boundingBox: new THREE.Box3().setFromObject(obj)
-    });
     const g = obj.geometry.clone().applyMatrix4(obj.matrixWorld);
     if (!g.index) g.setIndex([...Array(g.attributes.position.count).keys()]);
 
@@ -97,14 +87,29 @@ function mergeMeshes(model, center, matrix, scene, category) {
     const size = new THREE.Vector3(), center = new THREE.Vector3();
     box.getSize(size); box.getCenter(center);
 
+    // Tách riêng SurveyData và GeometryInfo
+    const surveyData = {};
+    const geomInfo = {};
+
+    for (const key in obj.userData) {
+      if (key.startsWith('SurveyData_')) {
+        surveyData[key.replace('SurveyData_', '')] = obj.userData[key];
+      }
+      if (key.startsWith('GeometryInfo_')) {
+        geomInfo[key.replace('GeometryInfo_', '')] = obj.userData[key];
+      }
+    }
+
     entry.meta.push({
       id: idx,
       name: obj.name || 'Unnamed',
-      userData: JSON.parse(JSON.stringify(obj.userData || {})),
+      surveyData,
+      geometryInfo: geomInfo,
+      userData: JSON.parse(JSON.stringify(obj.userData || {})), // nếu vẫn muốn giữ toàn bộ gốc
       size,
       center
     });
-    
+
     idx++;
   });
 
@@ -207,9 +212,7 @@ function registerClick(scene, camera) {
 
     const meta = mesh.userData.metadata?.find(obj => obj.id === objId);
     console.log('🟢 FULL INFO:', {
-      meta,
-      userData: mesh.userData,
-      name: mesh.name,
+      meta: meta.userData,
     });
     if (meta && infoContent) infoContent.innerHTML = generateInfoHTML(meta);
   }

@@ -6,7 +6,7 @@ statsFPS.showPanel(0);
 document.body.appendChild(statsFPS.dom);
 statsFPS.dom.style.position = 'absolute';
 statsFPS.dom.style.left = '10px';
-statsFPS.dom.style.top = '350px';
+statsFPS.dom.style.top = '150px';
 
 // Stats MS
 const statsMS = new Stats();
@@ -15,7 +15,7 @@ document.body.appendChild(statsMS.dom);
 // Thay đổi vị trí xuống góc phải dưới màn hình
 statsMS.dom.style.position = 'absolute';
 statsMS.dom.style.left = '10px';
-statsMS.dom.style.top = '400px';
+statsMS.dom.style.top = '200px';
 
 // Stats MB
 const statsMB = new Stats();
@@ -24,7 +24,7 @@ document.body.appendChild(statsMB.dom);
 // Thay đổi vị trí xuống góc phải dưới màn hình
 statsMB.dom.style.position = 'absolute';
 statsMB.dom.style.left = '10px';
-statsMB.dom.style.top = '450px';
+statsMB.dom.style.top = '250px';
 
 export function animateLoop(controls, scene, camera, renderer, labelRenderer, composer) {
   function animate() {
