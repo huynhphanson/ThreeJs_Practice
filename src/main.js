@@ -63,11 +63,11 @@ Promise.all([
   // HIỆN TRẠNG SÔNG CHÒ GLTF
   loadGLTFModel(gltfPathSCHouse, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/MÔ HÌNH NHÀ'),
   loadGLTFModel(gltfPathSCBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/RANH GPMB'),
-  // drawPolylineFromCSV(centerSCLinePath, scene, camera, 'HIỆN TRẠNG SÔNG CHÒ/TIM KHẢO SÁT', 40, 100),
+  drawPolylineFromCSV(centerSCLinePath, scene, camera, 'HIỆN TRẠNG SÔNG CHÒ/TIM KHẢO SÁT', 40, 100),
 
 
   // HIỆN TRẠNG SÔNG GIANG GLTF
-  // loadGLTFModel(gltfPathSGBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG GIANG/RANH GPMB'),
+  loadGLTFModel(gltfPathSGBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG GIANG/RANH GPMB'),
   // drawPolylineFromCSV(centerSGLinePath, scene, camera, 'HIỆN TRẠNG SÔNG GIANG/TIM KHẢO SÁT', 10, 100),
 
   // Mô hình thiết kế SÔNG CHÒ
@@ -92,7 +92,7 @@ function loop () {
 	requestAnimationFrame(loop);
   composer.render();
 	labelRenderer.render(scene, camera);
-	// cesiumViewer.render();
+	
 	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
 	tilesModels.forEach(model => {
     model.tilesRenderer.update();
@@ -104,7 +104,8 @@ function loop () {
   });
   
 	try {
-		syncThreeToCesium(camera, controls, cesiumViewer); //
+		syncThreeToCesium(camera, controls, cesiumViewer);
+    cesiumViewer.render();
 	} catch (error) {
 		console.error("Error syncing cameras:", error);
 	}
