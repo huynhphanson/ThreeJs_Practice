@@ -38,6 +38,14 @@ export function initCesium() {
   cesiumViewer.scene.globe.depthTestAgainstTerrain = true;
   cesiumViewer.scene.highDynamicRange = false;
   cesiumViewer.scene.useDepthPicking = false;
+  // Đợi Cesium load xong tiles trước khi ẩn loading
+  cesiumViewer.scene.globe.tileLoadProgressEvent.addEventListener(function (queuedTiles) {
+    if (queuedTiles === 0) {
+      document.getElementById('loading-overlay').style.display = 'none';
+      cesiumViewer.scene.globe.tileLoadProgressEvent.removeEventListener(this); // gỡ sau khi xong
+    }
+  });
+
   return cesiumViewer;
 }
 

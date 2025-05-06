@@ -57,13 +57,27 @@ function prepModel(model) {
 
 function mergeMeshes(model, center, matrix, scene, category) {
   const map = new Map();
+  const logUV = false; // ✅ bật/tắt log UV bị thiếu
   let idx = 0;
 
   model.traverse((obj) => {
     if (!obj.isMesh) return;
+
     const g = obj.geometry.clone().applyMatrix4(obj.matrixWorld);
     if (!g.index) g.setIndex([...Array(g.attributes.position.count).keys()]);
 
+    // ⚠️ Bổ sung normal nếu thiếu
+    if (!g.attributes.normal) g.computeVertexNormals();
+
+    // ⚠️ Thêm dummy UV nếu thiếu
+    if (!g.attributes.uv) {
+      const count = g.attributes.position.count;
+      const dummyUV = new Float32Array(count * 2).fill(0);
+      g.setAttribute('uv', new THREE.BufferAttribute(dummyUV, 2));
+      if (logUV) console.warn(`⚠️ Missing UV at mesh "${obj.name}" → filled with dummy UV`);
+    }
+
+    // Color attribute (copy từ vật liệu)
     const col = new Float32Array(g.attributes.position.count * 3);
     const c = obj.material.color;
     for (let i = 0; i < col.length; i += 3) {
@@ -72,6 +86,7 @@ function mergeMeshes(model, center, matrix, scene, category) {
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     g.setAttribute('objectId', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count).fill(idx), 1));
 
+    // Group theo vật liệu
     const key = obj.material.uuid;
     if (!map.has(key)) map.set(key, { geoms: [], mat: obj.material, groups: [], meta: [] });
 
@@ -80,33 +95,30 @@ function mergeMeshes(model, center, matrix, scene, category) {
     entry.geoms.push(g);
     entry.groups.push({ start, count: g.index.count, groupIndex: idx });
 
+    // Tính size & center
     const box = new THREE.Box3().setFromObject(obj);
     const size = new THREE.Vector3(), center = new THREE.Vector3();
     box.getSize(size); box.getCenter(center);
 
+    // Group userData theo prefix
     const groupedUserData = {};
     const userData = obj.userData || {};
-
     for (const key in userData) {
-      const [prefix, subKey] = key.split('_', 2); // chỉ tách 1 lần đầu
-      if (!subKey) continue; // bỏ qua key không có "_"
-
-      if (!groupedUserData[prefix]) {
-        groupedUserData[prefix] = {};
-      }
-
+      const [prefix, subKey] = key.split('_', 2);
+      if (!subKey) continue;
+      if (!groupedUserData[prefix]) groupedUserData[prefix] = {};
       groupedUserData[prefix][subKey] = userData[key];
     }
 
     entry.meta.push({
       id: idx,
       name: obj.name || 'Unnamed',
-      ...groupedUserData, // Spread toàn bộ nhóm như SurveyData, GeometryInfo...
-      userData: JSON.parse(JSON.stringify(userData)), // giữ bản đầy đủ nếu cần
+      ...groupedUserData,
+      userData: JSON.parse(JSON.stringify(userData)),
       size,
       center
     });
-    
+
     idx++;
   });
 
@@ -115,6 +127,7 @@ function mergeMeshes(model, center, matrix, scene, category) {
   map.forEach(({ geoms, mat, groups, meta }) => {
     const merged = BufferGeometryUtils.mergeGeometries(geoms, true);
     if (!merged) return;
+
     merged.clearGroups();
     groups.forEach(g => merged.addGroup(g.start, g.count, g.groupIndex));
     merged.applyMatrix4(new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z));
@@ -133,6 +146,7 @@ function mergeMeshes(model, center, matrix, scene, category) {
 
   return { meshes, centerResult: getECEFTransformFromEPSG(center.x, center.y, center.z).ecef };
 }
+
 
 function setupCamera(center, ecef, cam, ctrl) {
   const offset = center.clone().add(new THREE.Vector3(-100, -200, 300));
