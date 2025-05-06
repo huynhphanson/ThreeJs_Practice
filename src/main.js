@@ -38,7 +38,8 @@ const tilesSCPathIn = '../resources/models/3d-tiles/scIn/tileset.json'
 const tilesSCPathOut = '../resources/models/3d-tiles/scOut/tileset.json'
 const gltfPathSCBridge = '../resources/models/glb/sChoBridge.glb';
 const gltfPathSCHouse = '../resources/models/glb/sChoHouse.glb';
-const gltfPathSCBoundary = '../resources/models/glb/sChoGPBM.glb'
+const gltfPathSCDuongDan = '../resources/models/glb/sChoDuongDan.glb';
+const gltfPathSCBoundary = '../resources/models/glb/sChoGPMB.glb'
 const centerSCLinePath = '../resources/csv/SongCho_CenterLine.csv'
 
 // Path Sông Giang
@@ -70,7 +71,8 @@ Promise.all([
   // drawPolylineFromCSV(centerSGLinePath, scene, camera, 'HIỆN TRẠNG SÔNG GIANG/TIM KHẢO SÁT', 10, 100),
 
   // Mô hình thiết kế SÔNG CHÒ
-  // loadGLTFModel(gltfPathSCBridge, scene, camera, controls, 'MÔ HÌNH CẦU SÔNG CHÒ'),
+  loadGLTFModel(gltfPathSCBridge, scene, camera, controls, 'MÔ HÌNH CẦU SÔNG CHÒ'),
+  loadGLTFModel(gltfPathSCDuongDan, scene, camera, controls, 'MÔ HÌNH ĐƯỜNG DẪN'),
 ]).then(([inSCModel, outSCModel, inSGModel, outSGModel]) => {
   tilesModels.set('inSG', inSGModel);
   tilesModels.set('outSG', outSGModel);

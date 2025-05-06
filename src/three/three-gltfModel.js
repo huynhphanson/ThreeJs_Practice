@@ -84,29 +84,29 @@ function mergeMeshes(model, center, matrix, scene, category) {
     const size = new THREE.Vector3(), center = new THREE.Vector3();
     box.getSize(size); box.getCenter(center);
 
-    // Tách riêng SurveyData và GeometryInfo
-    const surveyData = {};
-    const geomInfo = {};
+    const groupedUserData = {};
+    const userData = obj.userData || {};
 
-    for (const key in obj.userData) {
-      if (key.startsWith('SurveyData_')) {
-        surveyData[key.replace('SurveyData_', '')] = obj.userData[key];
+    for (const key in userData) {
+      const [prefix, subKey] = key.split('_', 2); // chỉ tách 1 lần đầu
+      if (!subKey) continue; // bỏ qua key không có "_"
+
+      if (!groupedUserData[prefix]) {
+        groupedUserData[prefix] = {};
       }
-      if (key.startsWith('GeometryInfo_')) {
-        geomInfo[key.replace('GeometryInfo_', '')] = obj.userData[key];
-      }
+
+      groupedUserData[prefix][subKey] = userData[key];
     }
 
     entry.meta.push({
       id: idx,
       name: obj.name || 'Unnamed',
-      surveyData,
-      geometryInfo: geomInfo,
-      userData: JSON.parse(JSON.stringify(obj.userData || {})), // nếu vẫn muốn giữ toàn bộ gốc
+      ...groupedUserData, // Spread toàn bộ nhóm như SurveyData, GeometryInfo...
+      userData: JSON.parse(JSON.stringify(userData)), // giữ bản đầy đủ nếu cần
       size,
       center
     });
-
+    
     idx++;
   });
 
@@ -208,7 +208,6 @@ function registerClick(scene, camera) {
     if (objId === null) return;
 
     const meta = mesh.userData.metadata?.find(obj => obj.id === objId);
-
     if (meta && infoContent) infoContent.innerHTML = generateInfoHTML(meta);
   }
 }
