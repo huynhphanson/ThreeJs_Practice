@@ -17,6 +17,7 @@ import { renderLayerContent } from './utils/ui-renderLayer.js';
 import { initProjectInfo } from './utils/projectInfo.js';
 import { modelGroups } from './three/three-modelGroups.js';
 import { drawPolylineFromCSV } from './three/three-drawPol.js';
+import { registerClickHandler } from './three/three-registerClick.js';
 
 /* Cesium Init */
 export const cesiumViewer = initCesium();
@@ -121,19 +122,23 @@ window.addEventListener('beforeunload', () => {
 window.addEventListener('click', (event) => clearInfoTable(event, raycaster, scene, camera));
 window.addEventListener('resize', () => resizeScreen(camera, renderer, labelRenderer, effectFXAA, composer));
 
-
 /* FUNCTIONS */
 // Search
-const searchBtn = document.querySelector('.btn-search'); // find position
+const searchBtn = document.querySelector('.btn-search');
 searchBtn.addEventListener('click', () => findPosition(scene, camera, controls));
 // ProjectoPosition
-const oriBtn = document.querySelector('.btn-project-location'); // find project position
+const oriBtn = document.querySelector('.btn-project-location');
 oriBtn.addEventListener('click', () => findProjectPosition(camera, controls))
 // ZoomTarget
 window.addEventListener('dblclick', (event) => {
   if (isClickOnUI(event)) return;
   zoomTarget(event, raycaster, scene, camera, controls)
-}); // zoom target position
+});
+// Click Model Event
+const infoContent = document.getElementById('infoContent');
+registerClickHandler(scene, camera, infoContent); // ✅ đúng thứ tự
+
+
 
 // Cursor Coordinates
 const sidenavRightBottom = document.querySelector('.sidenav-right-bottom');
@@ -166,7 +171,6 @@ rulerBtn.addEventListener('click', () => {
     rulerBtn.classList.remove('i-active');
   }
 });
-
 
 // Ruler Area
 const areaBtn = document.querySelector('.fa-draw-polygon');
@@ -201,7 +205,7 @@ const infoBtn = document.querySelector('.info-project-btn');
 let infoPanelActive = false;
 infoBtn.addEventListener('click', () => {
   infoPanelActive = !infoPanelActive;
-  initProjectInfo(); // 👉 tự xử lý hiển thị hoặc ẩn
+  initProjectInfo();
 
   if (infoPanelActive) {
     infoBtn.classList.add('i-active');

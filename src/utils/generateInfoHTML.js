@@ -19,17 +19,38 @@ export function generateInfoHTML(meta) {
     <table style="border-collapse: collapse; width: 100%; font-size: 13px;">${rows}</table>
   `;
 
-  const formatVector = (v) => `(${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)})`;
+  const formatVector = (v) => {
+    if (!v) return '---';
+    if (Array.isArray(v)) {
+      return `(${v[0].toFixed(2)}, ${v[1].toFixed(2)}, ${v[2].toFixed(2)})`;
+    }
+    if (typeof v === 'object' && 'x' in v) {
+      return `(${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)})`;
+    }
+    return '---';
+  };
 
   const htmlSections = [];
 
   // General
-  const generalRows = [
-    toRow('Name', meta.name),
-    toRow('ID', meta.id),
-    toRow('Size', formatVector(meta.size)),
-    toRow('Center', formatVector(meta.center)),
-  ];
+  const isDrawPol = meta.X !== undefined && meta.Y !== undefined && meta.Z !== undefined;
+
+  const generalRows = isDrawPol
+    ? [
+        toRow('Desc', meta.name || meta.Desc || '---'),
+        toRow('X', meta.X.toFixed(3)),
+        toRow('Y', meta.Y.toFixed(3)),
+        toRow('Z', meta.Z.toFixed(3)),
+      ]
+    : [
+        toRow('Name', meta.name || '---'),
+        toRow('ID', meta.id),
+        toRow('Size', formatVector(meta.size)),
+        toRow('Center', formatVector(meta.center)),
+      ];
+
+
+
   htmlSections.push(section('General', generalRows.join('')));
 
   // Grouped fields

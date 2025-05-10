@@ -38,7 +38,6 @@ export async function loadGLTFModel(path, scene, camera, controls, category, cle
       const { meshes, centerResult } = mergeMeshes(model, center, matrix, scene, category);
 
       setupCamera(center, centerResult, camera, controls);
-      registerClick(scene, camera);
 
       centerECEF = centerResult.clone();
       cameraECEF = camOffset(center);
@@ -222,6 +221,7 @@ function registerClick(scene, camera) {
     if (objId === null) return;
 
     const meta = mesh.userData.metadata?.find(obj => obj.id === objId);
+    console.log(meta);
     if (meta && infoContent) infoContent.innerHTML = generateInfoHTML(meta);
   }
 }
