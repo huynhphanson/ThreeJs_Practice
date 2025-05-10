@@ -39,12 +39,36 @@ export function initCesium() {
   cesiumViewer.scene.highDynamicRange = false;
   cesiumViewer.scene.useDepthPicking = false;
   // Đợi Cesium load xong tiles trước khi ẩn loading
-  cesiumViewer.scene.globe.tileLoadProgressEvent.addEventListener(function (queuedTiles) {
+  let imageryReady = false;
+  let tilesReady = false;
+
+  // Đợi imagery sẵn sàng (đối với OSM hoặc Ion)
+  const imageryLayer = cesiumViewer.imageryLayers.get(0);
+  if (imageryLayer && imageryLayer.imageryProvider.ready) {
+    imageryReady = true;
+  } else if (imageryLayer) {
+    imageryLayer.imageryProvider.readyPromise.then(() => {
+      imageryReady = true;
+      checkReadyToHideLoading();
+    });
+  }
+
+  // Đợi terrain tiles load xong
+  cesiumViewer.scene.globe.tileLoadProgressEvent.addEventListener(function handleTileLoad(queuedTiles) {
     if (queuedTiles === 0) {
-      document.getElementById('loading-overlay').style.display = 'none';
-      cesiumViewer.scene.globe.tileLoadProgressEvent.removeEventListener(this); // gỡ sau khi xong
+      tilesReady = true;
+      cesiumViewer.scene.globe.tileLoadProgressEvent.removeEventListener(handleTileLoad);
+      checkReadyToHideLoading();
     }
   });
+
+  // Kiểm tra đủ điều kiện mới ẩn overlay
+  function checkReadyToHideLoading() {
+    if (imageryReady && tilesReady) {
+      document.getElementById('loading-overlay').style.display = 'none';
+    }
+  }
+
 
   return cesiumViewer;
 }

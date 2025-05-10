@@ -38,9 +38,9 @@ export function generateInfoHTML(meta) {
   const generalRows = isDrawPol
     ? [
         toRow('Desc', meta.name || meta.Desc || '---'),
-        toRow('X', meta.X.toFixed(3)),
-        toRow('Y', meta.Y.toFixed(3)),
-        toRow('Z', meta.Z.toFixed(3)),
+        toRow('X(E)', meta.X.toFixed(3)),
+        toRow('Y(N)', meta.Y.toFixed(3)),
+        toRow('Z(H)', meta.Z.toFixed(3)),
       ]
     : [
         toRow('Name', meta.name || '---'),
