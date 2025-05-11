@@ -25,7 +25,7 @@ loader.setMeshoptDecoder(MeshoptDecoder);
 let clickReady = false;
 export let centerECEF, cameraECEF;
 
-export async function loadGLTFModel(path, scene, camera, controls, category, clear = false) {
+export async function loadGLTFModel(path, scene, camera, controls, category, clear = false, visible = true) {
   if (clear) clearScene(scene);
 
   return new Promise((resolve, reject) => {
@@ -35,7 +35,7 @@ export async function loadGLTFModel(path, scene, camera, controls, category, cle
       const center = bbox.getCenter(new THREE.Vector3());
       const { ecef, matrix } = getECEFTransformFromEPSG(center.x, center.y, center.z);
 
-      const { meshes, centerResult } = mergeMeshes(model, center, matrix, scene, category);
+      const { meshes, centerResult } = mergeMeshes(model, center, matrix, scene, category, visible);
 
       setupCamera(center, centerResult, camera, controls);
 
@@ -54,7 +54,7 @@ function prepModel(model) {
   return model;
 }
 
-function mergeMeshes(model, center, matrix, scene, category) {
+function mergeMeshes(model, center, matrix, scene, category, visible) {
   const map = new Map();
   const logUV = false; // ✅ bật/tắt log UV bị thiếu
   let idx = 0;
@@ -131,15 +131,25 @@ function mergeMeshes(model, center, matrix, scene, category) {
     groups.forEach(g => merged.addGroup(g.start, g.count, g.groupIndex));
     merged.applyMatrix4(new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z));
 
-    const mesh = new THREE.Mesh(merged, mat);
+    const materialToUse = mat.clone();
+
+    if (!visible) {
+      materialToUse.transparent = true;
+      materialToUse.opacity = 0.03;     // gần như ẩn
+      materialToUse.depthWrite = false; // không ghi đè Z-buffer
+    }
+
+    const mesh = new THREE.Mesh(merged, materialToUse);
+
     mesh.applyMatrix4(matrix);
     mesh.geometry.computeBoundsTree();
     mesh.userData.metadata = meta;
     mesh.material.vertexColors = true;
     mesh.frustumCulled = false;
-
     scene.add(mesh);
-    addToModelGroup(category, mesh);
+    if (visible) {
+      addToModelGroup(category, mesh);
+    }
     meshes.push(mesh);
   });
 

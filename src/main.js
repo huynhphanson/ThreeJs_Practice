@@ -3,7 +3,7 @@ import { threeInit } from './three/three-init.js'
 import { startLoop } from './three/three-animate.js';
 import { effectFXAA } from './three/three-outline.js';
 import { findProjectPosition, zoomTarget, resizeScreen } from './three/three-controls.js';
-import { clearInfoTable } from '../src/utils/ui-main.js';
+import { clearInfoTable, isClickOnUI } from '../src/utils/ui-main.js';
 import { initCesium } from './cesium/cesium-init.js';
 import { loadGLTFModel } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
@@ -11,7 +11,6 @@ import { setViewer } from './cesium/cesium-viewer.js';
 import { cursorCoor } from './three/three-cursor-coordinates.js';
 import { initRuler, activateRuler, deactivateRuler } from './three/three-ruler.js';
 import { initRulerArea, activateRulerArea, deactivateRulerArea } from './three/three-ruler-area.js';
-import { isClickOnUI } from '../src/utils/ui-main.js';
 import { renderLayerContent } from './utils/ui-renderLayer.js';
 import { initProjectInfo } from './utils/projectInfo.js';
 import { modelGroups } from './three/three-modelGroups.js';
@@ -62,7 +61,7 @@ Promise.all([
   load3dTilesModel(tilesSGPathOut, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG GIANG/PHẠM VI NGOÀI RANH'),
 
   // HIỆN TRẠNG SÔNG CHÒ GLTF
-  loadGLTFModel(gltfPathSCHouse, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/MÔ HÌNH NHÀ'),
+  loadGLTFModel(gltfPathSCHouse, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/MÔ HÌNH NHÀ',false, false),
   loadGLTFModel(gltfPathSCBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/RANH GPMB'),
   drawPolylineFromCSV(centerSCLinePath, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/TIM KHẢO SÁT', 40, 100),
 

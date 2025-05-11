@@ -13,21 +13,32 @@ export function isClickOnUI(event) {
   });
 }
 
-
 // Lọc qua các nút, ấn nút nào sẽ hiện bảng thông tin lên
-iconButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    iconButtons.forEach(btn => btn.classList.remove('i-active'));
-    button.classList.add('i-active');
+if (!window._menuEventsBound) {
+  window._menuEventsBound = true;
 
-    const panelId = button.getAttribute('data-panel');
-    const panel = document.getElementById(panelId);
-    panels.forEach(p => p.classList.remove('active'));
-    if (panel) {
+  iconButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const panelId = button.getAttribute('data-panel');
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+
+      const isActive = panel.classList.contains('active');
+      if (isActive) {
+        button.classList.remove('i-active');
+        panel.classList.remove('active');
+        return;
+      }
+
+      iconButtons.forEach(btn => btn.classList.remove('i-active'));
+      panels.forEach(p => p.classList.remove('active'));
+
+      button.classList.add('i-active');
       panel.classList.add('active');
-    } 
-  })
-})
+    });
+  });
+}
+
 
 // Export function để khi click ra ngoài màn hình (ngoại trùng vùng model) thì bảng thuộc tính sẽ tắt, cần phải export để raycaster clearInfoTable vào trong main.js
 export function clearInfoTable (event, raycaster, scene, camera) {

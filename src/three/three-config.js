@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, RGBELoader } from 'three/examples/jsm/Addons.js';
 
+
 export function createScene () {
   const scene = new THREE.Scene();
   // const ambientLight = new THREE.AmbientLight(0xffffff);
@@ -40,8 +41,8 @@ export function createControls (camera, renderer) {
   const controls = new OrbitControls (camera, renderer.domElement)
   controls.target = new THREE.Vector3(6378137, 0, 0);
   // Limit the camera's vertical rotation to prevent gimbal lock
-  controls.maxPolarAngle = Math.PI * 0.75;  // Limit vertical rotation (45 degrees above/below the horizon)
-  controls.minPolarAngle = Math.PI * 0.15;  // Optional: Allow some movement below horizon
+  controls.maxPolarAngle = Math.PI;
+  controls.minPolarAngle = Math.PI * 0.15;
   controls.update();
   return controls
 }

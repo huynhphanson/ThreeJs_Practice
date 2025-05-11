@@ -4,99 +4,75 @@ export function initCesium() {
   Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1OGM1YmMzMy1kYjI1LTRjNGItOTY5Ni1jZmUyMmMxMzRiNDYiLCJpZCI6MjM2MjU0LCJpYXQiOjE3MjQyOTI4Nzh9.Jf658KQXXGt0BQHXyg3YcVdNzqRtWUgbkv1ppatp79M";
 
   const cesiumViewer = new Cesium.Viewer(cesiumContainer, {
-      useDefaultRenderLoop: false,
-      selectionIndicator: false,
-      homeButton: false,
-      sceneModePicker: false,
-      navigationHelpButton: false,
-      infoBox: false,
-      animation: false,
-      timeline: false,
-      fullscreenButton: false,
-      baseLayerPicker: false,
-      geocoder: false,
-      terrainShadows: Cesium.ShadowMode.DISABLED,
-      targetFrameRate: 60,
-      terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-/*       imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-        url: 'https://a.tile.openstreetmap.org/',
-        maximumLevel: 18  // giới hạn để tránh zoom quá sâu gây lỗi
-      }), */
-      contextOptions: {
-        webgl: {
-            alpha: false,
-            antialias: true,
-            preserveDrawingBuffer: true,
-            failIfMajorPerformanceCaveat: false,
-            depth: true,
-            stencil: false
-        },
-      },
-      orderIndependentTranslucency: true
-  });
-  cesiumViewer.scene.screenSpaceCameraController.enableTilt = false;
-  cesiumViewer.scene.globe.depthTestAgainstTerrain = true;
-  cesiumViewer.scene.highDynamicRange = false;
-  cesiumViewer.scene.useDepthPicking = false;
-  // Đợi Cesium load xong tiles trước khi ẩn loading
-  let imageryReady = false;
-  let tilesReady = false;
-
-  // Đợi imagery sẵn sàng (đối với OSM hoặc Ion)
-  const imageryLayer = cesiumViewer.imageryLayers.get(0);
-  if (imageryLayer && imageryLayer.imageryProvider.ready) {
-    imageryReady = true;
-  } else if (imageryLayer) {
-    imageryLayer.imageryProvider.readyPromise.then(() => {
-      imageryReady = true;
-      checkReadyToHideLoading();
-    });
-  }
-
-  // Đợi terrain tiles load xong
-  cesiumViewer.scene.globe.tileLoadProgressEvent.addEventListener(function handleTileLoad(queuedTiles) {
-    if (queuedTiles === 0) {
-      tilesReady = true;
-      cesiumViewer.scene.globe.tileLoadProgressEvent.removeEventListener(handleTileLoad);
-      checkReadyToHideLoading();
-    }
+    useDefaultRenderLoop: false,
+    selectionIndicator: false,
+    homeButton: false,
+    sceneModePicker: false,
+    navigationHelpButton: false,
+    infoBox: false,
+    animation: false,
+    timeline: false,
+    fullscreenButton: false,
+    baseLayerPicker: false,
+    geocoder: false,
+    terrainShadows: Cesium.ShadowMode.DISABLED,
+    targetFrameRate: 60,
+    terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+    contextOptions: {
+      webgl: {
+        alpha: false,
+        antialias: true,
+        preserveDrawingBuffer: true,
+        failIfMajorPerformanceCaveat: false,
+        depth: true,
+        stencil: false
+      }
+    },
+    orderIndependentTranslucency: true
   });
 
-  // Kiểm tra đủ điều kiện mới ẩn overlay
-  function checkReadyToHideLoading() {
-    if (imageryReady && tilesReady) {
+  const scene = cesiumViewer.scene;
+  scene.screenSpaceCameraController.enableTilt = false;
+  scene.globe.depthTestAgainstTerrain = true;
+  scene.highDynamicRange = false;
+  scene.useDepthPicking = false;
+
+  // ✅ Chỉ ẩn loading khi Cesium thực sự vẽ xong 1 khung hình có nội dung
+  let hasRendered = false;
+  scene.postRender.addEventListener(() => {
+    if (hasRendered) return;
+
+    const gl = scene.canvas.getContext('webgl') || scene.canvas.getContext('experimental-webgl');
+    const pixels = new Uint8Array(4);
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+    const isBlank = pixels.every(v => v === 0);
+    if (!isBlank) {
       document.getElementById('loading-overlay').style.display = 'none';
+      hasRendered = true;
     }
-  }
-
+  });
 
   return cesiumViewer;
 }
 
 export async function setBasemap(type, cesiumViewer) {
-  let imageryProvider;
+  const providers = {
+    streets: new Cesium.OpenStreetMapImageryProvider({
+      url: 'https://a.tile.openstreetmap.org/',
+      maximumLevel: 18
+    }),
+    hybrid: new Cesium.IonImageryProvider({ assetId: 3 }),
+    traffic: new Cesium.IonImageryProvider({ assetId: 4 })
+  };
 
-  switch (type) {
-    case 'streets':
-      imageryProvider = new Cesium.OpenStreetMapImageryProvider({
-        url: 'https://a.tile.openstreetmap.org/',
-        maximumLevel: 18
-      });
-      cesiumViewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
-      break;
-    case 'hybrid':
-      imageryProvider = new Cesium.IonImageryProvider({ assetId: 3 });
-      cesiumViewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
-      break;
-    case 'traffic':
-      imageryProvider = new Cesium.IonImageryProvider({ assetId: 4 });
-      cesiumViewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
-      break;
-    default:
-      console.warn("Unknown basemap:", type);
-      return;
+  const imageryProvider = providers[type];
+  if (!imageryProvider) {
+    console.warn("Unknown basemap:", type);
+    return;
   }
 
+  cesiumViewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
   cesiumViewer.imageryLayers.removeAll();
   cesiumViewer.imageryLayers.addImageryProvider(imageryProvider);
 }
