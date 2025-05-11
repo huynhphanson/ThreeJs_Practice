@@ -4,15 +4,23 @@ import { zoomAt } from '../three/three-controls';
 // === utils.js hoặc nằm chung file ===
 function toggleObjects(groupObjs, visible) {
   groupObjs.forEach(obj => {
+    obj.visible = visible;
+
     if (obj.constructor?.name === 'CSS2DObject') {
-      obj.visible = visible;
       if (!visible) obj.parent?.remove(obj);
       else obj.userData.originalParent?.add(obj);
-    } else {
-      obj.visible = visible;
+    }
+
+    // Gán layer rõ ràng thay vì nhớ layer cũ
+    obj.layers.set(visible ? 0 : 1);
+
+    if (obj.children?.length) {
+      toggleObjects(obj.children, visible);
     }
   });
 }
+
+
 
 function zoomToGroup(groupObjs, camera, controls) {
   const bbox = new THREE.Box3();
