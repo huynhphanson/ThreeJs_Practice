@@ -1,11 +1,10 @@
 import * as THREE from 'three';
 import { threeInit } from './three/three-init.js'
-import { animateLoop, startLoop } from './three/three-animate.js';
+import { startLoop } from './three/three-animate.js';
 import { effectFXAA } from './three/three-outline.js';
-import { findPosition, findProjectPosition, zoomTarget, resizeScreen } from './three/three-controls.js';
+import { findProjectPosition, zoomTarget, resizeScreen } from './three/three-controls.js';
 import { clearInfoTable } from '../src/utils/ui-main.js';
 import { initCesium } from './cesium/cesium-init.js';
-import { syncThreeToCesium } from './cesium/cesium-syncThree.js';
 import { loadGLTFModel } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
 import { setViewer } from './cesium/cesium-viewer.js';
@@ -18,6 +17,7 @@ import { initProjectInfo } from './utils/projectInfo.js';
 import { modelGroups } from './three/three-modelGroups.js';
 import { drawPolylineFromCSV } from './three/three-drawPol.js';
 import { registerClickHandler } from './three/three-registerClick.js';
+import { findPosition } from './three/three-findPosition.js';
 
 /* Cesium Init */
 export const cesiumViewer = initCesium();
@@ -101,8 +101,16 @@ window.addEventListener('resize', () => resizeScreen(camera, renderer, labelRend
 
 /* FUNCTIONS */
 // Search
+const searchInput = document.querySelector('.search-input');
 const searchBtn = document.querySelector('.btn-search');
-searchBtn.addEventListener('click', () => findPosition(scene, camera, controls));
+
+const triggerSearch = () => findPosition(scene, camera, controls);
+
+searchBtn.addEventListener('click', triggerSearch);
+searchInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') triggerSearch();
+});
+
 // ProjectoPosition
 const oriBtn = document.querySelector('.btn-project-location');
 oriBtn.addEventListener('click', () => findProjectPosition(camera, controls))

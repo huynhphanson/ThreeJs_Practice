@@ -55,51 +55,6 @@ export function zoomAt (target, newPos, camera, controls) {
 	} );
 };
 
-export function findPosition(scene, camera, controls) {
-  const searchInput = document.querySelector('.search-input');
-  const valueSearch = searchInput.value.replace(/\s/g, '').split(",");
-
-  if (valueSearch.length < 2) {
-    alert("Vui lòng nhập ít nhất X và Y.");
-    return;
-  }
-
-  const coords = valueSearch.map(Number);
-
-  const hasInvalid = coords.some(val => isNaN(val));
-  const hasNegative = coords.some(val => val < 0);
-
-  if (hasInvalid) {
-    alert("Vui lòng chỉ nhập số hợp lệ.");
-    return;
-  }
-
-  if (hasNegative) {
-    alert("Tọa độ không được là số âm.");
-    return;
-  }
-
-  const target = convertToECEF(coords[0], coords[1], coords[2] || 10);
-  function createCpointMesh (name, x, y, z) {
-    const geo = new THREE.SphereGeometry(.2); // radius of point
-    const mat = new THREE.MeshBasicMaterial({color: 0xFF0000});
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, y, z);
-    mesh.name = name || 'point';
-    return mesh;
-  }
-  scene.add(createCpointMesh('checkPoint1', target.x, target.y, target.z));
-
-  let cameraPosition = camera.position.clone();
-  let distance = cameraPosition.sub(target);
-  let direction = distance.normalize();
-  let offset = distance.clone().sub(direction.multiplyScalar(20.0));
-  let newPos = target.clone().sub(offset);
-
-  zoomAt(target, newPos, camera, controls);
-}
-
-
 export function findProjectPosition (camera, controls) {
   if (centerECEF && cameraECEF) {
     zoomAt(centerECEF, cameraECEF, camera, controls);
@@ -118,11 +73,19 @@ export function zoomTarget(event, raycaster, scene, camera, controls) {
   raycaster.setFromCamera(coords, camera);
   const intersects = raycaster.intersectObjects(scene.children, true);
   if (!intersects.length) return;
-
   const object = intersects[0].object;
   const parentType = object.parent?.type;
 
   resetHighlight(); // 🧹 xóa highlight cũ
+
+  // ✅ Nếu là point do người dùng thêm thủ công
+  if (object.userData?.type === 'point') {
+    const target = object.position.clone();
+    const direction = camera.position.clone().sub(target).normalize();
+    const newPos = target.clone().add(direction.multiplyScalar(20));
+    zoomAt(target, newPos, camera, controls);
+    return;
+  }
 
   if (parentType === "Group") {
     // Tiles3D hoặc group lớn
@@ -179,3 +142,4 @@ export function getCoordinate (event, raycaster, scene, camera) {
     // console.log('Đang chọn:', intersects[0].object)
   }
 }
+
