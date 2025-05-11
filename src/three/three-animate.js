@@ -1,4 +1,6 @@
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import * as THREE from 'three';
+import { syncThreeToCesium } from '../cesium/cesium-syncThree';
 
 // Stats FPS
 const statsFPS = new Stats();
@@ -43,4 +45,33 @@ export function animateLoop(controls, scene, camera, renderer, labelRenderer, co
  
   }
   animate();
+}
+
+export function startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer) {
+  
+  function loop () {
+    requestAnimationFrame(loop);
+    composer.render();
+    labelRenderer.render(scene, camera);
+    animateLoop(controls, scene, camera, renderer, labelRenderer, composer);
+
+    tilesModels.forEach(model => {
+      model.tilesRenderer.update();
+    });
+
+    scene.traverse(obj => {
+      if (obj.userData.updateLabelVisibility) {
+        obj.userData.updateLabelVisibility();
+      }
+    });
+
+    try {
+      syncThreeToCesium(camera, controls, cesiumViewer);
+      cesiumViewer.render();
+    } catch (error) {
+      console.error("Error syncing cameras:", error);
+    }
+  }
+
+  loop();
 }

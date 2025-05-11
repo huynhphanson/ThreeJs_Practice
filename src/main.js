@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { threeInit } from './three/three-init.js'
-import { animateLoop } from './three/three-animate.js';
+import { animateLoop, startLoop } from './three/three-animate.js';
 import { effectFXAA } from './three/three-outline.js';
 import { findPosition, findProjectPosition, zoomTarget, resizeScreen } from './three/three-controls.js';
 import { clearInfoTable } from '../src/utils/ui-main.js';
@@ -84,33 +84,10 @@ Promise.all([
   renderer.domElement.style.visibility = 'visible';
   labelRenderer.domElement.style.display = 'block';
 
-  loop();
+  startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer);
 });
 
-/* Loop */
-function loop () {
-	requestAnimationFrame(loop);
-  composer.render();
-	labelRenderer.render(scene, camera);
-	
-	animateLoop(controls, scene, camera, renderer, labelRenderer, composer)
-	tilesModels.forEach(model => {
-    model.tilesRenderer.update();
-  });
-  scene.traverse(obj => {
-    if (obj.userData.updateLabelVisibility) {
-      obj.userData.updateLabelVisibility();
-    }
-  });
-  
-	try {
-		syncThreeToCesium(camera, controls, cesiumViewer);
-    cesiumViewer.render();
-	} catch (error) {
-		console.error("Error syncing cameras:", error);
-	}
-}
-loop();
+startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer);
 
 /* window events */
 window.addEventListener('beforeunload', () => {
