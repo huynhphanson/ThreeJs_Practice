@@ -4,6 +4,8 @@ import { convertToECEF } from './three-convertCoor';
 import { zoomAt } from './three-controls';
 
 let pointCounter = 0;
+const tempObjects = []; // các đối tượng tạm cần xóa
+let closeBtn = null;
 
 export function findPosition(scene, camera, controls) {
   const searchInput = document.querySelector('.search-input');
@@ -50,7 +52,7 @@ export function findPosition(scene, camera, controls) {
         opacity: 0;
         transform: translateY(-10px);
         transition: opacity 0.3s ease, transform 0.3s ease;
-        pointer-events: none;
+        pointer-events: auto;
       `;
       panel.appendChild(tooltip);
     }
@@ -103,8 +105,23 @@ export function findPosition(scene, camera, controls) {
   const labelDiv = document.createElement('div');
   labelDiv.className = 'label';
   labelDiv.textContent = desc;
+  // Cho phép tương tác DOM nhãn
+  labelDiv.style.pointerEvents = 'auto';
+  labelDiv.style.cursor = 'pointer';
+  // Gắn sự kiện double click
+  labelDiv.addEventListener('dblclick', (e) => {
+    e.stopPropagation(); // Ngăn sự kiện lan ra canvas
+
+    // Zoom đến vị trí point
+    const direction = camera.position.clone().sub(target).normalize();
+    const newPos = target.clone().add(direction.multiplyScalar(20));
+    zoomAt(target, newPos, camera, controls);
+  });
   const label = new CSS2DObject(labelDiv);
-  label.position.copy(target.clone().add(new THREE.Vector3(0, 0.3, 0)));
+  // Tính offset theo hướng ngược camera để tránh label đè lên point
+  const camDir = camera.getWorldDirection(new THREE.Vector3());
+  const labelOffset = camDir.multiplyScalar(-0.5).add(new THREE.Vector3(0, 0.5, 0));
+  label.position.copy(target.clone().add(labelOffset));
   scene.add(label);
 
   // Zoom camera
@@ -112,4 +129,33 @@ export function findPosition(scene, camera, controls) {
   const offset = direction.multiplyScalar(20);
   const newPos = target.clone().add(offset);
   zoomAt(target, newPos, camera, controls);
+
+
+  registerTempObject(point);
+  registerTempObject(label);
+
+}
+
+export function registerTempObject(obj) {
+  tempObjects.push(obj);
+  if (!closeBtn && !document.getElementById('close-temp-points')) {
+    createCloseButton();
+  }
+  if (closeBtn) closeBtn.style.display = 'flex';
+}
+
+function createCloseButton() {
+  
+  closeBtn = document.createElement('div');
+  closeBtn.id = 'close-temp-points';
+  closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+
+  closeBtn.addEventListener('click', () => {
+    tempObjects.forEach(obj => obj.parent?.remove(obj));
+    tempObjects.length = 0;
+    closeBtn.remove();
+    closeBtn = null;
+  });
+
+  document.body.appendChild(closeBtn);
 }

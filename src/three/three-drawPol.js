@@ -2,11 +2,13 @@ import * as THREE from 'three';
 import { convertToECEF } from './three-convertCoor';
 import { addToModelGroup } from './three-modelGroups';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { zoomAt } from './three-controls';
 
 export async function drawPolylineFromCSV(
   url,
   scene,
   camera,
+  controls,
   name = 'Polyline',
   zOffset = 0,
   maxDistance = 700
@@ -100,6 +102,19 @@ export async function drawPolylineFromCSV(
       if (i === 0) div.classList.add('label-start');
       if (i === pointsLocal.length - 1) div.classList.add('label-end');
 
+      // Cho phép tương tác
+      div.style.pointerEvents = 'auto';
+      div.style.cursor = 'pointer';
+
+      // Gắn sự kiện double click để zoom
+      div.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const worldPos = localPoint.clone().add(origin);
+        const direction = camera.position.clone().sub(worldPos).normalize();
+        const newPos = worldPos.clone().add(direction.multiplyScalar(20));
+        zoomAt(worldPos, newPos, camera, controls);
+      });
+
       const label = new CSS2DObject(div);
       label.position.copy(localPoint);
       label.userData.isLabel = true;
@@ -108,6 +123,7 @@ export async function drawPolylineFromCSV(
 
       addToModelGroup(name, label);
       group.add(label);
+
 
       // Sphere
       const sphereGeom = new THREE.SphereGeometry(0.5, 16, 16);

@@ -82,7 +82,7 @@ export function zoomTarget(event, raycaster, scene, camera, controls) {
   if (object.userData?.type === 'point') {
     const target = object.position.clone();
     const direction = camera.position.clone().sub(target).normalize();
-    const newPos = target.clone().add(direction.multiplyScalar(20));
+    const newPos = target.clone().add(direction.multiplyScalar(10.0));
     zoomAt(target, newPos, camera, controls);
     return;
   }
