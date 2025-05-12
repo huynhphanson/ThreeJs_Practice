@@ -37,7 +37,10 @@ export function initCesium() {
   scene.highDynamicRange = false;
   scene.useDepthPicking = false;
 
-  // ✅ Chỉ ẩn loading khi Cesium thực sự vẽ xong 1 khung hình có nội dung
+  // ✅ Nền mặc định là 'none'
+  setBasemap('none', cesiumViewer);
+
+  // ✅ Ẩn loading khi Cesium render xong
   let hasRendered = false;
   scene.postRender.addEventListener(() => {
     if (hasRendered) return;
@@ -56,7 +59,10 @@ export function initCesium() {
   return cesiumViewer;
 }
 
+
 export async function setBasemap(type, cesiumViewer) {
+  const scene = cesiumViewer.scene;
+
   const providers = {
     streets: new Cesium.OpenStreetMapImageryProvider({
       url: 'https://a.tile.openstreetmap.org/',
@@ -66,13 +72,28 @@ export async function setBasemap(type, cesiumViewer) {
     traffic: new Cesium.IonImageryProvider({ assetId: 4 })
   };
 
+  cesiumViewer.imageryLayers.removeAll();
+
+  if (type === 'none') {
+    scene.sun.show = false;
+    scene.skyAtmosphere.show = false;
+    scene.skyBox.show = false;
+    scene.globe.show = false; // 🔑 tắt globe
+    scene.backgroundColor = new Cesium.Color(0.2, 0.2, 0.2, 1.0);
+    return;
+  } else {
+    // Khôi phục lại globe và trời khi chuyển về base map bình thường
+    scene.globe.show = true;
+    scene.skyAtmosphere.show = true;
+    scene.skyBox.show = true;
+    scene.backgroundColor = Cesium.Color.BLACK;
+  }
+
   const imageryProvider = providers[type];
   if (!imageryProvider) {
     console.warn("Unknown basemap:", type);
     return;
   }
 
-  cesiumViewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
-  cesiumViewer.imageryLayers.removeAll();
   cesiumViewer.imageryLayers.addImageryProvider(imageryProvider);
 }

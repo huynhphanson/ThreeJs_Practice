@@ -61,7 +61,7 @@ Promise.all([
   load3dTilesModel(tilesSGPathOut, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG GIANG/PHẠM VI NGOÀI RANH'),
 
   // HIỆN TRẠNG SÔNG CHÒ GLTF
-  loadGLTFModel(gltfPathSCHouse, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/MÔ HÌNH NHÀ',false, false),
+  // loadGLTFModel(gltfPathSCHouse, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/MÔ HÌNH NHÀ',false, false),
   loadGLTFModel(gltfPathSCBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/RANH GPMB'),
   drawPolylineFromCSV(centerSCLinePath, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/TIM KHẢO SÁT', 40, 100),
 
@@ -72,6 +72,9 @@ Promise.all([
   // Mô hình thiết kế SÔNG CHÒ
   loadGLTFModel(gltfPathSCBridge, scene, camera, controls, 'MÔ HÌNH CẦU SÔNG CHÒ'),
   loadGLTFModel(gltfPathSCDuongDan, scene, camera, controls, 'MÔ HÌNH ĐƯỜNG DẪN'),
+
+  // Vòng lặp
+  startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer)
 ]).then(([inSCModel, outSCModel, inSGModel, outSGModel]) => {
   tilesModels.set('inSG', inSGModel);
   tilesModels.set('outSG', outSGModel);
@@ -83,7 +86,6 @@ Promise.all([
   renderer.domElement.style.visibility = 'visible';
   labelRenderer.domElement.style.display = 'block';
 
-  startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer);
 });
 
 startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer);
