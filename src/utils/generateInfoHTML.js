@@ -82,3 +82,16 @@ export function generateInfoHTML(meta) {
   </div>
   `;
 }
+
+// project-info-data.js
+export const projectInfo = [
+  { label: "TÊN DỰ ÁN", value: "XÂY DỰNG MỚI THAY THẾ 03 CẦU: THÁC NGỰA, SÔNG GIANG, SÔNG CHÒ TRÊN TUYẾN TỈNH LỘ 8B, HUYỆN KHÁNH VĨNH" },
+  { label: "ĐƠN VỊ KHỞI TẠO", value: "PHÒNG KHẢO SÁT - CÔNG TY CỔ PHẦN TƯ VẤN T27" },
+  { label: "THỜI GIAN", value: "2024" },
+  { label: "ĐỊA ĐIỂM", value: "HUYỆN KHÁNH VĨNH, TỈNH KHÁNH HÒA" },
+  { label: "MÔ HÌNH 3D", value: "3D TILES, BIM IFC" },
+  { label: "ĐỊNH DẠNG DỮ LIỆU", value: "3D TILES (.JSON, .B3DM), .IFC" },
+  { label: "THIÊT BỊ KHẢO SÁT", value: "DJI ZENMUSE L1 " },
+  { label: "HỆ TỌA ĐỘ", value: "VN-2000/TM-3 108°15 - EPSG:9217 " },
+];
+

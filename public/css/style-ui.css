@@ -3,6 +3,7 @@
 @import './style-layer.css';
 @import './style-loading.css';
 @import './style-closeFindPosition.css';
+@import './style-projectInfo.css';
 
 body {
   margin: 0;
