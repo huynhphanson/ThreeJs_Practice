@@ -47,6 +47,9 @@ body {
 	top: 12px;
 	right: 12px;
 }
+.icon-bar-right {
+  position: relative;
+}
 .icon-bar-right i {
   width: 30px;
   height: 30px;
@@ -61,6 +64,30 @@ body {
   align-items: center;
   transition: all 0.2s ease;
   cursor: pointer;
+	position: relative;
+}
+.icon-bar-right i::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 50%;
+  right: 110%;
+  transform: translateY(-50%);
+  background: rgba(20, 20, 20, 0.95);
+  color: #fff;
+  font-size: 13px;
+  font-family: 'Arial', 'Tahoma', sans-serif;
+  text-transform: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1002;
+}
+
+.icon-bar-right i:hover::after {
+  opacity: 1;
 }
 
 .icon-bar-right i:hover {

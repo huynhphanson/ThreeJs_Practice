@@ -21,10 +21,11 @@ export function threeInit () {
   const labelRenderer = createLabelRenderer();
 
   // Environment
-  const envPath = '../../environments/qwantani_morning_4k.hdr'
+  const envPath = '../../environments/rogland_moonlit_night_4k.hdr'
   const environmentMap = createEnvironment(envPath)
   environmentMap.mapping = THREE.EquirectangularReflectionMapping;
   scene.environment = environmentMap;
+  renderer.toneMappingExposure = 1.5; // tăng từ mặc định 1.0
 
   return {scene, camera, renderer, controls, labelRenderer, composer}
 }

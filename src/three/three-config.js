@@ -5,8 +5,8 @@ import { CSS2DRenderer, RGBELoader } from 'three/examples/jsm/Addons.js';
 
 export function createScene () {
   const scene = new THREE.Scene();
-  // const ambientLight = new THREE.AmbientLight(0xffffff);
-  // scene.add(ambientLight);
+  const ambientLight = new THREE.AmbientLight(0xffffff);
+  scene.add(ambientLight);
   return scene
 }
 
