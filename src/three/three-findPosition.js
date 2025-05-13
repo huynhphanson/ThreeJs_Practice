@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import { convertToECEF } from './three-convertCoor';
+import { convertToECEF, convertTo9217 } from './three-convertCoor';
+import { centerCameraTiles, centerECEFTiles } from './three-3dtilesModel';
 import { zoomAt } from './three-controls';
 
 let pointCounter = 0;
@@ -8,6 +9,12 @@ const tempObjects = []; // các đối tượng tạm cần xóa
 let btn = null;
 
 export function findPosition(scene, camera, controls) {
+
+  const centerTiles9217 = convertTo9217(
+    centerECEFTiles.x,
+    centerECEFTiles.y,
+    centerCameraTiles.z
+  );
   const searchInput = document.querySelector('.search-input');
   const rawInput = searchInput.value.trim();
 
@@ -78,10 +85,8 @@ export function findPosition(scene, camera, controls) {
   const coords = parts.slice(0, 3).map(Number);
   if (coords.some(val => isNaN(val)))
     return showTooltip("Tọa độ không hợp lệ.");
-  if (coords.some(val => val < 0))
-    return showTooltip("Tọa độ không được âm.");
 
-  const [x, y, z = 10] = coords;
+  const [x, y, z = centerTiles9217.z + 100] = coords;
   let desc = parts[3]?.trim();
   if (!desc) {
     desc = String.fromCharCode(65 + (pointCounter % 26));
@@ -91,15 +96,12 @@ export function findPosition(scene, camera, controls) {
 
   const target = convertToECEF(x, y, z);
 
-  // Tạo điểm tương tác
-  const point = new THREE.Mesh(
-    new THREE.SphereGeometry(.2),
-    new THREE.MeshBasicMaterial({ color: 0xff0000 })
-  );
-  point.position.copy(target);
-  point.name = desc;
-  point.userData.type = 'point';
-  scene.add(point);
+  const pin = create3DWaterDrop(target, 0x98ede0);
+  pin.position.copy(target);
+  pin.name = desc;
+  pin.userData.type = 'point';
+  scene.add(pin);
+  registerTempObject(pin);
 
   // Tạo label gắn riêng vào scene (không add vào point)
   const labelDiv = document.createElement('div');
@@ -131,7 +133,7 @@ export function findPosition(scene, camera, controls) {
   zoomAt(target, newPos, camera, controls);
 
 
-  registerTempObject(point);
+  registerTempObject(pin);
   registerTempObject(label);
 
 }
@@ -159,4 +161,35 @@ function createCloseButton() {
   });
 
   document.body.appendChild(btn);
+}
+
+function create3DWaterDrop(position, color = 0xbfdcff) {
+  const points = [];
+  for (let i = 0; i <= 20; i++) {
+    const t = i / 20;
+    const x = 0.2 * Math.sin(Math.PI * t);
+    const y = 0.6 * (t - 0.5); // giọt nước dọc
+    points.push(new THREE.Vector2(x, y));
+  }
+
+  const geometry = new THREE.LatheGeometry(points, 64);
+  const material = new THREE.MeshStandardMaterial({
+    color,
+    emissive: color,
+    emissiveIntensity: 0.5,
+    metalness: 0.1,
+    roughness: 0.4,
+    transparent: true,
+    metalness: 0.1,
+    opacity: 0.9,
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.copy(position);
+
+  // Hướng đầu nhọn xuống
+  const normal = position.clone().normalize().negate();
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+
+  return mesh;
 }

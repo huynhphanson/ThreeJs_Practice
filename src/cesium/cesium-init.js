@@ -79,13 +79,12 @@ export async function setBasemap(type, cesiumViewer) {
     scene.skyAtmosphere.show = false;
     scene.skyBox.show = false;
     scene.globe.show = false; // 🔑 tắt globe
-    scene.backgroundColor = new Cesium.Color(0.2, 0.2, 0.2, 1.0);
+    scene.backgroundColor = new Cesium.Color(0.15, 0.15, 0.15, 0.0);
     return;
   } else {
     // Khôi phục lại globe và trời khi chuyển về base map bình thường
     scene.globe.show = true;
     scene.skyAtmosphere.show = true;
-    scene.skyBox.show = true;
     scene.backgroundColor = Cesium.Color.BLACK;
   }
 
