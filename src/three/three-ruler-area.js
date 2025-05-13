@@ -92,44 +92,11 @@ function handleMouseDown(event) {
 }
 
 function handleMouseMove(event) {
-  if (!areaEnabled && !draggingSphere) return;
-
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, cameraRef);
 
-  // === 1. Nếu đang drag một point ===
-  if (draggingSphere) {
-    const intersects = raycaster.intersectObjects(collectVisibleMeshes(areaGroup.parent, areaGroup), true);
-      // === Dragging logic ===
-  if (draggingSphere) {
-    const intersects = raycaster.intersectObjects(collectVisibleMeshes(areaGroup.parent, areaGroup), true);
-    if (intersects.length > 0) {
-      const hit = intersects[0].point.clone();
-      const localPos = hit.sub(originPoint);
-      draggingSphere.position.copy(localPos);
-      hasDragged = true;
-
-      const groupIndex = sphereGroups.findIndex(g => g.includes(draggingSphere));
-      if (groupIndex !== -1) {
-        const index = sphereGroups[groupIndex].indexOf(draggingSphere);
-        pointGroups[groupIndex][index].copy(localPos);
-
-        // ✅ Nếu có đủ 3 điểm thì regenerate (không cần kiểm tra đóng polygon)
-        const pts = pointGroups[groupIndex];
-        if (pts.length >= 3) {
-          regeneratePolygon(groupIndex);
-        }
-      }
-    }
-    return;
-  }
-
-    // ✅ Không làm gì nữa nếu đang drag
-    return;
-  }
-
-  // === 2. Highlight point khi hover ===
+  // === 1. Highlight point luôn bật ===
   const intersectsSphere = raycaster.intersectObjects(allSpheres, false);
   if (intersectsSphere.length > 0) {
     const sphere = intersectsSphere[0].object;
@@ -148,7 +115,32 @@ function handleMouseMove(event) {
     highlightedSphere = null;
   }
 
-  // === 3. Hiển thị preview line khi đang đo (chưa finalized, chưa drag) ===
+  // === 2. Nếu không kéo và không bật đo thì bỏ qua
+  if (!areaEnabled && !draggingSphere) return;
+
+  // === 3. Drag point
+  if (draggingSphere) {
+    const intersects = raycaster.intersectObjects(collectVisibleMeshes(areaGroup.parent, areaGroup), true);
+    if (intersects.length > 0) {
+      const hit = intersects[0].point.clone();
+      const localPos = hit.sub(originPoint);
+      draggingSphere.position.copy(localPos);
+      hasDragged = true;
+
+      const groupIndex = sphereGroups.findIndex(g => g.includes(draggingSphere));
+      if (groupIndex !== -1) {
+        const index = sphereGroups[groupIndex].indexOf(draggingSphere);
+        pointGroups[groupIndex][index].copy(localPos);
+
+        if (pointGroups[groupIndex].length >= 3) {
+          regeneratePolygon(groupIndex);
+        }
+      }
+    }
+    return;
+  }
+
+  // === 4. Hiển thị preview line khi đang đo
   if (!finalized) {
     const currentPoints = pointGroups.at(-1);
     if (!currentPoints || currentPoints.length === 0) return;
@@ -175,6 +167,7 @@ function handleMouseMove(event) {
     }
   }
 }
+
 
 
 function handleMouseUp(event) {
