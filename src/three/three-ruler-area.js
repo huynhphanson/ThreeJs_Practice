@@ -92,7 +92,7 @@ function handleMouseDown(event) {
 }
 
 function handleMouseMove(event) {
-  if (!areaEnabled) return;
+  if (!areaEnabled && !draggingSphere) return;
 
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -558,22 +558,13 @@ export function activateRulerArea() {
 }
 
 export function deactivateRulerArea() {
-  areaEnabled = false;
-  originPoint = null;
-  allSpheres = [];
-  pointGroups = [];
-  sphereGroups = [];
-  lineGroups = [];
-  labelGroups = [];
-  areaLabels = [];
-  finalized = false;
-  previewLine = null;
-  previewLabel = null;
+  areaEnabled = false;  // ❌ tắt chế độ vẽ thêm điểm
 
-  while (areaGroup.children.length > 0) {
-    const c = areaGroup.children[0];
-    if (c.geometry) c.geometry.dispose?.();
-    if (c.material) c.material.dispose?.();
-    areaGroup.remove(c);
-  }
+  draggingSphere = null;
+  highlightedSphere = null;
+
+  // ❌ KHÔNG xoá originPoint, allSpheres, pointGroups,...
+  // ❌ KHÔNG remove areaGroup
+
+  // ❌ KHÔNG reset previewLine, previewLabel, finalized → vì ta giữ để drag
 }
