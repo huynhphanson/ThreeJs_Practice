@@ -25,6 +25,7 @@ let clickTimeout = null;
 let isRightMouseDown = false;
 let rightMouseDownTime = 0;
 let rightMouseDownPosition = { x: 0, y: 0 };
+let clearAreaButton = null;
 
 let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
@@ -419,6 +420,8 @@ function finalizePolygon(groupIndex) {
   const label = createLabel(`Diện tích: ${Math.abs(area).toFixed(2)} m²`, center.clone().sub(originPoint), groupIndex, areaGroup);
   areaLabels[groupIndex] = label;
   areaGroup.add(label);
+  createClearAreaButton();
+
 }
 
 function drawMeasureLine(p1, p2) {
@@ -556,8 +559,38 @@ export function deactivateRulerArea() {
   draggingSphere = null;
   highlightedSphere = null;
 
-  // ❌ KHÔNG xoá originPoint, allSpheres, pointGroups,...
-  // ❌ KHÔNG remove areaGroup
+}
 
-  // ❌ KHÔNG reset previewLine, previewLabel, finalized → vì ta giữ để drag
+function createClearAreaButton() {
+  if (document.getElementById('area-clear-button')) return;
+
+  const btn = document.createElement('div');
+  btn.id = 'area-clear-button';
+  btn.classList.add('circle-button');
+  btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  btn.addEventListener('click', () => {
+    clearAllAreaMeasurements();
+    btn.remove();
+  });
+
+  document.body.appendChild(btn);
+}
+
+function clearAllAreaMeasurements() {
+  for (const arr of [sphereGroups, lineGroups, labelGroups]) {
+    arr.flat().forEach(obj => {
+      areaGroup.remove(obj);
+      obj.geometry?.dispose?.();
+      obj.material?.dispose?.();
+    });
+  }
+
+  areaLabels.forEach(lbl => areaGroup.remove(lbl));
+  allSpheres.length = 0;
+  pointGroups.length = 0;
+  sphereGroups.length = 0;
+  lineGroups.length = 0;
+  labelGroups.length = 0;
+  areaLabels.length = 0;
+  finalized = false;
 }

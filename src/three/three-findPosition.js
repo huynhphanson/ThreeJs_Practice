@@ -5,7 +5,7 @@ import { zoomAt } from './three-controls';
 
 let pointCounter = 0;
 const tempObjects = []; // các đối tượng tạm cần xóa
-let closeBtn = null;
+let btn = null;
 
 export function findPosition(scene, camera, controls) {
   const searchInput = document.querySelector('.search-input');
@@ -138,24 +138,25 @@ export function findPosition(scene, camera, controls) {
 
 export function registerTempObject(obj) {
   tempObjects.push(obj);
-  if (!closeBtn && !document.getElementById('close-temp-points')) {
+  if (!btn && !document.getElementById('close-temp-points')) {
     createCloseButton();
   }
-  if (closeBtn) closeBtn.style.display = 'flex';
+  if (btn) btn.style.display = 'flex';
 }
 
 function createCloseButton() {
   
-  closeBtn = document.createElement('div');
-  closeBtn.id = 'close-temp-points';
-  closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  btn = document.createElement('div');
+  btn.id = 'close-temp-points';
+  btn.classList.add('circle-button');
+  btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
 
-  closeBtn.addEventListener('click', () => {
+  btn.addEventListener('click', () => {
     tempObjects.forEach(obj => obj.parent?.remove(obj));
     tempObjects.length = 0;
-    closeBtn.remove();
-    closeBtn = null;
+    btn.remove();
+    btn = null;
   });
 
-  document.body.appendChild(closeBtn);
+  document.body.appendChild(btn);
 }

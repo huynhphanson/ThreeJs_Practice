@@ -239,6 +239,7 @@ function handleRightClick(event) {
     currentPoints.length = 0;
     currentSpheres.length = 0;
     clearPreview();
+    createClearRulerButton();
     return;
   }
 
@@ -246,7 +247,7 @@ function handleRightClick(event) {
     finalizePolylineMeasurement(pointGroups.length - 1);
     finalized = true;
     clearPreview();
-
+    createClearRulerButton();
     // ✅ Reset group để đo mới sau đó
     pointGroups.push([]);
     sphereGroups.push([]);
@@ -707,3 +708,47 @@ export function deactivateRuler() {
   highlightedSphere = null;
 }
 
+function createClearRulerButton() {
+  if (document.getElementById('ruler-clear-button')) return;
+
+  const btn = document.createElement('div');
+  btn.id = 'ruler-clear-button';
+  btn.classList.add('circle-button');
+  btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  btn.addEventListener('click', () => {
+    clearAllRulerMeasurements();
+    btn.remove();
+  });
+
+  document.body.appendChild(btn);
+}
+
+function clearAllRulerMeasurements() {
+  // 🧹 Xoá tất cả mesh & label
+  rulerGroup.children.slice().forEach(child => {
+    rulerGroup.remove(child);
+    child.geometry?.dispose?.();
+    child.material?.dispose?.();
+  });
+
+  // 🧹 Xoá các label CSS
+  rulerGroup.children.slice().forEach(child => {
+    if (child instanceof CSS2DObject) rulerGroup.remove(child);
+  });
+
+  // 🧼 Reset tất cả dữ liệu
+  allSpheres.length = 0;
+  measurements.length = 0;
+  pointGroups.length = 0;
+  sphereGroups.length = 0;
+  lineGroups.length = 0;
+  labelGroups.length = 0;
+  totalLabels.length = 0;
+  previewLine = null;
+  previewLabel = null;
+  previewLine1 = null;
+  previewLabel1 = null;
+  polygonAreaLabel = null;
+  polygonMesh = null;
+  finalized = false;
+}
