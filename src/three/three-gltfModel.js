@@ -65,6 +65,14 @@ function mergeMeshes(model, center, matrix, scene, category, visible) {
     const g = obj.geometry.clone().applyMatrix4(obj.matrixWorld);
     if (!g.index) g.setIndex([...Array(g.attributes.position.count).keys()]);
 
+    // 🚫 Bắt buộc phải ép về Float32Array cho toàn bộ attribute
+    for (const name in g.attributes) {
+      const attr = g.attributes[name];
+      if (!(attr.array instanceof Float32Array)) {
+        g.setAttribute(name, new THREE.BufferAttribute(new Float32Array(attr.array), attr.itemSize));
+      }
+    }
+
     // ⚠️ Bổ sung normal nếu thiếu
     if (!g.attributes.normal) g.computeVertexNormals();
 
@@ -74,6 +82,13 @@ function mergeMeshes(model, center, matrix, scene, category, visible) {
       const dummyUV = new Float32Array(count * 2).fill(0);
       g.setAttribute('uv', new THREE.BufferAttribute(dummyUV, 2));
       if (logUV) console.warn(`⚠️ Missing UV at mesh "${obj.name}" → filled with dummy UV`);
+    }
+    // ép mọi attribute về float
+    for (const name in g.attributes) {
+      const attr = g.attributes[name];
+      if (!(attr.array instanceof Float32Array)) {
+        g.setAttribute(name, new THREE.BufferAttribute(new Float32Array(attr.array), attr.itemSize));
+      }
     }
 
     // Color attribute (copy từ vật liệu)
@@ -132,11 +147,15 @@ function mergeMeshes(model, center, matrix, scene, category, visible) {
     merged.applyMatrix4(new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z));
 
     const materialToUse = mat.clone();
+    materialToUse.envMap = null;
+    materialToUse.envMapIntensity = 0;
+    materialToUse.metalness = 0;
+    materialToUse.roughness = 1;
 
     if (!visible) {
       materialToUse.transparent = true;
-      materialToUse.opacity = 0.03;     // gần như ẩn
-      materialToUse.depthWrite = false; // không ghi đè Z-buffer
+      materialToUse.opacity = 0.03;
+      materialToUse.depthWrite = false;
     }
 
     const mesh = new THREE.Mesh(merged, materialToUse);
