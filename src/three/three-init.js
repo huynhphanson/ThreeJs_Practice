@@ -21,7 +21,7 @@ export function threeInit () {
   const labelRenderer = createLabelRenderer();
 
   // Environment
-  const envPath = '../../environments/rogland_moonlit_night_4k.hdr'
+  const envPath = '../../assets/environments/rogland_moonlit_night_4k.hdr'
   const environmentMap = createEnvironment(envPath)
   environmentMap.mapping = THREE.EquirectangularReflectionMapping;
   scene.environment = environmentMap;

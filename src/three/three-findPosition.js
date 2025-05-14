@@ -5,7 +5,7 @@ import { centerCameraTiles, centerECEFTiles } from './three-3dtilesModel';
 import { zoomAt } from './three-controls';
 
 let pointCounter = 0;
-const tempObjects = []; // các đối tượng tạm cần xóa
+const tempObjects = [];
 let btn = null;
 
 export function findPosition(scene, camera, controls) {

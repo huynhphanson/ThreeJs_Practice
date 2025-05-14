@@ -3,7 +3,7 @@ import { threeInit } from './three/three-init.js'
 import { startLoop } from './three/three-animate.js';
 import { effectFXAA } from './three/three-outline.js';
 import { findProjectPosition, zoomTarget, resizeScreen } from './three/three-controls.js';
-import { clearInfoTable, isClickOnUI } from '../src/utils/ui-main.js';
+import { clearInfoTable, isClickOnUI } from '/src/utils/ui-main.js';
 import { initCesium } from './cesium/cesium-init.js';
 import { loadGLTFModel } from './three/three-gltfModel.js';
 import { load3dTilesModel } from './three/three-3dtilesModel.js';
@@ -34,19 +34,19 @@ threeContainer.appendChild(labelRenderer.domElement);
 
 const tilesModels = new Map();
 // Path Sông Chò
-const tilesSCPathIn = '../resources/models/3d-tiles/scIn/tileset.json'
-const tilesSCPathOut = '../resources/models/3d-tiles/scOut/tileset.json'
-const gltfPathSCBridge = '../resources/models/glb/sChoBridge.glb';
-const gltfPathSCHouse = '../resources/models/glb/sChoHouse.glb';
-const gltfPathSCDuongDan = '../resources/models/glb/sChoDuongDan.glb';
-const gltfPathSCBoundary = '../resources/models/glb/sChoGPMB.glb'
-const centerSCLinePath = '../resources/csv/SongCho_CenterLine.csv'
+const tilesSCPathIn = '/assets/models/3d-tiles/scIn/tileset.json'
+const tilesSCPathOut = '/assets/models/3d-tiles/scOut/tileset.json'
+const gltfPathSCBridge = '/assets/models/glb/sChoBridge.glb';
+const gltfPathSCHouse = '/assets/models/glb/sChoHouse.glb';
+const gltfPathSCDuongDan = '/assets/models/glb/sChoDuongDan.glb';
+const gltfPathSCBoundary = '/assets/models/glb/sChoGPMB.glb'
+const centerSCLinePath = '/assets/csv/SongCho_CenterLine.csv'
 
 // Path Sông Giang
-const tilesSGPathIn = '../resources/models/3d-tiles/sgIn/tileset.json'
-const tilesSGPathOut = '../resources/models/3d-tiles/sgOut/tileset.json'
-const gltfPathSGBoundary = '../resources/models/glb/sGiangGPMB.glb'
-const centerSGLinePath = '../resources/csv/SongGiang_CenterLine.csv'
+const tilesSGPathIn = '/assets/models/3d-tiles/sgIn/tileset.json'
+const tilesSGPathOut = '/assets/models/3d-tiles/sgOut/tileset.json'
+const gltfPathSGBoundary = '/assets/models/glb/sGiangGPMB.glb'
+const centerSGLinePath = '/assets/csv/SongGiang_CenterLine.csv'
 
 labelRenderer.domElement.style.display = 'none';
 renderer.domElement.style.visibility = 'hidden';
