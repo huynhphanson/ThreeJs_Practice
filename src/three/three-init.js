@@ -5,8 +5,8 @@ import {
   createRenderer,
   createControls,
   createLabelRenderer,
-  createEnvironment,
-} from './three-config.js'
+} from './three-config.js';
+import { RoomEnvironment } from 'three/examples/jsm/Addons.js';
 import { outline } from './three-outline.js';
 
 export function threeInit () {
@@ -21,11 +21,11 @@ export function threeInit () {
   const labelRenderer = createLabelRenderer();
 
   // Environment
-  const envPath = '../../assets/environments/rogland_moonlit_night_4k.hdr'
-  const environmentMap = createEnvironment(envPath)
-  environmentMap.mapping = THREE.EquirectangularReflectionMapping;
-  scene.environment = environmentMap;
-  renderer.toneMappingExposure = 1.5; // tăng từ mặc định 1.0
+  const environment = new RoomEnvironment();
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  const envMap = pmremGenerator.fromScene(environment).texture;
+
+  scene.environment = envMap;
 
   return {scene, camera, renderer, controls, labelRenderer, composer}
 }

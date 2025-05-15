@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CSS2DRenderer, RGBELoader } from 'three/examples/jsm/Addons.js';
+import { CSS2DRenderer } from 'three/examples/jsm/Addons.js';
 
 
 export function createScene () {
@@ -60,8 +60,4 @@ export function createLabelRenderer() {
   labelRenderer.domElement.style.top = '0px';
   labelRenderer.domElement.style.pointerEvents = 'none';
   return labelRenderer
-}
-
-export function createEnvironment (path) {
-  return new RGBELoader().load(path)
 }
