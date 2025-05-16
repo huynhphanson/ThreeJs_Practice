@@ -9,6 +9,9 @@ import {
   collectVisibleMeshes,
   updateLineTransform,
   createMeasureLineMaterial,
+  drawMeasureLine,
+  updateLineThickness,
+  createSphere
 } from './three-ruler-utils.js';
 
 let cameraRef, rendererRef, controlsRef;
@@ -99,22 +102,18 @@ function handleMouseMove(event) {
 
   // === 1. Highlight point luôn bật ===
   const intersectsSphere = raycaster.intersectObjects(allSpheres, false);
-  if (intersectsSphere.length > 0) {
-    const sphere = intersectsSphere[0].object;
-    if (highlightedSphere !== sphere) {
-      if (highlightedSphere) {
-        highlightedSphere.material.color.set(0xff0000);
-        highlightedSphere.scale.multiplyScalar(1 / 1.5);
-      }
-      highlightedSphere = sphere;
-      highlightedSphere.material.color.set(0x00ff00);
-      highlightedSphere.scale.multiplyScalar(1.5);
+  const hovered = intersectsSphere[0]?.object ?? null;
+
+  for (const sphere of allSpheres) {
+    if (sphere === hovered) {
+      sphere.userData.targetScale = 1.5;
+      sphere.userData.targetColor.set(0x00ff00);
+    } else {
+      sphere.userData.targetScale = 1;
+      sphere.userData.targetColor.set(0xff0000);
     }
-  } else if (highlightedSphere) {
-    highlightedSphere.material.color.set(0xff0000);
-    highlightedSphere.scale.multiplyScalar(1 / 1.5);
-    highlightedSphere = null;
   }
+
 
   // === 2. Nếu không kéo và không bật đo thì bỏ qua
   if (!areaEnabled && !draggingSphere) return;
@@ -154,7 +153,7 @@ function handleMouseMove(event) {
     const localEnd = hit.clone().sub(originPoint);
 
     if (!previewLine) {
-      previewLine = drawMeasureLine(localStart, localEnd);
+      previewLine = drawMeasureLine(localStart, localEnd, 0.05, areaGroup);
     } else {
       updateLineTransform(previewLine.mesh, localStart, localEnd);
     }
@@ -250,7 +249,7 @@ function handleRightClick(event) {
   const last = pointGroups[groupIndex].at(-1);
   if (first && last && !first.equals(last)) {
     
-    const { mesh } = drawMeasureLine(last, first);
+    const { mesh } = drawMeasureLine(last, first, 0.05, areaGroup);
     lineGroups[groupIndex].push(mesh);
 
     const mid = last.clone().lerp(first, 0.5);
@@ -303,7 +302,7 @@ function onMouseClick(event, scene) {
   }
 
   const local = worldPoint.clone().sub(originPoint);
-  const sphere = createSphere(local);
+  const sphere = createSphere(local, originPoint, cameraRef);
   sphere.position.copy(local);
   areaGroup.add(sphere);
   allSpheres.push(sphere);
@@ -317,7 +316,7 @@ function onMouseClick(event, scene) {
     const start = currentPoints[currentPoints.length - 2];
     const end = currentPoints[currentPoints.length - 1];
   
-    const { mesh } = drawMeasureLine(start, end);
+    const { mesh } = drawMeasureLine(start, end, 0.05, areaGroup);
     lineGroups[groupIndex].push(mesh);
   
     const mid = start.clone().lerp(end, 0.5);
@@ -365,7 +364,7 @@ function regeneratePolygon(groupIndex) {
   for (let i = 0; i < points.length - 1; i++) {
     const a = points[i];
     const b = points[i + 1];
-    const group = drawMeasureLine(a, b);
+    const group = drawMeasureLine(a, b, 0.05, areaGroup);
     updateLineThickness(group.mesh, cameraRef);
     lineGroups[groupIndex].push(group.mesh);
 
@@ -379,7 +378,7 @@ function regeneratePolygon(groupIndex) {
   // ✅ Vẽ đoạn khép: point cuối → point đầu
   const a = points[points.length - 1];
   const b = points[0];
-  const group = drawMeasureLine(a, b);
+  const group = drawMeasureLine(a, b, 0.05, areaGroup);
   updateLineThickness(group.mesh, cameraRef);
   lineGroups[groupIndex].push(group.mesh);
 
@@ -419,34 +418,6 @@ function finalizePolygon(groupIndex) {
   areaGroup.add(label);
   createClearAreaButton();
 
-}
-
-function drawMeasureLine(p1, p2) {
-  const direction = new THREE.Vector3().subVectors(p2, p1);
-  const length = direction.length();
-  const geometry = new THREE.CylinderGeometry(0.05, 0.05, length, 16, 1, true);
-  const material = createMeasureLineMaterial(length);
-
-  material.depthTest = false;
-  material.depthWrite = false;
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.renderOrder = 999;
-
-  mesh.position.copy(p1.clone().lerp(p2, 0.5));
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
-
-  areaGroup.add(mesh);
-  return { mesh };
-}
-function updateLineThickness(mesh, camera, min = 0.02, max = 1.0, factor = 0.002) {
-  const distance = mesh.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position);
-  const newRadius = THREE.MathUtils.clamp(distance * factor, min, max);
-  const height = mesh.geometry.parameters.height;
-
-  if (Math.abs(mesh.geometry.parameters.radiusTop - newRadius) < 0.001) return;
-
-  mesh.geometry.dispose();
-  mesh.geometry = new THREE.CylinderGeometry(newRadius, newRadius, height, 16, 1, true);
 }
 
 function compute3DArea(points3D) {
@@ -538,38 +509,29 @@ function updateAllLineScales(camera) {
 function updateSphereScales(spheres, camera) {
   const cameraPos = camera.position;
   const tempVec = new THREE.Vector3();
+  const lerpFactor = 0.2;
 
   for (const sphere of spheres) {
-    if (sphere === highlightedSphere) continue;
-
     const worldPos = sphere.getWorldPosition(tempVec);
     const distance = cameraPos.distanceTo(worldPos);
-    const scale = THREE.MathUtils.clamp(distance * 0.02, 1.0, 6.0);
 
-    if (Math.abs(sphere.scale.x - scale) > 0.01) {
-      sphere.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.2);
+    // Scale tween
+    if (sphere.userData.currentScale !== undefined) {
+      sphere.userData.currentScale = THREE.MathUtils.lerp(
+        sphere.userData.currentScale,
+        sphere.userData.targetScale,
+        lerpFactor
+      );
+      sphere.scale.setScalar(sphere.userData.currentScale);
+    }
+
+    // Màu tween
+    if (sphere.userData.currentColor && sphere.userData.targetColor) {
+      sphere.userData.currentColor.lerp(sphere.userData.targetColor, lerpFactor);
+      sphere.material.color.copy(sphere.userData.currentColor);
     }
   }
 }
-
-function createSphere(localPosition) {
-  const worldPos = localPosition.clone().add(originPoint);
-  const distance = cameraRef.position.distanceTo(worldPos);
-  const radius = THREE.MathUtils.clamp(Math.log10(distance + 1) * 0.1, 0.05, 0.5);
-
-  const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 16, 16),
-    new THREE.MeshBasicMaterial({
-      color: 0xff0000,
-      depthTest: true,
-      depthWrite: true
-    })
-  );
-  sphere.frustumCulled = false;
-  sphere.position.copy(localPosition);
-  return sphere;
-}
-
 
 export function activateRulerArea() {
   areaEnabled = true;

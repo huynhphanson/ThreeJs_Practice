@@ -119,3 +119,66 @@ export function createMeasureLineMaterial(length) {
     side: THREE.DoubleSide,
   });
 }
+
+export function createSphere(localPosition, originPoint, cameraRef) {
+  const worldPos = localPosition.clone().add(originPoint);
+  const distance = cameraRef.position.distanceTo(worldPos);
+  const radius = THREE.MathUtils.clamp(Math.log10(distance + 1) * 0.1, 0.05, 0.5);
+
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xff3b3b,
+    roughness: 0.3,
+    metalness: 0.1,
+    emissive: new THREE.Color(0x220000),
+  });
+
+  const geometry = new THREE.IcosahedronGeometry(radius, 1); // modern look
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = false;
+
+  mesh.userData.targetScale = 1;
+  mesh.userData.currentScale = 1;
+  mesh.userData.targetColor = new THREE.Color(0xff0000);
+  mesh.userData.currentColor = new THREE.Color(0xff0000);
+  mesh.position.copy(localPosition);
+
+  return mesh;
+}
+
+export function drawMeasureLine(p1, p2, radius = 0.1, group = null, type = 'polyline', groupIndex = null) {
+  const direction = new THREE.Vector3().subVectors(p2, p1);
+  const length = direction.length();
+  const geometry = new THREE.CylinderGeometry(radius, radius, length, 32, 1, true);
+  const material = createMeasureLineMaterial(length);
+
+  material.depthTest = false;
+  material.depthWrite = false;
+
+  const cylinder = new THREE.Mesh(geometry, material);
+  cylinder.renderOrder = 999;
+
+  const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+  cylinder.position.copy(midpoint);
+  cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+
+  cylinder.userData = {
+    isPolyline: true,
+    type,
+    groupIndex
+  };
+
+  if (group) group.add(cylinder);
+  return { mesh: cylinder };
+}
+
+export function updateLineThickness(mesh, camera, min = 0.02, max = 1.0, factor = 0.002) {
+  const distance = mesh.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position);
+  const newRadius = THREE.MathUtils.clamp(distance * factor, min, max);
+  const height = mesh.geometry.parameters.height;
+
+  if (Math.abs(mesh.geometry.parameters.radiusTop - newRadius) < 0.001) return;
+
+  mesh.geometry.dispose();
+  mesh.geometry = new THREE.CylinderGeometry(newRadius, newRadius, height, 16, 1, true);
+}
