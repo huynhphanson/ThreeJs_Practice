@@ -28,32 +28,20 @@ statsMB.dom.style.position = 'absolute';
 statsMB.dom.style.left = '10px';
 statsMB.dom.style.top = '200px';
 
-export function animateLoop(controls, scene, camera, renderer, labelRenderer, composer) {
-  function animate() {
+export function startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer) {
+  
+  function loop () {
+    // Start stats
     statsFPS.begin();
     statsMS.begin();
     statsMB.begin();
 
-    controls.update();
-    labelRenderer.render(scene, camera);
-    renderer.render(scene, camera);
-    composer.render();
-    renderer.setAnimationLoop( animate );
-    statsFPS.end();
-    statsMS.end();
-    statsMB.end();
- 
-  }
-  animate();
-}
-
-export function startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer) {
-  
-  function loop () {
+    // Loop
     requestAnimationFrame(loop);
+    
+    controls.update();
     composer.render();
     labelRenderer.render(scene, camera);
-    animateLoop(controls, scene, camera, renderer, labelRenderer, composer);
 
     tilesModels.forEach(model => {
       model.tilesRenderer.update();
@@ -71,6 +59,11 @@ export function startLoop(scene, camera, controls, renderer, labelRenderer, comp
     } catch (error) {
       console.error("Error syncing cameras:", error);
     }
+    
+    // End stats
+    statsFPS.end();
+    statsMS.end();
+    statsMB.end();
   }
 
   loop();
