@@ -5,10 +5,10 @@ import { convertTo9217, convertToECEF } from './three-convertCoor';
 import { addToModelGroup } from './three-modelGroups';
 
 
-export let centerECEFTiles, centerCameraTiles
+export let centerECEFTiles, centerCameraTiles;
 
 // Loader3DTiles
-export async function load3dTilesModel (path, camera, renderer, controls, scene, category = 'MÔ HÌNH 3D') {
+export async function load3dTilesModel (path, camera, renderer, controls, scene, category = 'MÔ HÌNH 3D', setCamera = false) {
   const sphere = new THREE.Sphere();
   const tilesRenderer = new TilesRenderer(path);
   const dracoLoader = new DRACOLoader();
@@ -45,18 +45,24 @@ export async function load3dTilesModel (path, camera, renderer, controls, scene,
     };
     // Convert EPSG back to ECEF and set camera position
     centerCameraTiles = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
-    camera.position.set(centerCameraTiles.x, centerCameraTiles.y, centerCameraTiles.z);
-    controls.target = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
+    if (setCamera) {
+      camera.position.set(centerCameraTiles.x, centerCameraTiles.y, centerCameraTiles.z);
+      controls.target.copy(sphere.center);
 
-    const up = centerCameraTiles.clone().normalize()
-    camera.up.copy(up);
+      const up = centerCameraTiles.clone().normalize();
+      camera.up.copy(up);
+
+      controls.update(); // ⬅️ rất quan trọng
+      cameraAlreadySet = true;
+    }
+
+    
     // add to scene
     scene.add(model);
   });
 
   // Giải phóng bộ nhớ khi không sử dụng
   const disposeTilesRenderer = () => {
-    tilesRenderer.removeEventListener('load-tile-set', onTileSetLoaded);
     tilesRenderer.dispose();  // Giải phóng tài nguyên của TilesRenderer
     model.traverse((object) => {
       if (object instanceof THREE.Mesh) {

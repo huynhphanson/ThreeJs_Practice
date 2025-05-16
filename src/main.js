@@ -76,7 +76,7 @@ Promise.all([
 
   // Vòng lặp
   startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer)
-]).then(([inSGModel, outSGModel, inSCModel, outSCModel]) => {
+]).then(([inSCModel, outSCModel, inSGModel, outSGModel]) => {
   tilesModels.set('inSG', inSGModel);
   tilesModels.set('outSG', outSGModel);
   tilesModels.set('inSC', inSCModel);

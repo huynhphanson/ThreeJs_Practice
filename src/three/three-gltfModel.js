@@ -4,11 +4,8 @@ import { DRACOLoader } from 'three/examples/jsm/Addons.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { getECEFTransformFromEPSG } from './three-convertCoor.js';
-import { generateInfoHTML } from '../utils/generateInfoHTML.js';
 import { addToModelGroup } from './three-modelGroups.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
-import { isClickOnUI } from '../utils/ui-main.js';
-import { resetHighlight, applyHighlight } from '../utils/highlighUtils.js';
 
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -22,7 +19,6 @@ const loader = new GLTFLoader();
 loader.setDRACOLoader(draco);
 loader.setMeshoptDecoder(MeshoptDecoder);
 
-let clickReady = false;
 export let centerECEF, cameraECEF;
 
 export async function loadGLTFModel(path, scene, camera, controls, category, clear = false, visible = true) {
@@ -38,9 +34,8 @@ export async function loadGLTFModel(path, scene, camera, controls, category, cle
       const { meshes, centerResult } = mergeMeshes(model, center, matrix, scene, category, visible);
 
       setupCamera(center, centerResult, camera, controls);
-
-      centerECEF = centerResult.clone();
       cameraECEF = camOffset(center);
+
       resolve();
     }, undefined, reject);
   });
