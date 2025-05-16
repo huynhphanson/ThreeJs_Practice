@@ -72,7 +72,7 @@ Promise.all([
 
   // Mô hình thiết kế SÔNG CHÒ
   // loadGLTFModel(gltfPathSCBridge, scene, camera, controls, 'MÔ HÌNH CẦU SÔNG CHÒ'),
-  loadGLTFModel(gltfPathSCDuongDan, scene, camera, controls, 'MÔ HÌNH ĐƯỜNG DẪN'),
+  // loadGLTFModel(gltfPathSCDuongDan, scene, camera, controls, 'MÔ HÌNH ĐƯỜNG DẪN'),
 
   // Vòng lặp
   startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer)
