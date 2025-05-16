@@ -39,9 +39,9 @@ export async function load3dTilesModel (path, camera, renderer, controls, scene,
     const size = new THREE.Vector3();
     const maxLength = bbox.getSize(size).length();
     const cameraEPSG = {
-      x: centerEPSG.x,
-      y: centerEPSG.y - maxLength * 0.5, 
-      z: centerEPSG.z + maxLength * 0.5
+      x: centerEPSG.x - maxLength * 0.1,
+      y: centerEPSG.y - maxLength * 0.4, 
+      z: centerEPSG.z + maxLength * 0.25
     };
     // Convert EPSG back to ECEF and set camera position
     centerCameraTiles = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
@@ -53,7 +53,6 @@ export async function load3dTilesModel (path, camera, renderer, controls, scene,
       camera.up.copy(up);
 
       controls.update(); // ⬅️ rất quan trọng
-      cameraAlreadySet = true;
     }
 
     

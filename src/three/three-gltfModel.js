@@ -21,7 +21,7 @@ loader.setMeshoptDecoder(MeshoptDecoder);
 
 export let centerECEF, cameraECEF;
 
-export async function loadGLTFModel(path, scene, camera, controls, category, clear = false, visible = true) {
+export async function loadGLTFModel(path, scene, camera, controls, category, clear = false, visible = true, setCamera = false) {
   if (clear) clearScene(scene);
 
   return new Promise((resolve, reject) => {
@@ -33,9 +33,11 @@ export async function loadGLTFModel(path, scene, camera, controls, category, cle
 
       const { meshes, centerResult } = mergeMeshes(model, center, matrix, scene, category, visible);
 
-      setupCamera(center, centerResult, camera, controls);
-      cameraECEF = camOffset(center);
-
+      if (setCamera) {
+        setupCamera(center, centerResult, camera, controls);
+        cameraECEF = camOffset(center);
+      }
+      
       resolve();
     }, undefined, reject);
   });
