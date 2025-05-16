@@ -34,8 +34,8 @@ threeContainer.appendChild(labelRenderer.domElement);
 
 const tilesModels = new Map();
 // Path Sông Chò
-const tilesSCPathIn = 'https://tsdev.host/2_tl8b/assets/models/3d-tiles/scIn/tileset.json';
-const tilesSCPathOut = 'https://tsdev.host/2_tl8b/assets/models/3d-tiles/scOut/tileset.json';
+const tilesSCPathIn = 'https://tsdev.host/PROJECT_T27/TL8B/assets/models/3d-tiles/scIn/tileset.json';
+const tilesSCPathOut = 'https://tsdev.host/PROJECT_T27/TL8B/assets/models/3d-tiles/scOut/tileset.json';
 const gltfPathSCBridge = '/assets/models/glb/sChoBridge.glb';
 const gltfPathSCHouse = '/assets/models/glb/sChoHouse.glb';
 const gltfPathSCDuongDan = '/assets/models/glb/sChoDuongDan.glb';
@@ -43,8 +43,8 @@ const gltfPathSCBoundary = '/assets/models/glb/sChoGPMB.glb'
 const centerSCLinePath = '/assets/csv/SongCho_CenterLine.csv'
 
 // Path Sông Giang
-const tilesSGPathIn = 'https://tsdev.host/2_tl8b/assets/models/3d-tiles/sgIn/tileset.json';
-const tilesSGPathOut = 'https://tsdev.host/2_tl8b/assets/models/3d-tiles/sgOut/tileset.json';
+const tilesSGPathIn = 'https://tsdev.host/PROJECT_T27/TL8B/assets/models/3d-tiles/sgIn/tileset.json';
+const tilesSGPathOut = 'https://tsdev.host/PROJECT_T27/TL8B/assets/models/3d-tiles/sgOut/tileset.json';
 const gltfPathSGBoundary = '/assets/models/glb/sGiangGPMB.glb'
 const centerSGLinePath = '/assets/csv/SongGiang_CenterLine.csv'
 
@@ -53,12 +53,13 @@ renderer.domElement.style.visibility = 'hidden';
 document.getElementById('loading-overlay').style.display = 'flex';
 
 Promise.all([
-  // HIỆN TRẠNG SÔNG CHÒ 3D TILES
-  load3dTilesModel(tilesSCPathIn, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG CHÒ/PHẠM VI TRONG RANH'),
-  load3dTilesModel(tilesSCPathOut, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG CHÒ/PHẠM VI NGOÀI RANH'),
+
   // HIỆN TRẠNG SÔNG GIANG 3D TILES
   load3dTilesModel(tilesSGPathIn, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG GIANG/PHẠM VI TRONG RANH'),
   load3dTilesModel(tilesSGPathOut, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG GIANG/PHẠM VI NGOÀI RANH'),
+    // HIỆN TRẠNG SÔNG CHÒ 3D TILES
+  load3dTilesModel(tilesSCPathIn, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG CHÒ/PHẠM VI TRONG RANH'),
+  load3dTilesModel(tilesSCPathOut, camera, renderer, controls, scene, 'HIỆN TRẠNG SÔNG CHÒ/PHẠM VI NGOÀI RANH'),
 
   // HIỆN TRẠNG SÔNG CHÒ GLTF
   // loadGLTFModel(gltfPathSCHouse, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/MÔ HÌNH NHÀ',false, false),
@@ -75,7 +76,7 @@ Promise.all([
 
   // Vòng lặp
   startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer)
-]).then(([inSCModel, outSCModel, inSGModel, outSGModel]) => {
+]).then(([inSGModel, outSGModel, inSCModel, outSCModel]) => {
   tilesModels.set('inSG', inSGModel);
   tilesModels.set('outSG', outSGModel);
   tilesModels.set('inSC', inSCModel);
