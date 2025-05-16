@@ -2,7 +2,7 @@ name: Build and Deploy to Hostinger via FTP
 
 on:
   push:
-    branches: [ main ] # hoặc branch bạn dùng
+    branches: [ master ] # hoặc branch bạn dùng
 
 jobs:
   build-and-deploy:
