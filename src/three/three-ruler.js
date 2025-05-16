@@ -394,7 +394,7 @@ function regenerateLinesAndLabels(groupIndex) {
   }
   
   const center = computeCentroid(worldPoints).sub(originPoint);
-  const totalLabel = createLabel(`Tổng: ${totalLength.toFixed(2)} m`, center, groupIndex, rulerGroup);
+  const totalLabel = createLabel(`Tổng chiều dài: ${totalLength.toFixed(2)} m`, center, groupIndex, rulerGroup);
   totalLabels[groupIndex] = totalLabel;
   rulerGroup.add(totalLabel);
 

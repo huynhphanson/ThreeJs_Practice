@@ -303,10 +303,7 @@ function onMouseClick(event, scene) {
   }
 
   const local = worldPoint.clone().sub(originPoint);
-  const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.1, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0xff0000, depthTest: false })
-  );
+  const sphere = createSphere(local);
   sphere.position.copy(local);
   areaGroup.add(sphere);
   allSpheres.push(sphere);
@@ -540,14 +537,39 @@ function updateAllLineScales(camera) {
 }
 function updateSphereScales(spheres, camera) {
   const cameraPos = camera.position;
-  spheres.forEach(sphere => {
-    if (sphere === highlightedSphere) return;
+  const tempVec = new THREE.Vector3();
 
-    const distance = sphere.getWorldPosition(new THREE.Vector3()).distanceTo(cameraPos);
+  for (const sphere of spheres) {
+    if (sphere === highlightedSphere) continue;
+
+    const worldPos = sphere.getWorldPosition(tempVec);
+    const distance = cameraPos.distanceTo(worldPos);
     const scale = THREE.MathUtils.clamp(distance * 0.02, 1.0, 6.0);
-    sphere.scale.set(scale, scale, scale);
-  });
+
+    if (Math.abs(sphere.scale.x - scale) > 0.01) {
+      sphere.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.2);
+    }
+  }
 }
+
+function createSphere(localPosition) {
+  const worldPos = localPosition.clone().add(originPoint);
+  const distance = cameraRef.position.distanceTo(worldPos);
+  const radius = THREE.MathUtils.clamp(Math.log10(distance + 1) * 0.1, 0.05, 0.5);
+
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 16, 16),
+    new THREE.MeshBasicMaterial({
+      color: 0xff0000,
+      depthTest: true,
+      depthWrite: true
+    })
+  );
+  sphere.frustumCulled = false;
+  sphere.position.copy(localPosition);
+  return sphere;
+}
+
 
 export function activateRulerArea() {
   areaEnabled = true;

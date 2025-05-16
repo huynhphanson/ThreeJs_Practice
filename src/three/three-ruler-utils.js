@@ -18,7 +18,7 @@ export function createLabel(text, position, groupIndex = null, parentGroup) {
   div.style.padding = '2px 6px';
   div.style.borderRadius = '4px';
 
-  if (/^Tổng:/.test(text) || /^Diện tích:/.test(text)) {
+  if (/^Tổng chiều dài:/.test(text) || /^Diện tích:/.test(text)) {
     div.style.backgroundColor = 'rgba(0, 200, 0, 0.85)';
     div.style.textShadow = '0 0 2px #000';
     div.style.fontWeight = 'bold';
