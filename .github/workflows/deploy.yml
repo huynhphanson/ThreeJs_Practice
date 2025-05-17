@@ -29,5 +29,5 @@ jobs:
           server: 153.92.11.40
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: dist/tl8b/
-          server-dir: tl8b
+          local-dir: dist/tl8b
+          server-dir: tl8b/
