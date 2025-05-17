@@ -36,17 +36,17 @@ const tilesModels = new Map();
 // Path Sông Chò
 const tilesSCPathIn = 'https://tsdev.host/PROJECT_T27/TL8B/assets/models/3d-tiles/scIn/tileset.json';
 const tilesSCPathOut = 'https://tsdev.host/PROJECT_T27/TL8B/assets/models/3d-tiles/scOut/tileset.json';
-const gltfPathSCBridge = '/assets/models/glb/sChoBridge.glb';
-const gltfPathSCHouse = '/assets/models/glb/sChoHouse.glb';
-const gltfPathSCDuongDan = '/assets/models/glb/sChoDuongDan.glb';
-const gltfPathSCBoundary = '/assets/models/glb/sChoGPMB.glb'
-const centerSCLinePath = '/assets/csv/SongCho_CenterLine.csv'
+const gltfPathSCBridge = './assets/models/glb/sChoBridge.glb';
+const gltfPathSCHouse = './assets/models/glb/sChoHouse.glb';
+const gltfPathSCDuongDan = './assets/models/glb/sChoDuongDan.glb';
+const gltfPathSCBoundary = './assets/models/glb/sChoGPMB.glb'
+const centerSCLinePath = './assets/csv/SongCho_CenterLine.csv'
 
 // Path Sông Giang
 const tilesSGPathIn = 'https://tsdev.host/PROJECT_T27/TL8B/assets/models/3d-tiles/sgIn/tileset.json';
 const tilesSGPathOut = 'https://tsdev.host/PROJECT_T27/TL8B/assets/models/3d-tiles/sgOut/tileset.json';
-const gltfPathSGBoundary = '/assets/models/glb/sGiangGPMB.glb'
-const centerSGLinePath = '/assets/csv/SongGiang_CenterLine.csv'
+const gltfPathSGBoundary = './assets/models/glb/sGiangGPMB.glb'
+const centerSGLinePath = './assets/csv/SongGiang_CenterLine.csv'
 
 labelRenderer.domElement.style.display = 'none';
 renderer.domElement.style.visibility = 'hidden';

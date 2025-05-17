@@ -1,3 +1,6 @@
 export default {
-  base: './',
-}
+  base: '/tl8b/',
+  build: {
+    outDir: 'dist/tl8b',
+  },
+};
