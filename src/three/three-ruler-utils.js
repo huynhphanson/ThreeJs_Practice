@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/examples/jsm/Addons.js';
 
+export const hoverableSpheres = [];
+
 export function computeCentroid(worldPoints) {
   const sum = worldPoints.reduce((acc, p) => acc.add(p), new THREE.Vector3());
   return sum.divideScalar(worldPoints.length);
@@ -181,4 +183,29 @@ export function updateLineThickness(mesh, camera, min = 0.02, max = 1.0, factor 
 
   mesh.geometry.dispose();
   mesh.geometry = new THREE.CylinderGeometry(newRadius, newRadius, height, 16, 1, true);
+}
+
+export function handleHover(mouse, camera, raycaster, spheres, renderer, isEnabled = true) {
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(spheres, false);
+  const hovered = intersects[0]?.object ?? null;
+
+  let isHovering = false;
+
+  for (const sphere of spheres) {
+    if (!sphere.userData) continue;
+
+    if (sphere === hovered) {
+      sphere.userData.targetScale = 1.5;
+      sphere.userData.targetColor.set(0x00ff00);
+      isHovering = true;
+    } else {
+      sphere.userData.targetScale = 1;
+      sphere.userData.targetColor.set(0xff0000);
+    }
+  }
+
+  if (renderer?.domElement) {
+    renderer.domElement.style.cursor = isEnabled && isHovering ? 'pointer' : 'default';
+  }
 }

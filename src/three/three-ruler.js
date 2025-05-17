@@ -14,7 +14,9 @@ import {
   collectVisibleMeshes,
   drawMeasureLine,
   updateLineThickness,
-  createSphere
+  createSphere,
+  handleHover,
+  hoverableSpheres
 } from './three-ruler-utils.js';
 
 // === Biến toàn cục ===
@@ -64,6 +66,7 @@ let totalLengthLabel = null;
 
 // === Khởi tạo ===
 export function initRuler(scene, camera, renderer, controls) {
+  camera.userData.renderer = renderer;
   cameraRef = camera;
   rendererRef = renderer;
   controlsRef = controls;
@@ -138,20 +141,7 @@ function handleMouseMove(event) {
   }
 
   // ✅ xử lý hover point
-  const intersectsSphere = raycaster.intersectObjects(allSpheres, false);
-  const hovered = intersectsSphere[0]?.object ?? null;
-
-  for (const sphere of allSpheres) {
-    if (!sphere.userData) continue;
-    if (sphere === hovered) {
-      sphere.userData.targetScale = 1.5;
-      sphere.userData.targetColor.set(0x00ff00);
-    } else {
-      sphere.userData.targetScale = 1;
-      sphere.userData.targetColor.set(0xff0000);
-    }
-  }
-
+  handleHover(mouse, cameraRef, raycaster, hoverableSpheres, rendererRef, true);
 
   // ⛔ phần này chỉ chạy khi đang bật chức năng đo
   if (!rulerEnabled) return;
@@ -225,6 +215,7 @@ function handleRightClick(event) {
     const sphere = currentSpheres[0];
     rulerGroup.remove(sphere);
     allSpheres = allSpheres.filter(s => s !== sphere);
+    hoverableSpheres.splice(hoverableSpheres.indexOf(sphere), 1);
     currentPoints.length = 0;
     currentSpheres.length = 0;
     clearPreview();
@@ -323,7 +314,7 @@ function onMouseClick(event, scene) {
   currentPoints.push(localPoint);
   currentSpheres.push(sphere);
   allSpheres.push(sphere);
-
+  hoverableSpheres.push(sphere);
   if (currentPoints.length >= 2 && previewLine) {
     previewLine1 = previewLine;
     previewLabel1 = previewLabel;
@@ -721,6 +712,7 @@ function clearAllRulerMeasurements() {
   lineGroups.length = 0;
   labelGroups.length = 0;
   totalLabels.length = 0;
+  hoverableSpheres.length = 0;
   previewLine = null;
   previewLabel = null;
   previewLine1 = null;

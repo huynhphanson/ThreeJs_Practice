@@ -1,17 +1,17 @@
 // === THREE RULER AREA ===
 
 import * as THREE from 'three';
-import { CSS2DObject } from 'three/examples/jsm/Addons.js';
 import {
   computeCentroid,
   createLabel,
   updateLabel,
   collectVisibleMeshes,
   updateLineTransform,
-  createMeasureLineMaterial,
   drawMeasureLine,
   updateLineThickness,
-  createSphere
+  createSphere,
+  handleHover,
+  hoverableSpheres
 } from './three-ruler-utils.js';
 
 let cameraRef, rendererRef, controlsRef;
@@ -52,6 +52,7 @@ let allSpheres = [];
 let finalized = false;
 
 export function initRulerArea(scene, camera, renderer, controls) {
+  camera.userData.renderer = renderer;
   cameraRef = camera;
   rendererRef = renderer;
   controlsRef = controls;
@@ -101,19 +102,7 @@ function handleMouseMove(event) {
   raycaster.setFromCamera(mouse, cameraRef);
 
   // === 1. Highlight point luôn bật ===
-  const intersectsSphere = raycaster.intersectObjects(allSpheres, false);
-  const hovered = intersectsSphere[0]?.object ?? null;
-
-  for (const sphere of allSpheres) {
-    if (sphere === hovered) {
-      sphere.userData.targetScale = 1.5;
-      sphere.userData.targetColor.set(0x00ff00);
-    } else {
-      sphere.userData.targetScale = 1;
-      sphere.userData.targetColor.set(0xff0000);
-    }
-  }
-
+  handleHover(mouse, cameraRef, raycaster, hoverableSpheres, rendererRef, true);
 
   // === 2. Nếu không kéo và không bật đo thì bỏ qua
   if (!areaEnabled && !draggingSphere) return;
@@ -306,7 +295,7 @@ function onMouseClick(event, scene) {
   sphere.position.copy(local);
   areaGroup.add(sphere);
   allSpheres.push(sphere);
-
+  hoverableSpheres.push(sphere);
   currentPoints.push(local);
   currentSpheres.push(sphere);
 
@@ -449,12 +438,13 @@ function cancelCurrentMeasurement() {
   const points = pointGroups[groupIndex];
   if (!points || points.length >= 3) return;
 
-  // Xoá các đối tượng vừa thêm
   sphereGroups[groupIndex]?.forEach(s => {
     areaGroup.remove(s);
     s.geometry?.dispose?.();
     s.material?.dispose?.();
     allSpheres = allSpheres.filter(item => item !== s);
+    const idx = hoverableSpheres.indexOf(s);
+    if (idx !== -1) hoverableSpheres.splice(idx, 1); // ✅ dùng đúng biến
   });
 
   lineGroups[groupIndex]?.forEach(l => {
@@ -514,16 +504,16 @@ function updateSphereScales(spheres, camera) {
   for (const sphere of spheres) {
     const worldPos = sphere.getWorldPosition(tempVec);
     const distance = cameraPos.distanceTo(worldPos);
+    const autoScale = THREE.MathUtils.clamp(distance * 0.02, 1.0, 6.0);
+    const target = autoScale * sphere.userData.targetScale;
 
-    // Scale tween
-    if (sphere.userData.currentScale !== undefined) {
-      sphere.userData.currentScale = THREE.MathUtils.lerp(
-        sphere.userData.currentScale,
-        sphere.userData.targetScale,
-        lerpFactor
-      );
-      sphere.scale.setScalar(sphere.userData.currentScale);
-    }
+    sphere.userData.currentScale = THREE.MathUtils.lerp(
+      sphere.userData.currentScale,
+      target,
+      lerpFactor
+    );
+    sphere.scale.setScalar(sphere.userData.currentScale);
+
 
     // Màu tween
     if (sphere.userData.currentColor && sphere.userData.targetColor) {
@@ -569,12 +559,16 @@ function clearAllAreaMeasurements() {
     });
   }
 
-  areaLabels.forEach(lbl => areaGroup.remove(lbl));
+  areaLabels.forEach(lbl => {
+    if (lbl && lbl.parent) areaGroup.remove(lbl); // ✅ kiểm tra kỹ trước khi remove
+  });
+
   allSpheres.length = 0;
   pointGroups.length = 0;
   sphereGroups.length = 0;
   lineGroups.length = 0;
   labelGroups.length = 0;
-  areaLabels.length = 0;
+  areaLabels.length = 0; // ✅ reset sạch
+  hoverableSpheres.length = 0;
   finalized = false;
 }
