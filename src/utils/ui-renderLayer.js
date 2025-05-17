@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CSS2DObject } from 'three/examples/jsm/Addons.js';
 import { zoomAt } from '../three/three-controls';
 
 // === utils.js hoặc nằm chung file ===
@@ -6,7 +7,7 @@ function toggleObjects(groupObjs, visible) {
   groupObjs.forEach(obj => {
     obj.visible = visible;
 
-    if (obj.constructor?.name === 'CSS2DObject') {
+    if (obj instanceof CSS2DObject) {
       if (!visible) obj.parent?.remove(obj);
       else obj.userData.originalParent?.add(obj);
     }
