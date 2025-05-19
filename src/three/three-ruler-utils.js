@@ -1,6 +1,7 @@
 // three-ruler-utils.js
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/examples/jsm/Addons.js';
+import { convertTo9217, convertToECEF } from './three-convertCoor';
 
 export const hoverableSpheres = [];
 
@@ -174,14 +175,28 @@ export function drawMeasureLine(p1, p2, radius = 0.1, group = null, type = 'poly
   return { mesh: cylinder };
 };
 
-export function createAreaPolygon(localPoints, materialOptions = {}) {
-  if (localPoints.length < 3) return null;
+export function createAreaPolygon(worldPoints, originPoint, materialOptions = {}) {
+  if (worldPoints.length < 3) return null;
 
+  // B1: ECEF → EPSG để lấy cao độ chính xác
+  const epsgPoints = worldPoints.map(p => convertTo9217(p.x, p.y, p.z));
+  const maxZ = Math.max(...epsgPoints.map(p => p.z));
+
+  // B2: Dựng lại mặt phẳng tại Z max và convert về lại ECEF
+  const flattenedECEF = epsgPoints.map(p => {
+    const flat = new THREE.Vector3(p.x, p.y, maxZ);
+    return convertToECEF(flat.x, flat.y, flat.z);
+  });
+
+  // B3: Về local để vẽ mesh
+  const projected = flattenedECEF.map(p => p.clone().sub(originPoint));
+
+  // B4: Tạo geometry dạng triangle fan
   const positions = [];
-  for (let i = 1; i < localPoints.length - 1; i++) {
-    positions.push(...localPoints[0].toArray());
-    positions.push(...localPoints[i].toArray());
-    positions.push(...localPoints[i + 1].toArray());
+  for (let i = 1; i < projected.length - 1; i++) {
+    positions.push(...projected[0].toArray());
+    positions.push(...projected[i].toArray());
+    positions.push(...projected[i + 1].toArray());
   }
 
   const geometry = new THREE.BufferGeometry();
@@ -200,8 +215,43 @@ export function createAreaPolygon(localPoints, materialOptions = {}) {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.renderOrder = -1;
   return mesh;
-};
+}
 
+export function updatePolygonMesh({
+  groupIndex,
+  pointGroups,
+  originPoint,
+  areaGroup,
+  polygonMeshes,
+  createAreaPolygon
+}) {
+  const updatedWorld = pointGroups[groupIndex].map(p => p.clone().add(originPoint));
+  const newPolygon = createAreaPolygon(updatedWorld, originPoint);
+
+  const oldMesh = polygonMeshes[groupIndex];
+  if (oldMesh) {
+    areaGroup.remove(oldMesh);
+    oldMesh.geometry?.dispose?.();
+    oldMesh.material?.dispose?.();
+  }
+
+  if (newPolygon) {
+    areaGroup.add(newPolygon);
+    polygonMeshes[groupIndex] = newPolygon;
+  }
+}
+
+export function compute3DArea(pointsECEF) {
+  if (pointsECEF.length < 3) return 0;
+
+  // Chuyển sang hệ tọa độ EPSG:9217 và lấy x, y
+  const projected2D = pointsECEF.map(p => {
+    const epsg = convertTo9217(p.x, p.y, p.z);
+    return new THREE.Vector2(epsg.x, epsg.y);
+  });
+
+  return Math.abs(THREE.ShapeUtils.area(projected2D));
+}
 
 export function updateLineThickness(mesh, camera, min = 0.02, max = 1.0, factor = 0.002) {
   const distance = mesh.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position);

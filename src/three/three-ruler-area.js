@@ -12,8 +12,12 @@ import {
   createSphere,
   handleHover,
   hoverableSpheres,
-  createAreaPolygon
+  createAreaPolygon,
+  updatePolygonMesh,
+  compute3DArea
 } from './three-ruler-utils.js';
+import { convertToECEF, convertTo9217 } from './three-convertCoor.js';
+
 
 let cameraRef, rendererRef, controlsRef;
 let areaGroup = new THREE.Group();
@@ -51,6 +55,7 @@ let labelGroups = [];
 let areaLabels = [];
 let allSpheres = [];
 let finalized = false;
+let polygonMeshes = [];
 
 export function initRulerArea(scene, camera, renderer, controls) {
   camera.userData.renderer = renderer;
@@ -124,6 +129,15 @@ function handleMouseMove(event) {
 
         if (pointGroups[groupIndex].length >= 3) {
           regeneratePolygon(groupIndex);
+          // ✅ Cập nhật lại vùng polygon
+          updatePolygonMesh({
+            groupIndex,
+            pointGroups,
+            originPoint,
+            areaGroup,
+            polygonMeshes,
+            createAreaPolygon
+          });
         }
       }
     }
@@ -184,8 +198,6 @@ function handleMouseUp(event) {
 
   draggingSphere = null;
 }
-
-
 
 function handleRightClick(event) {
   if (!areaEnabled) return;
@@ -253,7 +265,6 @@ function handleRightClick(event) {
   previewLabel = null;
   finalized = true;
 }
-
 
 function onMouseClick(event, scene) {
   if (!areaEnabled || event.button !== 0) return;
@@ -384,14 +395,17 @@ function regeneratePolygon(groupIndex) {
   const closingLabel = createLabel(`Diện tích: ${area.toFixed(2)} m²`, center, groupIndex, areaGroup);
   areaLabels[groupIndex] = closingLabel;
   areaGroup.add(closingLabel);
-  
 }
 
 function finalizePolygon(groupIndex) {
   const points = pointGroups[groupIndex];
   const worldPoints = points.map(p => p.clone().add(originPoint));
-  const polygonMesh = createAreaPolygon(points);
-  if (polygonMesh) areaGroup.add(polygonMesh);
+
+  const polygonMesh = createAreaPolygon(worldPoints, originPoint);
+  if (polygonMesh) {
+    areaGroup.add(polygonMesh);
+    polygonMeshes[groupIndex] = polygonMesh;
+  }
 
   const geometry = new THREE.BufferGeometry();
   const center = computeCentroid(worldPoints);
@@ -400,40 +414,15 @@ function finalizePolygon(groupIndex) {
   for (let i = 0; i < worldPoints.length; i++) {
     vertices.push(...worldPoints[i].toArray());
   }
+
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
 
   const area = compute3DArea(worldPoints);
   
-
   const label = createLabel(`Diện tích: ${Math.abs(area).toFixed(2)} m²`, center.clone().sub(originPoint), groupIndex, areaGroup);
   areaLabels[groupIndex] = label;
   areaGroup.add(label);
   createClearAreaButton();
-
-}
-
-function compute3DArea(points3D) {
-  if (points3D.length < 3) return 0;
-
-  // 1. Lấy normal từ tam giác đầu tiên
-  const v0 = points3D[0], v1 = points3D[1], v2 = points3D[2];
-  const edge1 = v1.clone().sub(v0);
-  const edge2 = v2.clone().sub(v0);
-  const normal = edge1.clone().cross(edge2).normalize();
-
-  // 2. Tạo hệ trục vuông góc với normal
-  const xAxis = edge1.clone().normalize();
-  const yAxis = normal.clone().cross(xAxis).normalize();
-  const origin = v0.clone();
-
-  // 3. Project các điểm sang mặt phẳng 2D
-  const projected = points3D.map(p => {
-    const local = p.clone().sub(origin);
-    return new THREE.Vector2(local.dot(xAxis), local.dot(yAxis));
-  });
-
-  // 4. Tính diện tích 2D
-  return Math.abs(THREE.ShapeUtils.area(projected));
 }
 
 function cancelCurrentMeasurement() {
@@ -566,6 +555,15 @@ function clearAllAreaMeasurements() {
     if (lbl && lbl.parent) areaGroup.remove(lbl); // ✅ kiểm tra kỹ trước khi remove
   });
 
+  polygonMeshes.forEach(p => {
+    if (p) {
+      areaGroup.remove(p);
+      p.geometry?.dispose?.();
+      p.material?.dispose?.();
+    }
+  });
+
+  polygonMeshes.length = 0;
   allSpheres.length = 0;
   pointGroups.length = 0;
   sphereGroups.length = 0;
