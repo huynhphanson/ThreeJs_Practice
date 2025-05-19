@@ -204,12 +204,11 @@ export function createAreaPolygon(worldPoints, originPoint, materialOptions = {}
   geometry.computeVertexNormals();
 
   const material = new THREE.MeshStandardMaterial({
-    color: 0x00ff00,
+    color: 0xf5b43b,          // Cam nhạt
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.3,
-    depthWrite: false,
-    ...materialOptions
+    opacity: 0.35,
+    depthWrite: false
   });
 
   const mesh = new THREE.Mesh(geometry, material);
