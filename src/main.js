@@ -63,16 +63,16 @@ Promise.all([
 
   // HIỆN TRẠNG SÔNG CHÒ GLTF
   // loadGLTFModel(gltfPathSCHouse, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/MÔ HÌNH NHÀ',false, false),
-  loadGLTFModel(gltfPathSCBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/RANH GPMB'),
-  drawPolylineFromCSV(centerSCLinePath, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/TIM KHẢO SÁT', 40, 100),
+  // loadGLTFModel(gltfPathSCBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/RANH GPMB'),
+  // drawPolylineFromCSV(centerSCLinePath, scene, camera, controls, 'HIỆN TRẠNG SÔNG CHÒ/TIM KHẢO SÁT', 40, 100),
 
   // HIỆN TRẠNG SÔNG GIANG GLTF
-  loadGLTFModel(gltfPathSGBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG GIANG/RANH GPMB'),
-  drawPolylineFromCSV(centerSGLinePath, scene, camera, controls, 'HIỆN TRẠNG SÔNG GIANG/TIM KHẢO SÁT', 10, 100),
+  // loadGLTFModel(gltfPathSGBoundary, scene, camera, controls, 'HIỆN TRẠNG SÔNG GIANG/RANH GPMB'),
+  // drawPolylineFromCSV(centerSGLinePath, scene, camera, controls, 'HIỆN TRẠNG SÔNG GIANG/TIM KHẢO SÁT', 10, 100),
 
   // Mô hình thiết kế SÔNG CHÒ
-  loadGLTFModel(gltfPathSCBridge, scene, camera, controls, 'MÔ HÌNH CẦU SÔNG CHÒ'),
-  loadGLTFModel(gltfPathSCDuongDan, scene, camera, controls, 'MÔ HÌNH ĐƯỜNG DẪN'),
+  // loadGLTFModel(gltfPathSCBridge, scene, camera, controls, 'MÔ HÌNH CẦU SÔNG CHÒ'),
+  // loadGLTFModel(gltfPathSCDuongDan, scene, camera, controls, 'MÔ HÌNH ĐƯỜNG DẪN'),
 
   // Vòng lặp
   startLoop(scene, camera, controls, renderer, labelRenderer, composer, tilesModels, cesiumViewer)

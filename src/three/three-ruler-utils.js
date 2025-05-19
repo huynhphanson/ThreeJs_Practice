@@ -172,7 +172,36 @@ export function drawMeasureLine(p1, p2, radius = 0.1, group = null, type = 'poly
 
   if (group) group.add(cylinder);
   return { mesh: cylinder };
-}
+};
+
+export function createAreaPolygon(localPoints, materialOptions = {}) {
+  if (localPoints.length < 3) return null;
+
+  const positions = [];
+  for (let i = 1; i < localPoints.length - 1; i++) {
+    positions.push(...localPoints[0].toArray());
+    positions.push(...localPoints[i].toArray());
+    positions.push(...localPoints[i + 1].toArray());
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x00ff00,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.3,
+    depthWrite: false,
+    ...materialOptions
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.renderOrder = -1;
+  return mesh;
+};
+
 
 export function updateLineThickness(mesh, camera, min = 0.02, max = 1.0, factor = 0.002) {
   const distance = mesh.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position);

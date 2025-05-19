@@ -11,7 +11,8 @@ import {
   updateLineThickness,
   createSphere,
   handleHover,
-  hoverableSpheres
+  hoverableSpheres,
+  createAreaPolygon
 } from './three-ruler-utils.js';
 
 let cameraRef, rendererRef, controlsRef;
@@ -389,6 +390,8 @@ function regeneratePolygon(groupIndex) {
 function finalizePolygon(groupIndex) {
   const points = pointGroups[groupIndex];
   const worldPoints = points.map(p => p.clone().add(originPoint));
+  const polygonMesh = createAreaPolygon(points);
+  if (polygonMesh) areaGroup.add(polygonMesh);
 
   const geometry = new THREE.BufferGeometry();
   const center = computeCentroid(worldPoints);
