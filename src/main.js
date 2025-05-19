@@ -17,6 +17,7 @@ import { modelGroups } from './three/three-modelGroups.js';
 import { drawPolylineFromCSV } from './three/three-drawPol.js';
 import { registerClickHandler } from './three/three-registerClick.js';
 import { findPosition } from './three/three-findPosition.js';
+import { initClipPlane } from './three/three-clipPlane.js';
 
 /* Cesium Init */
 export const cesiumViewer = initCesium();
@@ -126,12 +127,11 @@ const infoContent = document.getElementById('infoContent');
 registerClickHandler(scene, camera, infoContent); // ✅ đúng thứ tự
 
 
-
 // Cursor Coordinates
 const sidenavRightBottom = document.querySelector('.sidenav-right-bottom');
 cursorCoor(raycaster, scene, camera, sidenavRightBottom);
 
-// Ruler
+// Ruler Distance
 const rulerBtn = document.querySelector('.fa-ruler');
 let rulerInitialized = false;
 let rulerActive = false;
@@ -186,6 +186,17 @@ areaBtn.addEventListener('click', () => {
     areaBtn.classList.remove('i-active');
   }
 });
+
+// Clip Plane
+const scissorsBtn = document.querySelector('.fa-scissors');
+let clipEnabled = false;
+
+scissorsBtn.addEventListener('click', () => {
+  clipEnabled = !clipEnabled;
+  initClipPlane(renderer, scene, clipEnabled);
+});
+
+
 
 // Project Infomation
 const infoBtn = document.querySelector('.info-project-btn');
