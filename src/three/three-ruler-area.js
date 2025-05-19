@@ -14,10 +14,10 @@ import {
   hoverableSpheres,
   createAreaPolygon,
   updatePolygonMesh,
-  compute3DArea
+  compute3DArea,
+  drawDropLines,
+  updateDropLines
 } from './three-ruler-utils.js';
-import { convertToECEF, convertTo9217 } from './three-convertCoor.js';
-
 
 let cameraRef, rendererRef, controlsRef;
 let areaGroup = new THREE.Group();
@@ -56,6 +56,7 @@ let areaLabels = [];
 let allSpheres = [];
 let finalized = false;
 let polygonMeshes = [];
+let dropLineGroups = []; // Mỗi group lưu mảng các line
 
 export function initRulerArea(scene, camera, renderer, controls) {
   camera.userData.renderer = renderer;
@@ -129,7 +130,7 @@ function handleMouseMove(event) {
 
         if (pointGroups[groupIndex].length >= 3) {
           regeneratePolygon(groupIndex);
-          // ✅ Cập nhật lại vùng polygon
+          // Cập nhật lại vùng polygon
           updatePolygonMesh({
             groupIndex,
             pointGroups,
@@ -138,6 +139,13 @@ function handleMouseMove(event) {
             polygonMeshes,
             createAreaPolygon
           });
+          // Cập nhật droplines
+          updateDropLines(
+            sphereGroups[groupIndex],
+            dropLineGroups[groupIndex],
+            originPoint,
+            pointGroups[groupIndex]
+          );
         }
       }
     }
@@ -171,8 +179,6 @@ function handleMouseMove(event) {
     }
   }
 }
-
-
 
 function handleMouseUp(event) {
   isMouseDown = false;
@@ -407,6 +413,9 @@ function finalizePolygon(groupIndex) {
     polygonMeshes[groupIndex] = polygonMesh;
   }
 
+  const dropLines = drawDropLines(sphereGroups[groupIndex], originPoint, areaGroup);
+  dropLineGroups[groupIndex] = dropLines;
+
   const geometry = new THREE.BufferGeometry();
   const center = computeCentroid(worldPoints);
 
@@ -552,7 +561,7 @@ function clearAllAreaMeasurements() {
   }
 
   areaLabels.forEach(lbl => {
-    if (lbl && lbl.parent) areaGroup.remove(lbl); // ✅ kiểm tra kỹ trước khi remove
+    if (lbl && lbl.parent) areaGroup.remove(lbl);
   });
 
   polygonMeshes.forEach(p => {
@@ -563,13 +572,24 @@ function clearAllAreaMeasurements() {
     }
   });
 
+  dropLineGroups.forEach(lines => {
+    lines?.forEach(line => {
+      if (!line) return;
+      areaGroup.remove(line);
+      line.geometry?.dispose?.();
+      line.material?.dispose?.();
+    });
+  });
+
+  // ✅ Reset sạch toàn bộ
   polygonMeshes.length = 0;
+  dropLineGroups.length = 0;
   allSpheres.length = 0;
   pointGroups.length = 0;
   sphereGroups.length = 0;
   lineGroups.length = 0;
   labelGroups.length = 0;
-  areaLabels.length = 0; // ✅ reset sạch
+  areaLabels.length = 0;
   hoverableSpheres.length = 0;
   finalized = false;
 }

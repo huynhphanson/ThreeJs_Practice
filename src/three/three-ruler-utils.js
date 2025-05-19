@@ -253,6 +253,67 @@ export function compute3DArea(pointsECEF) {
   return Math.abs(THREE.ShapeUtils.area(projected2D));
 }
 
+export function drawDropLines(spheres, originPoint, parentGroup) {
+  const lines = [];
+  if (!spheres || spheres.length < 3) return;
+
+  // B1: Tính worldPoints từ spheres
+  const worldPoints = spheres.map(s => s.position.clone().add(originPoint));
+  console.log(worldPoints);
+  // B2: Chuyển sang EPSG để tìm zMax
+  const epsgPoints = worldPoints.map(p => convertTo9217(p.x, p.y, p.z));
+  const zMax = Math.max(...epsgPoints.map(p => p.z));
+
+  // B3: Vẽ các đường từ điểm gốc xuống điểm XY giữ Z = zMax
+  for (let i = 0; i < worldPoints.length; i++) {
+    const pECEF = worldPoints[i];
+    const pEPSG = epsgPoints[i];
+
+    const flatEPSG = new THREE.Vector3(pEPSG.x, pEPSG.y, zMax);
+    const projectedECEF = convertToECEF(flatEPSG.x, flatEPSG.y, flatEPSG.z);
+
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      pECEF.clone().sub(originPoint),
+      projectedECEF.clone().sub(originPoint)
+    ]);
+    const material = new THREE.LineBasicMaterial({
+      color: 0xffa500,
+      depthTest: false,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    const line = new THREE.Line(geometry, material);
+    line.renderOrder = 999;
+    parentGroup.add(line);
+    lines.push(line);
+  };
+  return lines;
+};
+
+export function updateDropLines(spheres, dropLines, originPoint, pointGroup) {
+  if (!spheres || !dropLines || !pointGroup) return;
+
+  const worldPoints = pointGroup.map(p => p.clone().add(originPoint));
+  const epsgPoints = worldPoints.map(p => convertTo9217(p.x, p.y, p.z));
+  const zMax = Math.max(...epsgPoints.map(p => p.z));
+
+  for (let i = 0; i < spheres.length; i++) {
+    const pECEF = worldPoints[i];
+    const pEPSG = epsgPoints[i];
+    const flat = convertToECEF(pEPSG.x, pEPSG.y, zMax);
+
+    const line = dropLines[i];
+    if (!line || !line.geometry) continue;
+
+    const points = [
+      pECEF.clone().sub(originPoint),
+      flat.clone().sub(originPoint)
+    ];
+    line.geometry.setFromPoints(points);
+  }
+}
+
 export function updateLineThickness(mesh, camera, min = 0.02, max = 1.0, factor = 0.002) {
   const distance = mesh.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position);
   const newRadius = THREE.MathUtils.clamp(distance * factor, min, max);
