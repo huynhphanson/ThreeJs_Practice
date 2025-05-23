@@ -190,18 +190,11 @@ areaBtn.addEventListener('click', () => {
 // Clip Plane
 const scissorsBtn = document.querySelector('.fa-scissors');
 let clipEnabled = false;
-
 scissorsBtn.addEventListener('click', () => {
   clipEnabled = !clipEnabled;
-  initClipPlane(renderer, scene, camera, renderer.domElement, clipEnabled);
-
-  if (clipEnabled) {
-    scissorsBtn.classList.add('i-active');
-  } else {
-    scissorsBtn.classList.remove('i-active');
-  }
+  initClipPlane(scene, camera, renderer, controls, clipEnabled);
+  scissorsBtn.classList.toggle('i-active', clipEnabled);
 });
-
 
 
 // Project Infomation
