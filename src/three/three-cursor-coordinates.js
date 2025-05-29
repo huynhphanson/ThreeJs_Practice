@@ -27,9 +27,9 @@ export function cursorCoor (raycaster, scene, camera, container) {
       
 
       divCoor.innerHTML = `
-      <span style="color: #aaa;">VN-2000/TM-3 108°15’ - EPSG:9217</span>
-      <span>X(E): ${coordinate.x} |</span>
-      <span>Y(N): ${coordinate.y} |</span>
+      <span style="color: #aaa;">VN-2000/TM-3 108°15’<span class="epsg-tag">- EPSG:9217</span></span>
+      <span>X(E): ${coordinate.x}</span>
+      <span>Y(N): ${coordinate.y}</span>
       <span>Z(H): ${coordinate.z}</span>
     `;
     
