@@ -1,6 +1,9 @@
 // three-ruler-utils.js
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/examples/jsm/Addons.js';
+import { convertTo9217, convertToECEF } from './three-convertCoor';
+
+export const hoverableSpheres = [];
 
 export function computeCentroid(worldPoints) {
   const sum = worldPoints.reduce((acc, p) => acc.add(p), new THREE.Vector3());
@@ -170,6 +173,143 @@ export function drawMeasureLine(p1, p2, radius = 0.1, group = null, type = 'poly
 
   if (group) group.add(cylinder);
   return { mesh: cylinder };
+};
+
+export function createAreaPolygon(worldPoints, originPoint, materialOptions = {}) {
+  if (worldPoints.length < 3) return null;
+
+  // B1: ECEF → EPSG để lấy cao độ chính xác
+  const epsgPoints = worldPoints.map(p => convertTo9217(p.x, p.y, p.z));
+  const maxZ = Math.max(...epsgPoints.map(p => p.z));
+
+  // B2: Dựng lại mặt phẳng tại Z max và convert về lại ECEF
+  const flattenedECEF = epsgPoints.map(p => {
+    const flat = new THREE.Vector3(p.x, p.y, maxZ);
+    return convertToECEF(flat.x, flat.y, flat.z);
+  });
+
+  // B3: Về local để vẽ mesh
+  const projected = flattenedECEF.map(p => p.clone().sub(originPoint));
+
+  // B4: Tạo geometry dạng triangle fan
+  const positions = [];
+  for (let i = 1; i < projected.length - 1; i++) {
+    positions.push(...projected[0].toArray());
+    positions.push(...projected[i].toArray());
+    positions.push(...projected[i + 1].toArray());
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xf5b43b,          // Cam nhạt
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.35,
+    depthWrite: false
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.renderOrder = -1;
+  return mesh;
+}
+
+export function updatePolygonMesh({
+  groupIndex,
+  pointGroups,
+  originPoint,
+  areaGroup,
+  polygonMeshes,
+  createAreaPolygon
+}) {
+  const updatedWorld = pointGroups[groupIndex].map(p => p.clone().add(originPoint));
+  const newPolygon = createAreaPolygon(updatedWorld, originPoint);
+
+  const oldMesh = polygonMeshes[groupIndex];
+  if (oldMesh) {
+    areaGroup.remove(oldMesh);
+    oldMesh.geometry?.dispose?.();
+    oldMesh.material?.dispose?.();
+  }
+
+  if (newPolygon) {
+    areaGroup.add(newPolygon);
+    polygonMeshes[groupIndex] = newPolygon;
+  }
+}
+
+export function compute3DArea(pointsECEF) {
+  if (pointsECEF.length < 3) return 0;
+
+  // Chuyển sang hệ tọa độ EPSG:9217 và lấy x, y
+  const projected2D = pointsECEF.map(p => {
+    const epsg = convertTo9217(p.x, p.y, p.z);
+    return new THREE.Vector2(epsg.x, epsg.y);
+  });
+
+  return Math.abs(THREE.ShapeUtils.area(projected2D));
+}
+
+export function drawDropLines(spheres, originPoint, parentGroup) {
+  const lines = [];
+  if (!spheres || spheres.length < 3) return;
+
+  // B1: Tính worldPoints từ spheres
+  const worldPoints = spheres.map(s => s.position.clone().add(originPoint));
+  // B2: Chuyển sang EPSG để tìm zMax
+  const epsgPoints = worldPoints.map(p => convertTo9217(p.x, p.y, p.z));
+  const zMax = Math.max(...epsgPoints.map(p => p.z));
+
+  // B3: Vẽ các đường từ điểm gốc xuống điểm XY giữ Z = zMax
+  for (let i = 0; i < worldPoints.length; i++) {
+    const pECEF = worldPoints[i];
+    const pEPSG = epsgPoints[i];
+
+    const flatEPSG = new THREE.Vector3(pEPSG.x, pEPSG.y, zMax);
+    const projectedECEF = convertToECEF(flatEPSG.x, flatEPSG.y, flatEPSG.z);
+
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      pECEF.clone().sub(originPoint),
+      projectedECEF.clone().sub(originPoint)
+    ]);
+    const material = new THREE.LineBasicMaterial({
+      color: 0xffa500,
+      depthTest: false,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    const line = new THREE.Line(geometry, material);
+    line.renderOrder = 999;
+    parentGroup.add(line);
+    lines.push(line);
+  };
+  return lines;
+};
+
+export function updateDropLines(spheres, dropLines, originPoint, pointGroup) {
+  if (!spheres || !dropLines || !pointGroup) return;
+
+  const worldPoints = pointGroup.map(p => p.clone().add(originPoint));
+  const epsgPoints = worldPoints.map(p => convertTo9217(p.x, p.y, p.z));
+  const zMax = Math.max(...epsgPoints.map(p => p.z));
+
+  for (let i = 0; i < spheres.length; i++) {
+    const pECEF = worldPoints[i];
+    const pEPSG = epsgPoints[i];
+    const flat = convertToECEF(pEPSG.x, pEPSG.y, zMax);
+
+    const line = dropLines[i];
+    if (!line || !line.geometry) continue;
+
+    const points = [
+      pECEF.clone().sub(originPoint),
+      flat.clone().sub(originPoint)
+    ];
+    line.geometry.setFromPoints(points);
+  }
 }
 
 export function updateLineThickness(mesh, camera, min = 0.02, max = 1.0, factor = 0.002) {
@@ -181,4 +321,29 @@ export function updateLineThickness(mesh, camera, min = 0.02, max = 1.0, factor 
 
   mesh.geometry.dispose();
   mesh.geometry = new THREE.CylinderGeometry(newRadius, newRadius, height, 16, 1, true);
+}
+
+export function handleHover(mouse, camera, raycaster, spheres, renderer, isEnabled = true) {
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(spheres, false);
+  const hovered = intersects[0]?.object ?? null;
+
+  let isHovering = false;
+
+  for (const sphere of spheres) {
+    if (!sphere.userData) continue;
+
+    if (sphere === hovered) {
+      sphere.userData.targetScale = 1.5;
+      sphere.userData.targetColor.set(0x00ff00);
+      isHovering = true;
+    } else {
+      sphere.userData.targetScale = 1;
+      sphere.userData.targetColor.set(0xff0000);
+    }
+  }
+
+  if (renderer?.domElement) {
+    renderer.domElement.style.cursor = isEnabled && isHovering ? 'pointer' : 'default';
+  }
 }

@@ -1,17 +1,22 @@
 // === THREE RULER AREA ===
 
 import * as THREE from 'three';
-import { CSS2DObject } from 'three/examples/jsm/Addons.js';
 import {
   computeCentroid,
   createLabel,
   updateLabel,
   collectVisibleMeshes,
   updateLineTransform,
-  createMeasureLineMaterial,
   drawMeasureLine,
   updateLineThickness,
-  createSphere
+  createSphere,
+  handleHover,
+  hoverableSpheres,
+  createAreaPolygon,
+  updatePolygonMesh,
+  compute3DArea,
+  drawDropLines,
+  updateDropLines
 } from './three-ruler-utils.js';
 
 let cameraRef, rendererRef, controlsRef;
@@ -50,8 +55,11 @@ let labelGroups = [];
 let areaLabels = [];
 let allSpheres = [];
 let finalized = false;
+let polygonMeshes = [];
+let dropLineGroups = []; // Mỗi group lưu mảng các line
 
 export function initRulerArea(scene, camera, renderer, controls) {
+  camera.userData.renderer = renderer;
   cameraRef = camera;
   rendererRef = renderer;
   controlsRef = controls;
@@ -101,19 +109,7 @@ function handleMouseMove(event) {
   raycaster.setFromCamera(mouse, cameraRef);
 
   // === 1. Highlight point luôn bật ===
-  const intersectsSphere = raycaster.intersectObjects(allSpheres, false);
-  const hovered = intersectsSphere[0]?.object ?? null;
-
-  for (const sphere of allSpheres) {
-    if (sphere === hovered) {
-      sphere.userData.targetScale = 1.5;
-      sphere.userData.targetColor.set(0x00ff00);
-    } else {
-      sphere.userData.targetScale = 1;
-      sphere.userData.targetColor.set(0xff0000);
-    }
-  }
-
+  handleHover(mouse, cameraRef, raycaster, hoverableSpheres, rendererRef, true);
 
   // === 2. Nếu không kéo và không bật đo thì bỏ qua
   if (!areaEnabled && !draggingSphere) return;
@@ -134,6 +130,22 @@ function handleMouseMove(event) {
 
         if (pointGroups[groupIndex].length >= 3) {
           regeneratePolygon(groupIndex);
+          // Cập nhật lại vùng polygon
+          updatePolygonMesh({
+            groupIndex,
+            pointGroups,
+            originPoint,
+            areaGroup,
+            polygonMeshes,
+            createAreaPolygon
+          });
+          // Cập nhật droplines
+          updateDropLines(
+            sphereGroups[groupIndex],
+            dropLineGroups[groupIndex],
+            originPoint,
+            pointGroups[groupIndex]
+          );
         }
       }
     }
@@ -168,8 +180,6 @@ function handleMouseMove(event) {
   }
 }
 
-
-
 function handleMouseUp(event) {
   isMouseDown = false;
 
@@ -194,8 +204,6 @@ function handleMouseUp(event) {
 
   draggingSphere = null;
 }
-
-
 
 function handleRightClick(event) {
   if (!areaEnabled) return;
@@ -264,7 +272,6 @@ function handleRightClick(event) {
   finalized = true;
 }
 
-
 function onMouseClick(event, scene) {
   if (!areaEnabled || event.button !== 0) return;
   if (draggingSphere) return; // ⛔ đang drag thì không được tính click
@@ -306,7 +313,7 @@ function onMouseClick(event, scene) {
   sphere.position.copy(local);
   areaGroup.add(sphere);
   allSpheres.push(sphere);
-
+  hoverableSpheres.push(sphere);
   currentPoints.push(local);
   currentSpheres.push(sphere);
 
@@ -394,12 +401,20 @@ function regeneratePolygon(groupIndex) {
   const closingLabel = createLabel(`Diện tích: ${area.toFixed(2)} m²`, center, groupIndex, areaGroup);
   areaLabels[groupIndex] = closingLabel;
   areaGroup.add(closingLabel);
-  
 }
 
 function finalizePolygon(groupIndex) {
   const points = pointGroups[groupIndex];
   const worldPoints = points.map(p => p.clone().add(originPoint));
+
+  const polygonMesh = createAreaPolygon(worldPoints, originPoint);
+  if (polygonMesh) {
+    areaGroup.add(polygonMesh);
+    polygonMeshes[groupIndex] = polygonMesh;
+  }
+
+  const dropLines = drawDropLines(sphereGroups[groupIndex], originPoint, areaGroup);
+  dropLineGroups[groupIndex] = dropLines;
 
   const geometry = new THREE.BufferGeometry();
   const center = computeCentroid(worldPoints);
@@ -408,40 +423,15 @@ function finalizePolygon(groupIndex) {
   for (let i = 0; i < worldPoints.length; i++) {
     vertices.push(...worldPoints[i].toArray());
   }
+
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
 
   const area = compute3DArea(worldPoints);
   
-
   const label = createLabel(`Diện tích: ${Math.abs(area).toFixed(2)} m²`, center.clone().sub(originPoint), groupIndex, areaGroup);
   areaLabels[groupIndex] = label;
   areaGroup.add(label);
   createClearAreaButton();
-
-}
-
-function compute3DArea(points3D) {
-  if (points3D.length < 3) return 0;
-
-  // 1. Lấy normal từ tam giác đầu tiên
-  const v0 = points3D[0], v1 = points3D[1], v2 = points3D[2];
-  const edge1 = v1.clone().sub(v0);
-  const edge2 = v2.clone().sub(v0);
-  const normal = edge1.clone().cross(edge2).normalize();
-
-  // 2. Tạo hệ trục vuông góc với normal
-  const xAxis = edge1.clone().normalize();
-  const yAxis = normal.clone().cross(xAxis).normalize();
-  const origin = v0.clone();
-
-  // 3. Project các điểm sang mặt phẳng 2D
-  const projected = points3D.map(p => {
-    const local = p.clone().sub(origin);
-    return new THREE.Vector2(local.dot(xAxis), local.dot(yAxis));
-  });
-
-  // 4. Tính diện tích 2D
-  return Math.abs(THREE.ShapeUtils.area(projected));
 }
 
 function cancelCurrentMeasurement() {
@@ -449,12 +439,13 @@ function cancelCurrentMeasurement() {
   const points = pointGroups[groupIndex];
   if (!points || points.length >= 3) return;
 
-  // Xoá các đối tượng vừa thêm
   sphereGroups[groupIndex]?.forEach(s => {
     areaGroup.remove(s);
     s.geometry?.dispose?.();
     s.material?.dispose?.();
     allSpheres = allSpheres.filter(item => item !== s);
+    const idx = hoverableSpheres.indexOf(s);
+    if (idx !== -1) hoverableSpheres.splice(idx, 1); // ✅ dùng đúng biến
   });
 
   lineGroups[groupIndex]?.forEach(l => {
@@ -514,16 +505,16 @@ function updateSphereScales(spheres, camera) {
   for (const sphere of spheres) {
     const worldPos = sphere.getWorldPosition(tempVec);
     const distance = cameraPos.distanceTo(worldPos);
+    const autoScale = THREE.MathUtils.clamp(distance * 0.02, 1.0, 6.0);
+    const target = autoScale * sphere.userData.targetScale;
 
-    // Scale tween
-    if (sphere.userData.currentScale !== undefined) {
-      sphere.userData.currentScale = THREE.MathUtils.lerp(
-        sphere.userData.currentScale,
-        sphere.userData.targetScale,
-        lerpFactor
-      );
-      sphere.scale.setScalar(sphere.userData.currentScale);
-    }
+    sphere.userData.currentScale = THREE.MathUtils.lerp(
+      sphere.userData.currentScale,
+      target,
+      lerpFactor
+    );
+    sphere.scale.setScalar(sphere.userData.currentScale);
+
 
     // Màu tween
     if (sphere.userData.currentColor && sphere.userData.targetColor) {
@@ -569,12 +560,36 @@ function clearAllAreaMeasurements() {
     });
   }
 
-  areaLabels.forEach(lbl => areaGroup.remove(lbl));
+  areaLabels.forEach(lbl => {
+    if (lbl && lbl.parent) areaGroup.remove(lbl);
+  });
+
+  polygonMeshes.forEach(p => {
+    if (p) {
+      areaGroup.remove(p);
+      p.geometry?.dispose?.();
+      p.material?.dispose?.();
+    }
+  });
+
+  dropLineGroups.forEach(lines => {
+    lines?.forEach(line => {
+      if (!line) return;
+      areaGroup.remove(line);
+      line.geometry?.dispose?.();
+      line.material?.dispose?.();
+    });
+  });
+
+  // ✅ Reset sạch toàn bộ
+  polygonMeshes.length = 0;
+  dropLineGroups.length = 0;
   allSpheres.length = 0;
   pointGroups.length = 0;
   sphereGroups.length = 0;
   lineGroups.length = 0;
   labelGroups.length = 0;
   areaLabels.length = 0;
+  hoverableSpheres.length = 0;
   finalized = false;
 }
