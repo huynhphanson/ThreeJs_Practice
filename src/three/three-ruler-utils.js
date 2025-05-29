@@ -1,7 +1,7 @@
 // three-ruler-utils.js
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/examples/jsm/Addons.js';
-import { convertTo9217, convertToECEF } from './three-convertCoor';
+import { convertToEPSG, convertToECEF } from './three-convertCoor';
 
 export const hoverableSpheres = [];
 
@@ -179,7 +179,7 @@ export function createAreaPolygon(worldPoints, originPoint, materialOptions = {}
   if (worldPoints.length < 3) return null;
 
   // B1: ECEF → EPSG để lấy cao độ chính xác
-  const epsgPoints = worldPoints.map(p => convertTo9217(p.x, p.y, p.z));
+  const epsgPoints = worldPoints.map(p => convertToEPSG(p.x, p.y, p.z));
   const maxZ = Math.max(...epsgPoints.map(p => p.z));
 
   // B2: Dựng lại mặt phẳng tại Z max và convert về lại ECEF
@@ -243,9 +243,9 @@ export function updatePolygonMesh({
 export function compute3DArea(pointsECEF) {
   if (pointsECEF.length < 3) return 0;
 
-  // Chuyển sang hệ tọa độ EPSG:9217 và lấy x, y
+  // Chuyển sang hệ tọa độ EPSG:EPSG và lấy x, y
   const projected2D = pointsECEF.map(p => {
-    const epsg = convertTo9217(p.x, p.y, p.z);
+    const epsg = convertToEPSG(p.x, p.y, p.z);
     return new THREE.Vector2(epsg.x, epsg.y);
   });
 
@@ -259,7 +259,7 @@ export function drawDropLines(spheres, originPoint, parentGroup) {
   // B1: Tính worldPoints từ spheres
   const worldPoints = spheres.map(s => s.position.clone().add(originPoint));
   // B2: Chuyển sang EPSG để tìm zMax
-  const epsgPoints = worldPoints.map(p => convertTo9217(p.x, p.y, p.z));
+  const epsgPoints = worldPoints.map(p => convertToEPSG(p.x, p.y, p.z));
   const zMax = Math.max(...epsgPoints.map(p => p.z));
 
   // B3: Vẽ các đường từ điểm gốc xuống điểm XY giữ Z = zMax
@@ -293,7 +293,7 @@ export function updateDropLines(spheres, dropLines, originPoint, pointGroup) {
   if (!spheres || !dropLines || !pointGroup) return;
 
   const worldPoints = pointGroup.map(p => p.clone().add(originPoint));
-  const epsgPoints = worldPoints.map(p => convertTo9217(p.x, p.y, p.z));
+  const epsgPoints = worldPoints.map(p => convertToEPSG(p.x, p.y, p.z));
   const zMax = Math.max(...epsgPoints.map(p => p.z));
 
   for (let i = 0; i < spheres.length; i++) {

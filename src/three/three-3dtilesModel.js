@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { DRACOLoader, GLTFLoader } from 'three/examples/jsm/Addons.js';
 import { TilesRenderer } from '3d-tiles-renderer';
-import { convertTo9217, convertToECEF } from './three-convertCoor';
+import { convertToEPSG, convertToECEF } from './three-convertCoor';
 import { addToModelGroup } from './three-modelGroups';
 
 
@@ -43,7 +43,7 @@ export async function load3dTilesModel (path, camera, renderer, controls, scene,
       tilesRenderer.getBoundingSphere(sphere);
       centerECEFTiles = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
 
-      const centerEPSG = convertTo9217(centerECEFTiles.x, centerECEFTiles.y, centerECEFTiles.z);
+      const centerEPSG = convertToEPSG(centerECEFTiles.x, centerECEFTiles.y, centerECEFTiles.z);
       const size = new THREE.Vector3();
       const maxLength = bbox.getSize(size).length();
 

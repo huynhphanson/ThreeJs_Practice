@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import { convertToECEF, convertTo9217 } from './three-convertCoor';
+import { convertToECEF, convertToEPSG } from './three-convertCoor';
 import { centerCameraTiles, centerECEFTiles } from './three-3dtilesModel';
 import { zoomAt } from './three-controls';
 
@@ -10,7 +10,7 @@ let btn = null;
 
 export function findPosition(scene, camera, controls) {
 
-  const centerTiles9217 = convertTo9217(
+  const centerTilesEPSG = convertToEPSG(
     centerECEFTiles.x,
     centerECEFTiles.y,
     centerCameraTiles.z
@@ -86,7 +86,7 @@ export function findPosition(scene, camera, controls) {
   if (coords.some(val => isNaN(val)))
     return showTooltip("Tọa độ không hợp lệ.");
 
-  const [x, y, z = centerTiles9217.z + 100] = coords;
+  const [x, y, z = centerTilesEPSG.z + 100] = coords;
   let desc = parts[3]?.trim();
   if (!desc) {
     desc = String.fromCharCode(65 + (pointCounter % 26));

@@ -1,7 +1,7 @@
 // === THREE RULER HOÀN CHỈNH ===
 
 import * as THREE from 'three';
-import { convertToECEF, convertTo9217 } from './three-convertCoor';
+import { convertToECEF, convertToEPSG } from './three-convertCoor';
 import { CSS2DObject } from 'three/examples/jsm/Addons.js';
 import {
   computeCentroid,
@@ -427,8 +427,8 @@ function drawRightTriangle(p1Sphere, p2Sphere) {
 
   const p1World = p1.clone().add(originPoint);
   const p2World = p2.clone().add(originPoint);
-  const p1VN = convertTo9217(p1World.x, p1World.y, p1World.z);
-  const p2VN = convertTo9217(p2World.x, p2World.y, p2World.z);
+  const p1VN = convertToEPSG(p1World.x, p1World.y, p1World.z);
+  const p2VN = convertToEPSG(p2World.x, p2World.y, p2World.z);
   const p3VN = new THREE.Vector3(p2VN.x, p2VN.y, p1VN.z);
   const p3World = convertToECEF(p3VN.x, p3VN.y, p3VN.z);
   const p3 = p3World.clone().sub(originPoint);
@@ -542,8 +542,8 @@ function updateAllMeasurements() {
 
     const p1World = p1.clone().add(originPoint);
     const p2World = p2.clone().add(originPoint);
-    const p1VN = convertTo9217(p1World.x, p1World.y, p1World.z);
-    const p2VN = convertTo9217(p2World.x, p2World.y, p2World.z);
+    const p1VN = convertToEPSG(p1World.x, p1World.y, p1World.z);
+    const p2VN = convertToEPSG(p2World.x, p2World.y, p2World.z);
     const p3VN = new THREE.Vector3(p2VN.x, p2VN.y, p1VN.z);
     const p3World = convertToECEF(p3VN.x, p3VN.y, p3VN.z);
     const p3 = p3World.clone().sub(originPoint);
