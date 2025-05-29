@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { convertTo9217 } from "./three-convertCoor";
+import { convertToEPSG } from "./three-convertCoor";
+import { getEPSGLabel } from './three-coordConfig';
+const { label, epsg } = getEPSGLabel();
 
 
 export function cursorCoor (raycaster, scene, camera, container) {
@@ -17,7 +19,7 @@ export function cursorCoor (raycaster, scene, camera, container) {
     const intersects = raycaster.intersectObjects(visibleObjects);
     if (intersects.length > 0) {
       const p = intersects[0].point;
-      const pEPSG = convertTo9217(p.x, p.y, p.z);
+      const pEPSG = convertToEPSG(p.x, p.y, p.z);
 
       const coordinate = {
         x: pEPSG.x.toFixed(3),
@@ -27,12 +29,14 @@ export function cursorCoor (raycaster, scene, camera, container) {
       
 
       divCoor.innerHTML = `
-      <span style="color: #aaa;">VN-2000/TM-3 108°15’ - EPSG:9217</span>
-      <span>X(E): ${coordinate.x} |</span>
-      <span>Y(N): ${coordinate.y} |</span>
-      <span>Z(H): ${coordinate.z}</span>
-    `;
-    
+        <span style="color: #aaa;">
+          ${label}<span class="epsg-tag">- ${epsg}</span>
+        </span>
+        <span>X(E): ${coordinate.x}</span>
+        <span>Y(N): ${coordinate.y}</span>
+        <span>Z(H): ${coordinate.z}</span>
+      `;
+                
 
       container.style.display = 'block';
     } else {

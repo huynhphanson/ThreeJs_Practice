@@ -140,9 +140,11 @@ export async function drawPolylineFromCSV(
     // Hàm cập nhật hiện/ẩn nhãn theo khoảng cách camera
     const updateLabelVisibility = () => {
       group.children.forEach(obj => {
-        if (obj instanceof CSS2DObject) {
+        if (obj.isCSS2DObject) {
           const dist = camera.position.distanceTo(obj.getWorldPosition(new THREE.Vector3()));
-          obj.element.style.display = dist < maxDistance ? 'block' : 'none';
+          const visible = dist < maxDistance;
+          obj.element.style.visibility = visible ? 'visible' : 'hidden';
+          obj.element.style.pointerEvents = visible ? 'auto' : 'none';
         }
       });
     };

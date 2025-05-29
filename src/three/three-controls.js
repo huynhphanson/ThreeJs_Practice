@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import gsap from 'gsap';
-import { convertTo9217, convertToECEF } from './three-convertCoor';
+import { convertToEPSG, convertToECEF } from './three-convertCoor';
 import { centerCameraTiles, centerECEFTiles } from './three-3dtilesModel';
 import { centerECEF, cameraECEF } from './three-gltfModel';
 import { resetHighlight, applyHighlight } from '../utils/highlighUtils';
@@ -137,7 +137,7 @@ export function getCoordinate (event, raycaster, scene, camera) {
   const intersects = raycaster.intersectObjects(scene.children);
   if(intersects.length > 0){
     const p = intersects[0].point;
-    const pEPSG = convertTo9217(p.x, p.y, p.z)
+    const pEPSG = convertToEPSG(p.x, p.y, p.z)
     console.log('Tọa độ:',pEPSG.x, pEPSG.y, pEPSG.z);
     // console.log('Đang chọn:', intersects[0].object)
   }
