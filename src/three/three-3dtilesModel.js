@@ -36,23 +36,24 @@ export async function load3dTilesModel (path, camera, renderer, controls, scene,
   addToModelGroup(category, model);
 
   tilesRenderer.addEventListener('load-tile-set', () => {
-    const bbox = new THREE.Box3();
-    tilesRenderer.getBoundingBox(bbox);
-    tilesRenderer.getBoundingSphere(sphere);
-    centerECEFTiles = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
 
-    const centerEPSG = convertTo9217(centerECEFTiles.x, centerECEFTiles.y, centerECEFTiles.z);
-    const size = new THREE.Vector3();
-    const maxLength = bbox.getSize(size).length();
-
-    const cameraEPSG = {
-      x: centerEPSG.x - maxLength * 0.1,
-      y: centerEPSG.y - maxLength * 0.4,
-      z: centerEPSG.z + maxLength * 0.25
-    };
-
-    centerCameraTiles = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
     if (setCamera) {
+      const bbox = new THREE.Box3();
+      tilesRenderer.getBoundingBox(bbox);
+      tilesRenderer.getBoundingSphere(sphere);
+      centerECEFTiles = new THREE.Vector3(sphere.center.x, sphere.center.y, sphere.center.z);
+
+      const centerEPSG = convertTo9217(centerECEFTiles.x, centerECEFTiles.y, centerECEFTiles.z);
+      const size = new THREE.Vector3();
+      const maxLength = bbox.getSize(size).length();
+
+      const cameraEPSG = {
+        x: centerEPSG.x - maxLength * 0.1,
+        y: centerEPSG.y - maxLength * 0.4,
+        z: centerEPSG.z + maxLength * 0.25
+      };
+
+      centerCameraTiles = convertToECEF(cameraEPSG.x, cameraEPSG.y, cameraEPSG.z);
       camera.position.set(centerCameraTiles.x, centerCameraTiles.y, centerCameraTiles.z);
       controls.target.copy(sphere.center);
       camera.up.copy(centerCameraTiles.clone().normalize());
